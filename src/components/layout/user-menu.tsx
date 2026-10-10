@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { User, Shield, Moon, Sun, LogOut, Check } from "lucide-react";
 import {
   Dropdown,
@@ -10,18 +11,36 @@ import {
   DropdownSeparator,
 } from "@/components/ui/dropdown";
 import { Badge } from "@/components/ui/badge";
+import { createClient } from "@/lib/supabase/client";
 
 export function UserMenu() {
+  const router = useRouter();
   const [isDark, setIsDark] = React.useState(true);
+  const [userEmail, setUserEmail] = React.useState<string | null>(null);
+  const [userName, setUserName] = React.useState<string>("ERP Lead");
 
   React.useEffect(() => {
-    // Sync initial theme
     if (document.documentElement.classList.contains("dark")) {
       setIsDark(true);
     } else {
-      // Default to dark mode for ERP obsidian theme
       document.documentElement.classList.add("dark");
       setIsDark(true);
+    }
+
+    // Check if client session exists
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user) {
+          setUserEmail(data.user.email || null);
+          setUserName(
+            data.user.user_metadata?.full_name ||
+              (data.user.email ? data.user.email.split("@")[0] : "ERP Member")
+          );
+        }
+      });
+    } catch {
+      // In offline / mock development
     }
   }, []);
 
@@ -35,6 +54,17 @@ export function UserMenu() {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/login");
+      router.refresh();
+    } catch {
+      router.push("/login");
+    }
+  };
+
   return (
     <Dropdown>
       <DropdownTrigger>
@@ -42,23 +72,28 @@ export function UserMenu() {
           className="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           aria-label="User profile and system settings"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-primary font-semibold text-xs border border-primary/30">
-            EA
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-primary font-semibold text-xs border border-primary/30 uppercase">
+            {userName.slice(0, 2)}
           </div>
           <div className="hidden text-left md:block">
-            <div className="text-xs font-medium text-foreground">ERP Architect</div>
+            <div className="text-xs font-medium text-foreground">{userName}</div>
             <div className="text-[10px] text-muted-foreground">Admin Console</div>
           </div>
         </button>
       </DropdownTrigger>
       <DropdownContent align="right" className="w-56 p-1">
         <div className="px-2 py-2">
-          <div className="text-xs font-semibold text-foreground">Lead Systems Engineer</div>
-          <div className="text-[11px] text-muted-foreground truncate">lead@ithub-enterprise.com</div>
+          <div className="text-xs font-semibold text-foreground">{userName}</div>
+          <div className="text-[11px] text-muted-foreground truncate">
+            {userEmail || "lead@ithub-enterprise.com"}
+          </div>
           <div className="mt-1.5 flex items-center gap-1.5">
-            <Badge variant="outline" className="text-[9px] h-4 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+            <Badge
+              variant="outline"
+              className="text-[9px] h-4 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+            >
               <Shield className="mr-0.5 h-2.5 w-2.5" />
-              Super Admin
+              Verified Session
             </Badge>
           </div>
         </div>
@@ -75,19 +110,15 @@ export function UserMenu() {
         <DropdownSeparator />
         <DropdownItem
           onClick={() => {
-            alert("Phase 1 Foundation Session: Active in Local Development");
+            router.push("/settings");
           }}
         >
           <div className="flex items-center gap-2 text-muted-foreground">
             <User className="h-4 w-4" />
-            <span>Profile Settings (Phase 4)</span>
+            <span>Profile & Security</span>
           </div>
         </DropdownItem>
-        <DropdownItem
-          onClick={() => {
-            alert("Session Management is managed in Phase 1 via local foundation context.");
-          }}
-        >
+        <DropdownItem onClick={handleSignOut}>
           <div className="flex items-center gap-2 text-destructive">
             <LogOut className="h-4 w-4" />
             <span>Sign Out</span>

@@ -1,122 +1,131 @@
 # 🗄️ IT-HUB ERP — Enterprise Data Model Specification
 
-## 1. Entity Relationship Overview
+## 1. Multi-Tenant Entity Relationship Diagram
 
 ```mermaid
 erDiagram
-    ORGANIZATIONS ||--o{ USERS : employs
-    ORGANIZATIONS ||--o{ WAREHOUSES : owns
-    ORGANIZATIONS ||--o{ PRODUCTS : catalogs
-    ORGANIZATIONS ||--o{ CUSTOMERS : manages
-    ORGANIZATIONS ||--o{ SUPPLIERS : partners_with
+    COMPANIES ||--o{ MEMBERSHIPS : has_members
+    COMPANIES ||--o{ ROLES : defines_custom_roles
+    COMPANIES ||--|| COMPANY_SETTINGS : configured_by
+    COMPANIES ||--o{ AUDIT_LOGS : records
+
+    PROFILES ||--o{ MEMBERSHIPS : assigned_to
+    PROFILES ||--o{ AUDIT_LOGS : triggers
+
+    ROLES ||--o{ MEMBERSHIPS : categorizes
+    ROLES ||--o{ ROLE_PERMISSIONS : includes
+    PERMISSIONS ||--o{ ROLE_PERMISSIONS : mapped_via
+
+    COMPANIES ||--o{ WAREHOUSES : owns
+    COMPANIES ||--o{ PRODUCTS : catalogs
+    COMPANIES ||--o{ CUSTOMERS : manages
+    COMPANIES ||--o{ SUPPLIERS : partners_with
+    COMPANIES ||--o{ EMPLOYEES : employs
 
     WAREHOUSES ||--o{ STOCK_MOVEMENTS : originates_or_receives
     PRODUCTS ||--o{ STOCK_MOVEMENTS : logs
-    PRODUCTS }o--|| SUPPLIERS : sourced_from
-
-    CUSTOMERS ||--o{ SALES_ORDERS : places
-    SALES_ORDERS ||--o{ ORDER_ITEMS : contains
-    PRODUCTS ||--o{ ORDER_ITEMS : ordered_as
-    SALES_ORDERS ||--o{ INVOICES : generates
-
-    ORGANIZATIONS ||--o{ EMPLOYEES : contracts
-    EMPLOYEES ||--o{ PAYROLL_RECORDS : compensated_via
-    EMPLOYEES ||--o{ AUDIT_LOGS : performs
 ```
 
 ---
 
-## 2. Core Tables & Schemas
+## 2. Authentication, Tenancy & RBAC Tables
 
-### `products`
-* `id` (UUID / TEXT, Primary Key)
-* `sku` (TEXT, Unique, Indexed)
-* `barcode` (TEXT, Optional, Indexed)
-* `name` (TEXT, Not Null)
-* `category_id` (TEXT, Foreign Key)
-* `warehouse_id` (TEXT, Foreign Key)
-* `bin_location` (TEXT)
-* `cost_price` (DECIMAL(12, 2), Not Null)
-* `selling_price` (DECIMAL(12, 2), Not Null)
-* `current_stock` (INTEGER, Default 0)
-* `min_threshold` (INTEGER, Default 10)
-* `max_capacity` (INTEGER, Default 100)
-* `unit` (TEXT, Default 'Units')
-* `supplier_id` (TEXT, Foreign Key)
-* `status` (ENUM: `'In Stock'`, `'Low Stock'`, `'Critical Low'`, `'Out of Stock'`)
-* `created_at` (TIMESTAMPTZ, Default NOW())
-* `updated_at` (TIMESTAMPTZ, Default NOW())
+### `companies`
+Tenant organization root entity. All domain resources are partitioned by `company_id`.
+* `id` (`UUID`, Primary Key, `gen_random_uuid()`)
+* `name` (`TEXT`, Not Null)
+* `slug` (`TEXT`, Unique, Not Null)
+* `domain` (`TEXT`, Optional custom domain)
+* `plan` (`TEXT`, Default `'ENTERPRISE'`)
+* `status` (`TEXT`, Check: `'ACTIVE'`, `'SUSPENDED'`, `'PENDING'`)
+* `created_at` (`TIMESTAMPTZ`, Default `NOW()`)
+* `updated_at` (`TIMESTAMPTZ`, Default `NOW()`)
+* `created_by` (`UUID`)
 
-### `stock_movements`
-* `id` (TEXT, Primary Key, e.g. `MOV-2026-9041`)
-* `product_id` (TEXT, Foreign Key -> `products.id`)
-* `warehouse_id` (TEXT, Foreign Key -> `warehouses.id`)
-* `type` (ENUM: `'Stock In'`, `'Stock Out'`, `'Audit Adjustment'`)
-* `quantity` (INTEGER, Signed delta)
-* `reference` (TEXT, e.g. `PO-88410`, `SO-10928`)
-* `operator` (TEXT, User Name or ID)
-* `notes` (TEXT)
-* `created_at` (TIMESTAMPTZ, Default NOW())
+### `profiles`
+User profile extension synchronized with Supabase `auth.users(id)` via automated trigger.
+* `id` (`UUID`, Primary Key, References `auth.users(id)` ON DELETE CASCADE)
+* `email` (`TEXT`, Unique, Not Null)
+* `full_name` (`TEXT`, Not Null)
+* `avatar_url` (`TEXT`)
+* `is_super_admin` (`BOOLEAN`, Default `FALSE`)
+* `created_at` (`TIMESTAMPTZ`, Default `NOW()`)
+* `updated_at` (`TIMESTAMPTZ`, Default `NOW()`)
 
-### `warehouses`
-* `id` (TEXT, Primary Key)
-* `code` (TEXT, Unique)
-* `name` (TEXT, Not Null)
-* `city` (TEXT)
-* `capacity` (INTEGER)
-* `current_usage` (INTEGER)
-* `manager` (TEXT)
-* `email` (TEXT)
-* `phone` (TEXT)
-* `status` (TEXT, Default 'Operational')
+### `roles`
+PRD system roles (shared, `company_id IS NULL`) and tenant-specific custom roles.
+* `id` (`UUID`, Primary Key, `gen_random_uuid()`)
+* `company_id` (`UUID`, References `companies(id)` ON DELETE CASCADE, Nullable for system roles)
+* `name` (`TEXT`, Not Null)
+* `code` (`TEXT`, Not Null, Unique per company)
+* `description` (`TEXT`)
+* `is_system` (`BOOLEAN`, Default `FALSE`)
+* `created_at` (`TIMESTAMPTZ`, Default `NOW()`)
+* `updated_at` (`TIMESTAMPTZ`, Default `NOW()`)
+* `created_by` (`UUID`)
 
-### `suppliers`
-* `id` (TEXT, Primary Key)
-* `code` (TEXT, Unique)
-* `name` (TEXT, Not Null)
-* `category` (TEXT)
-* `contact_person` (TEXT)
-* `email` (TEXT)
-* `phone` (TEXT)
-* `lead_time_days` (INTEGER)
-* `rating` (DECIMAL(3, 2))
-* `status` (TEXT, Default 'Active')
+### `permissions`
+Granular privilege catalog across resources and operations.
+* `id` (`UUID`, Primary Key, `gen_random_uuid()`)
+* `code` (`TEXT`, Unique, Not Null, e.g. `'inventory:view'`, `'finance:approve'`)
+* `resource` (`TEXT`, Not Null, e.g. `'inventory'`, `'crm'`, `'finance'`)
+* `action` (`TEXT`, Not Null, e.g. `'view'`, `'create'`, `'edit'`, `'delete'`, `'export'`, `'approve'`)
+* `description` (`TEXT`)
+* `created_at` (`TIMESTAMPTZ`, Default `NOW()`)
 
-### `customers` (CRM)
-* `id` (TEXT, Primary Key)
-* `name` (TEXT, Not Null)
-* `company` (TEXT)
-* `email` (TEXT)
-* `phone` (TEXT)
-* `status` (ENUM: `'Lead'`, `'Prospect'`, `'Active Customer'`, `'Inactive'`)
-* `total_spend` (DECIMAL(12, 2), Default 0)
+### `role_permissions`
+Many-to-many junction mapping roles to assigned granular permissions.
+* `role_id` (`UUID`, References `roles(id)` ON DELETE CASCADE)
+* `permission_id` (`UUID`, References `permissions(id)` ON DELETE CASCADE)
+* `created_at` (`TIMESTAMPTZ`, Default `NOW()`)
+* Primary Key: `(role_id, permission_id)`
 
-### `sales_orders`
-* `id` (TEXT, Primary Key, e.g. `SO-2026-1049`)
-* `customer_id` (TEXT, Foreign Key)
-* `order_date` (TIMESTAMPTZ)
-* `status` (ENUM: `'Draft'`, `'Confirmed'`, `'Dispatched'`, `'Fulfilled'`, `'Cancelled'`)
-* `total_amount` (DECIMAL(12, 2))
-* `tax_amount` (DECIMAL(12, 2))
-* `payment_status` (ENUM: `'Pending'`, `'Paid'`, `'Overdue'`)
+### `memberships`
+Server-verified association between a user, tenant company, and role.
+* `id` (`UUID`, Primary Key, `gen_random_uuid()`)
+* `company_id` (`UUID`, References `companies(id)` ON DELETE CASCADE)
+* `user_id` (`UUID`, References `profiles(id)` ON DELETE CASCADE)
+* `role_id` (`UUID`, References `roles(id)` ON DELETE RESTRICT)
+* `status` (`TEXT`, Check: `'ACTIVE'`, `'INVITED'`, `'SUSPENDED'`, Default `'ACTIVE'`)
+* `created_at` (`TIMESTAMPTZ`, Default `NOW()`)
+* `updated_at` (`TIMESTAMPTZ`, Default `NOW()`)
+* `created_by` (`UUID`)
+* Unique: `(company_id, user_id)`
 
-### `employees` (HR)
-* `id` (TEXT, Primary Key)
-* `employee_code` (TEXT, Unique)
-* `full_name` (TEXT, Not Null)
-* `department` (TEXT)
-* `designation` (TEXT)
-* `email` (TEXT)
-* `phone` (TEXT)
-* `base_salary` (DECIMAL(12, 2))
-* `join_date` (DATE)
-* `status` (ENUM: `'Active'`, `'On Leave'`, `'Terminated'`)
+### `company_settings`
+Tenant-specific configuration and localization preferences.
+* `company_id` (`UUID`, Primary Key, References `companies(id)` ON DELETE CASCADE)
+* `currency` (`TEXT`, Default `'USD'`)
+* `timezone` (`TEXT`, Default `'UTC'`)
+* `fiscal_year_start` (`TEXT`, Default `'01-01'`)
+* `theme` (`TEXT`, Default `'obsidian'`)
+* `features` (`JSONB`, Default `'{}'::jsonb`)
+* `updated_at` (`TIMESTAMPTZ`, Default `NOW()`)
+* `updated_by` (`UUID`)
 
 ### `audit_logs`
-* `id` (UUID, Primary Key)
-* `user_id` (TEXT)
-* `action` (TEXT)
-* `entity_type` (TEXT)
-* `entity_id` (TEXT)
-* `payload` (JSONB)
-* `created_at` (TIMESTAMPTZ, Default NOW())
+Immutable enterprise change and security event trail.
+* `id` (`UUID`, Primary Key, `gen_random_uuid()`)
+* `company_id` (`UUID`, References `companies(id)` ON DELETE CASCADE)
+* `user_id` (`UUID`, References `profiles(id)` ON DELETE SET NULL)
+* `action` (`TEXT`, Not Null)
+* `resource` (`TEXT`, Not Null)
+* `resource_id` (`TEXT`)
+* `details` (`JSONB`, Default `'{}'::jsonb`)
+* `ip_address` (`TEXT`)
+* `user_agent` (`TEXT`)
+* `created_at` (`TIMESTAMPTZ`, Default `NOW()`)
+
+---
+
+## 3. PostgreSQL Row-Level Security (RLS) Model
+
+1. **Security Definer Helper Functions**:
+   * `public.is_super_admin()`: Returns `TRUE` if `profiles.is_super_admin = TRUE` for `auth.uid()`.
+   * `public.user_company_ids()`: Returns all `company_id`s where caller has `status = 'ACTIVE'` membership.
+   * `public.has_company_permission(comp_id, perm_code)`: Evaluates if caller is Super Admin or has role granting `perm_code`.
+2. **Multi-Tenant Policy Rule**: Every query on tenant-owned tables is bounded by:
+   ```sql
+   USING (company_id IN (SELECT user_company_ids()) OR public.is_super_admin())
+   ```
+   Ensuring Company A users can never read or mutate Company B data under any circumstances.
