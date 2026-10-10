@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { StorageService } from './services/storageService';
-import { Header } from './components/Header';
-import { Sidebar } from './components/Sidebar';
+import { AuthService } from './lib/auth/authService';
+import { Header } from './components/layout/Header';
+import { Sidebar } from './components/layout/Sidebar';
 import { DashboardView } from './components/DashboardView';
 import { ProductsView } from './components/ProductsView';
 import { MovementsLedgerView } from './components/MovementsLedgerView';
@@ -14,6 +15,15 @@ import { StockMovementModal } from './components/StockMovementModal';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { ToastContainer } from './components/ToastContainer';
 
+// Feature Views
+import { CrmView } from './features/crm/components/CrmView';
+import { SalesView } from './features/sales/components/SalesView';
+import { FinanceView } from './features/finance/components/FinanceView';
+import { HrView } from './features/hr/components/HrView';
+import { PayrollView } from './features/payroll/components/PayrollView';
+import { ProjectsView } from './features/projects/components/ProjectsView';
+import { ReportsView } from './features/reports/components/ReportsView';
+
 export function App() {
   // Main Data States
   const [products, setProducts] = useState([]);
@@ -22,6 +32,9 @@ export function App() {
   const [suppliers, setSuppliers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activities, setActivities] = useState([]);
+
+  // Auth & RBAC State
+  const [currentUser, setCurrentUser] = useState(() => AuthService.getCurrentUser());
 
   // UI States
   const [currentView, setCurrentView] = useState('dashboard');
@@ -85,17 +98,22 @@ export function App() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  // Switch User Profile (RBAC simulation)
+  const handleSwitchUser = (userId) => {
+    const newUser = AuthService.switchUser(userId);
+    setCurrentUser(newUser);
+    addToast(`Switched user context to ${newUser.name} (${newUser.role})`, 'info');
+  };
+
   // Keyboard Shortcuts (Ctrl+K for search, Escape to close modals)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Focus search on Ctrl+K or '/'
       if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA')) {
         e.preventDefault();
         const searchInput = document.getElementById('global-search-input');
         if (searchInput) searchInput.focus();
       }
 
-      // Escape to close modals
       if (e.key === 'Escape') {
         if (isProductModalOpen) setIsProductModalOpen(false);
         if (isMovementModalOpen) setIsMovementModalOpen(false);
@@ -150,7 +168,10 @@ export function App() {
   // Handle Stock Movement Record (In, Out, Audit)
   const handleRecordStockMovement = (movementData) => {
     try {
-      const result = StorageService.recordStockMovement(movementData);
+      const result = StorageService.recordStockMovement({
+        ...movementData,
+        operator: currentUser?.name || 'Operations Specialist'
+      });
       loadData();
       addToast(`Recorded ${movementData.type} (${Math.abs(movementData.quantity)} units) for ${result.product.sku}`, 'success');
     } catch (err) {
@@ -205,17 +226,16 @@ export function App() {
     }
   };
 
-  // Filter products by warehouse from warehouse card
-  const handleFilterByWarehouse = (warehouseId) => {
-    setCurrentView('products');
-    // Set search or filter in products view
-    addToast(`Filtered inventory for warehouse depot`, 'info');
+  // Filter products by warehouse
+  const handleFilterByWarehouse = () => {
+    setCurrentView('inventory');
+    addToast('Filtered inventory for selected depot', 'info');
   };
 
-  // Filter products by supplier from supplier card
-  const handleFilterBySupplier = (supplierId) => {
-    setCurrentView('products');
-    addToast(`Filtered catalog for supplier contracts`, 'info');
+  // Filter products by supplier
+  const handleFilterBySupplier = () => {
+    setCurrentView('inventory');
+    addToast('Filtered catalog for selected supplier contracts', 'info');
   };
 
   // Computed alert badges
@@ -228,6 +248,7 @@ export function App() {
       <Sidebar
         currentView={currentView}
         setCurrentView={setCurrentView}
+        currentUser={currentUser}
         lowStockCount={lowStockCount}
         totalProducts={products.length}
         onExportCSV={handleExportCSV}
@@ -253,6 +274,8 @@ export function App() {
           }}
           onResetData={handleResetDemoDataPrompt}
           criticalItems={criticalItems}
+          currentUser={currentUser}
+          onSwitchUser={handleSwitchUser}
         />
 
         <main className="content-container">
@@ -274,7 +297,7 @@ export function App() {
             />
           )}
 
-          {currentView === 'products' && (
+          {currentView === 'inventory' && (
             <ProductsView
               products={products}
               categories={categories}
@@ -331,6 +354,34 @@ export function App() {
               products={products}
               onFilterBySupplier={handleFilterBySupplier}
             />
+          )}
+
+          {currentView === 'crm' && (
+            <CrmView onNotify={addToast} />
+          )}
+
+          {currentView === 'sales' && (
+            <SalesView onNotify={addToast} />
+          )}
+
+          {currentView === 'finance' && (
+            <FinanceView />
+          )}
+
+          {currentView === 'hr' && (
+            <HrView onNotify={addToast} />
+          )}
+
+          {currentView === 'payroll' && (
+            <PayrollView onNotify={addToast} />
+          )}
+
+          {currentView === 'projects' && (
+            <ProjectsView />
+          )}
+
+          {currentView === 'reports' && (
+            <ReportsView onNotify={addToast} />
           )}
 
           {currentView === 'analytics' && (

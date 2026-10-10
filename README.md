@@ -1,18 +1,71 @@
-# 📦 NEXUS ERP — Enterprise Inventory & Operations Suite
+# 🏛️ IT-HUB ERP — Enterprise Operations Suite
 
-> Next-generation Enterprise Resource Planning (ERP) platform for real-time inventory management, multi-warehouse logistics, SKU lifecycle control, and automated reorder defense.
+> Next-generation Enterprise Resource Planning (ERP) platform for real-time inventory management, multi-warehouse logistics, CRM, commercial sales orders, financial ledger, human capital, automated payroll, and operational intelligence.
 
 ![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=flat&logo=react)
 ![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?style=flat&logo=vite)
-![Design](https://img.shields.io/badge/Theme-Obsidian%20Dark%20%26%20Light-00E5FF?style=flat)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat&logo=supabase)
+![Theme](https://img.shields.io/badge/Theme-Obsidian%20Dark%20%26%20Light-00E5FF?style=flat)
 ![Status](https://img.shields.io/badge/Status-Operational-10B981?style=flat)
 
 ---
 
-## 🌟 Core Modules & Capabilities
+## 📁 Repository Structure
+
+```text
+it-hub-erp/
+├── docs/                               # 📚 Enterprise Blueprint & Architecture
+│   ├── MASTER_BUILD_PLAN.md            # Phased build milestones & Gantt roadmap
+│   ├── ARCHITECTURE.md                 # System layering, data flow & security
+│   ├── DATA_MODEL.md                   # Relational database entities & ER diagrams
+│   ├── PERMISSIONS.md                  # RBAC permissions matrix & role definitions
+│   ├── DEPLOYMENT.md                   # Docker, Vercel & Supabase hosting guide
+│   └── OPEN_QUESTIONS.md               # Key architectural decisions & FX/costing
+├── public/                             # Static public assets & favicons
+├── src/
+│   ├── app/                            # Route shells & layouts
+│   ├── components/
+│   │   ├── layout/                     # Header, Sidebar, Responsive Shell
+│   │   ├── ui/                         # Atomic design system controls
+│   │   └── shared/                     # Confirm dialogs & toast notifications
+│   ├── features/                       # 🧩 Modular Business Domains
+│   │   ├── dashboard/                  # Executive telemetry & velocity charts
+│   │   ├── inventory/                  # SKU catalog, stock ledger, barcodes
+│   │   ├── crm/                        # Customer directory & lead pipeline
+│   │   ├── sales/                      # Commercial sales orders & fulfillment
+│   │   ├── finance/                    # Chart of accounts, balance sheet, P&L
+│   │   ├── hr/                         # Employee directory & department hierarchy
+│   │   ├── payroll/                    # Statutory withholding & disbursements
+│   │   ├── projects/                   # Strategic engineering projects & milestones
+│   │   ├── reports/                    # CSV valuation & movement ledgers
+│   │   └── notifications/              # Stockout & audit event radar
+│   ├── lib/                            # ⚙️ Core Libraries & Services
+│   │   ├── auth/                       # Session handling & RBAC user profiles
+│   │   ├── db/                         # Database & storage adapter
+│   │   ├── permissions/                # Fine-grained RBAC permission checks
+│   │   ├── validation/                 # Schema validators
+│   │   ├── audit/                      # Cryptographic audit trail logger
+│   │   └── utils/                      # Currency, date, and margin utilities
+│   └── types/                          # Data contracts & TypeScript models
+├── supabase/                           # 🐘 Database Migrations & Seeds
+│   ├── migrations/                     # 20261010000000_init_erp_schema.sql
+│   └── seed.sql                        # Enterprise mock dataset for PostgreSQL
+├── tests/                              # 🧪 Comprehensive Test Suite
+│   ├── unit/                           # Inventory calculations & margin formulas
+│   ├── integration/                    # RBAC role authorization matrix
+│   └── e2e/                            # End-to-end stock transfer lifecycle
+├── .env.example                        # Environment variables template
+├── .gitignore
+├── README.md
+└── package.json
+```
+
+---
+
+## 🌟 Modules & Business Features
 
 ### 1. 📊 Executive Operations Radar (Dashboard)
-* **Real-time KPI Metrics**: Live stock valuation (Cost Basis), projected retail turnover yield, average margin %, active catalog SKUs, and transaction velocity.
+* **Real-time KPI Metrics**: Live stock valuation (Cost Basis), potential retail turnover, gross margin %, catalog SKUs, and movement velocity.
 * **Movement Velocity Charts**: Interactive SVG stock trajectory visualization tracking Inbound receipts vs Outbound dispatches.
 * **Category Breakdown**: Category-level volume progress bars and working capital distribution.
 * **Live Audit Activity Feed**: Real-time chronological operations log with relative timestamps.
@@ -25,7 +78,6 @@
   * Auto-generates cryptographically distinct SKUs with category prefixes (e.g. `ELEC-CORE-8812`).
   * Instant UPC/EAN barcode code generator.
   * Stock level safety gauges compared against max storage capacity.
-  * Delete protection with confirmation dialogs.
 
 ### 3. 🔄 Stock Movement Ledger (In / Out / Audit)
 * **Transaction Recording**:
@@ -47,20 +99,33 @@
   * European Gateway Depot (Amsterdam, NL)
 * Live storage utilization gauges (% capacity filled, active SKUs, and facility director contact details).
 
-### 6. 🚚 Supplier & Vendor Procurement Directory
-* Direct vendor directory with SLA lead times (business days), reliability ratings (4.5–4.9 ⭐), account representatives, and one-click catalog filtering.
+### 6. 🤝 CRM & Commercial Accounts
+* Enterprise account directory with lifetime spend tracking, account contact profiles, and lead status pipeline transitions (`Lead`, `Prospect`, `Active Customer`).
 
-### 7. 📈 Financial Valuation & Liquidity Analytics
-* Working capital basis vs retail list yield comparison.
-* Top 5 highest valuation assets and top 5 highest profit margin performers.
-* Slow-moving liquidity risk alert audit.
+### 7. 🛒 Sales Orders & Fulfillment
+* Commercial sales order tracking (PO/SO codes), line-item allocations, payment receipt statuses (`Paid`, `Pending`), and fulfillment lifecycle stages (`Confirmed`, `Dispatched`, `Fulfilled`).
 
-### 8. 💾 Data Persistence, Backup & Portability
-* Instant persistence via browser `localStorage` with enterprise demo fallback.
-* One-click **Export Catalog to CSV**.
-* One-click **Full JSON Database Backup**.
-* **Import JSON Dataset** loader.
-* **Reset to Demo Data** utility for safe demonstration and onboarding.
+### 8. 💰 Finance, Ledger & Treasury Capital
+* Chart of accounts (Assets, Liabilities, Equity, Revenue, COGS), working capital calculations, accounts receivable/payable balances.
+
+### 9. 👥 HR & Staff Directory
+* Personnel profiles, employee identification codes, department divisions, salary bands, and streamlined employee onboarding.
+
+### 10. 💳 Automated Payroll Engine
+* Automated monthly salary runs with statutory tax withholding (22%), healthcare deductions, and single-click net pay disbursement.
+
+### 11. 📐 Capital Engineering Projects
+* PMO project milestone tracker, target completion dates, allocated budgets vs committed expenditure, and progress velocity bars.
+
+### 12. 📑 Enterprise Reports & Business Intelligence
+* Exportable audit-ready CSV schedules for Inventory Asset Valuation and Stock Movement Audit Trails.
+
+### 13. 🔐 Role-Based Access Control (RBAC)
+* Seamless in-app user role switcher in the header to simulate and verify permissions for:
+  * **Super Admin**: Unrestricted system governance.
+  * **Inventory Manager**: SKU creation, stock adjustments, vendor oversight.
+  * **Operations Staff**: Barcode scanning and movement logging only.
+  * **Finance Director**: Balance sheet, ledger, and payroll disbursements.
 
 ---
 
@@ -95,13 +160,5 @@ npm run preview
 ---
 
 ## ⌨️ Keyboard Shortcuts
-* `Ctrl + K` or `/` — Universal SKU & product search
+* `Ctrl + K` or `/` — Universal SKU, product, and account search
 * `Escape` — Close active modal dialog
-
----
-
-## 🛠️ Technology Stack
-* **Framework**: React 19, Vite
-* **Icons**: Lucide React
-* **Styling**: Vanilla CSS Design Tokens (Obsidian Dark & Clean Light modes)
-* **Fonts**: Plus Jakarta Sans, JetBrains Mono
