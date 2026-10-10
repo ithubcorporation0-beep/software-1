@@ -1,12 +1,14 @@
 # 🏛️ IT-HUB ERP — Enterprise Operations Suite
 
-> Next-generation Enterprise Resource Planning (ERP) platform for real-time inventory management, multi-warehouse logistics, CRM, commercial sales orders, financial ledger, human capital, automated payroll, and operational intelligence.
+> Modern, modular Enterprise Resource Planning (ERP) platform engineered with Next.js App Router, TypeScript, Tailwind CSS, and accessible design system primitives.
 
-![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=flat&logo=react)
-![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?style=flat&logo=vite)
-![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat&logo=supabase)
+![Next.js](https://img.shields.io/badge/Next.js-16.4-black?style=flat&logo=next.js)
+![React 19](https://img.shields.io/badge/React-19.3-61DAFB?style=flat&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=flat&logo=tailwind-css)
+![Vitest](https://img.shields.io/badge/Vitest-5.0-green?style=flat&logo=vitest)
 ![Theme](https://img.shields.io/badge/Theme-Obsidian%20Dark%20%26%20Light-00E5FF?style=flat)
-![Status](https://img.shields.io/badge/Status-Operational-10B981?style=flat)
+![Phase](https://img.shields.io/badge/Phase-1%20Foundation%20Active-10B981?style=flat)
 
 ---
 
@@ -16,123 +18,82 @@
 it-hub-erp/
 ├── docs/                               # 📚 Enterprise Blueprint & Architecture
 │   ├── MASTER_BUILD_PLAN.md            # Phased build milestones & Gantt roadmap
-│   ├── ARCHITECTURE.md                 # System layering, data flow & security
+│   ├── ARCHITECTURE.md                 # System layering, App Router, design tokens & security
 │   ├── DATA_MODEL.md                   # Relational database entities & ER diagrams
 │   ├── PERMISSIONS.md                  # RBAC permissions matrix & role definitions
 │   ├── DEPLOYMENT.md                   # Docker, Vercel & Supabase hosting guide
-│   └── OPEN_QUESTIONS.md               # Key architectural decisions & FX/costing
+│   └── OPEN_QUESTIONS.md               # Key architectural decisions & open questions
 ├── public/                             # Static public assets & favicons
 ├── src/
-│   ├── app/                            # Route shells & layouts
+│   ├── app/                            # 🚀 Next.js App Router
+│   │   ├── (erp)/                      # Authenticated ERP application shell
+│   │   │   ├── layout.tsx              # Persistent layout with Sidebar, Header & Viewport
+│   │   │   ├── page.tsx                # Executive Operations Radar (Dashboard)
+│   │   │   ├── inventory/page.tsx      # Inventory & Multi-Depot Logistics (Phase 2)
+│   │   │   ├── crm/page.tsx            # CRM & Commercial Accounts (Phase 2)
+│   │   │   ├── sales/page.tsx          # Sales Orders & Fulfillment (Phase 2)
+│   │   │   ├── projects/page.tsx       # Projects & PMO Portfolio (Phase 3)
+│   │   │   ├── finance/page.tsx        # Finance & General Ledger (Phase 3)
+│   │   │   ├── payroll/page.tsx        # Payroll & Statutory Disbursements (Phase 3)
+│   │   │   ├── hr/page.tsx             # Human Resources & Directory (Phase 4)
+│   │   │   ├── reports/page.tsx        # Reports & Audit Intelligence (Phase 4)
+│   │   │   └── settings/page.tsx       # System Settings & Governance (Phase 4)
+│   │   ├── error.tsx                   # Route-level error boundary
+│   │   ├── global-error.tsx            # Root fatal error boundary
+│   │   ├── not-found.tsx               # Accessible 404 page
+│   │   ├── layout.tsx                  # Root HTML shell with theme & metadata
+│   │   └── globals.css                 # Design tokens, CSS variables, focus rings
 │   ├── components/
-│   │   ├── layout/                     # Header, Sidebar, Responsive Shell
-│   │   ├── ui/                         # Atomic design system controls
-│   │   └── shared/                     # Confirm dialogs & toast notifications
-│   ├── features/                       # 🧩 Modular Business Domains
-│   │   ├── dashboard/                  # Executive telemetry & velocity charts
-│   │   ├── inventory/                  # SKU catalog, stock ledger, barcodes
-│   │   ├── crm/                        # Customer directory & lead pipeline
-│   │   ├── sales/                      # Commercial sales orders & fulfillment
-│   │   ├── finance/                    # Chart of accounts, balance sheet, P&L
-│   │   ├── hr/                         # Employee directory & department hierarchy
-│   │   ├── payroll/                    # Statutory withholding & disbursements
-│   │   ├── projects/                   # Strategic engineering projects & milestones
-│   │   ├── reports/                    # CSV valuation & movement ledgers
-│   │   └── notifications/              # Stockout & audit event radar
-│   ├── lib/                            # ⚙️ Core Libraries & Services
-│   │   ├── auth/                       # Session handling & RBAC user profiles
-│   │   ├── db/                         # Database & storage adapter
-│   │   ├── permissions/                # Fine-grained RBAC permission checks
-│   │   ├── validation/                 # Schema validators
-│   │   ├── audit/                      # Cryptographic audit trail logger
-│   │   └── utils/                      # Currency, date, and margin utilities
-│   └── types/                          # Data contracts & TypeScript models
+│   │   ├── layout/                     # SaaS Shell Components
+│   │   │   ├── erp-shell.tsx           # Primary wrapper
+│   │   │   ├── sidebar.tsx             # Left navigation with phase badges & tenant context
+│   │   │   ├── header.tsx              # Sticky top header with search, notifs & user menu
+│   │   │   ├── mobile-nav.tsx          # Accessible mobile drawer with focus trap
+│   │   │   ├── global-search-dialog.tsx# Universal Command palette (Ctrl+K)
+│   │   │   ├── notifications-popover.tsx# System notification tray
+│   │   │   ├── user-menu.tsx           # Role switcher & dark/light theme toggle
+│   │   │   ├── page-header.tsx         # Page title, dynamic breadcrumbs & actions
+│   │   │   └── content-layout.tsx      # Standardized responsive container
+│   │   ├── ui/                         # 🎨 Design System Primitives
+│   │   │   ├── button.tsx              # Accessible button with variants & loading states
+│   │   │   ├── input.tsx               # Inputs with accessible labels & error states
+│   │   │   ├── badge.tsx               # Semantic badges (success, warning, info, etc.)
+│   │   │   ├── card.tsx                # Card, Header, Title, Content, Footer
+│   │   │   ├── dialog.tsx              # Modal dialogs with Escape listener & backdrop
+│   │   │   ├── dropdown.tsx            # Accessible dropdowns with keyboard navigation
+│   │   │   ├── table.tsx               # Tabular data patterns with responsive scrolling
+│   │   │   ├── skeleton.tsx            # Pulsing skeleton loaders
+│   │   │   ├── empty-state.tsx         # Zero-data state with icon & CTA
+│   │   │   ├── error-state.tsx         # Operation failure alert with retry
+│   │   │   └── breadcrumbs.tsx         # Screen-reader friendly breadcrumb trail
+│   │   └── shared/
+│   │       └── coming-soon-module.tsx  # Honest roadmap placeholder for future modules
+│   ├── lib/                            # ⚙️ Reusable Utilities & Logic
+│   │   ├── permissions/rbac.js         # Fine-grained RBAC matrix (Super Admin, Ops, etc.)
+│   │   └── utils.ts                    # Class merger (`cn`), currency & date formatters
+│   └── types/                          # TypeScript definitions & constants
 ├── supabase/                           # 🐘 Database Migrations & Seeds
 │   ├── migrations/                     # 20261010000000_init_erp_schema.sql
-│   └── seed.sql                        # Enterprise mock dataset for PostgreSQL
+│   └── seed.sql                        # PostgreSQL seed dataset
 ├── tests/                              # 🧪 Comprehensive Test Suite
-│   ├── unit/                           # Inventory calculations & margin formulas
-│   ├── integration/                    # RBAC role authorization matrix
-│   └── e2e/                            # End-to-end stock transfer lifecycle
-├── .env.example                        # Environment variables template
-├── .gitignore
-├── README.md
+│   ├── setup.ts                        # Jest-DOM matchers initialization
+│   ├── unit/                           # Button, Badge, Sidebar, ComingSoonModule tests
+│   └── integration/                    # RBAC role permissions tests
+├── .env.example                        # Safe environment variables blueprint
+├── .gitignore                          # Strictly ignores .env.local, .next, and secrets
+├── eslint.config.mjs                   # ESLint 9 flat configuration
+├── tsconfig.json                       # TypeScript compiler configuration with path aliases
+├── tailwind.config.ts                  # Design tokens & semantic color system
+├── vitest.config.ts                    # Vitest configuration with jsdom & React plugin
 └── package.json
 ```
-
----
-
-## 🌟 Modules & Business Features
-
-### 1. 📊 Executive Operations Radar (Dashboard)
-* **Real-time KPI Metrics**: Live stock valuation (Cost Basis), potential retail turnover, gross margin %, catalog SKUs, and movement velocity.
-* **Movement Velocity Charts**: Interactive SVG stock trajectory visualization tracking Inbound receipts vs Outbound dispatches.
-* **Category Breakdown**: Category-level volume progress bars and working capital distribution.
-* **Live Audit Activity Feed**: Real-time chronological operations log with relative timestamps.
-
-### 2. 🏷️ Product & SKU Master Catalog
-* **Dual View Experience**: High-density Data Table view with sortable columns or Responsive Card Grid view.
-* **Universal Search & Filtering**: Multi-parameter search by SKU, Name, Barcode UPC, Category, Warehouse Hub, or Bin Location.
-* **Profit Margin Engine**: Auto-computes gross profit margin percentages and dollar spread per unit.
-* **Full CRUD Operations**:
-  * Auto-generates cryptographically distinct SKUs with category prefixes (e.g. `ELEC-CORE-8812`).
-  * Instant UPC/EAN barcode code generator.
-  * Stock level safety gauges compared against max storage capacity.
-
-### 3. 🔄 Stock Movement Ledger (In / Out / Audit)
-* **Transaction Recording**:
-  * **Stock In (+)**: Receive supplier shipments, container deliveries, and client returns.
-  * **Stock Out (-)**: Dispatch sales orders, work order allocations, and fulfillment jobs with negative-stock prevention.
-  * **Audit Adjustments (±)**: Reconcile physical cycle counts and scrap damaged units.
-* **Complete Audit Trail**: Immutable transaction ID, ISO timestamp, delta quantities, reference codes (PO#, SO#), authorized operators, and notes.
-
-### 4. 🚨 Intelligent Reorder Radar & Stockout Defense
-* **Automated Stockout Detection**: Classifies products into `Stockout Emergency`, `Critical (<40% min threshold)`, and `Reorder Needed`.
-* **Recommended Replenishment Calculator**: Automatically computes missing capacity units and estimated purchase capital required.
-* **One-Click Restock**: Pre-fills stock movement transactions or generates simulated batch Purchase Orders (PO).
-
-### 5. 🏢 Multi-Depot Logistics Facilities
-* Tracks centralized and regional distribution centers:
-  * Central Logistics Hub (Dallas, TX)
-  * East Coast Distribution Center (Newark, NJ)
-  * Pacific Freight Depot (Long Beach, CA)
-  * European Gateway Depot (Amsterdam, NL)
-* Live storage utilization gauges (% capacity filled, active SKUs, and facility director contact details).
-
-### 6. 🤝 CRM & Commercial Accounts
-* Enterprise account directory with lifetime spend tracking, account contact profiles, and lead status pipeline transitions (`Lead`, `Prospect`, `Active Customer`).
-
-### 7. 🛒 Sales Orders & Fulfillment
-* Commercial sales order tracking (PO/SO codes), line-item allocations, payment receipt statuses (`Paid`, `Pending`), and fulfillment lifecycle stages (`Confirmed`, `Dispatched`, `Fulfilled`).
-
-### 8. 💰 Finance, Ledger & Treasury Capital
-* Chart of accounts (Assets, Liabilities, Equity, Revenue, COGS), working capital calculations, accounts receivable/payable balances.
-
-### 9. 👥 HR & Staff Directory
-* Personnel profiles, employee identification codes, department divisions, salary bands, and streamlined employee onboarding.
-
-### 10. 💳 Automated Payroll Engine
-* Automated monthly salary runs with statutory tax withholding (22%), healthcare deductions, and single-click net pay disbursement.
-
-### 11. 📐 Capital Engineering Projects
-* PMO project milestone tracker, target completion dates, allocated budgets vs committed expenditure, and progress velocity bars.
-
-### 12. 📑 Enterprise Reports & Business Intelligence
-* Exportable audit-ready CSV schedules for Inventory Asset Valuation and Stock Movement Audit Trails.
-
-### 13. 🔐 Role-Based Access Control (RBAC)
-* Seamless in-app user role switcher in the header to simulate and verify permissions for:
-  * **Super Admin**: Unrestricted system governance.
-  * **Inventory Manager**: SKU creation, stock adjustments, vendor oversight.
-  * **Operations Staff**: Barcode scanning and movement logging only.
-  * **Finance Director**: Balance sheet, ledger, and payroll disbursements.
 
 ---
 
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
-* [Node.js](https://nodejs.org/) (v18+)
+* [Node.js](https://nodejs.org/) (v18+ or v20+)
 * npm (v9+)
 
 ### 2. Installation
@@ -143,22 +104,40 @@ cd software-1
 
 # Install dependencies
 npm install
+
+# Copy environment configuration template
+cp .env.example .env.local
 ```
 
 ### 3. Development Server
 ```bash
 npm run dev
 ```
-Open **[http://localhost:5173/](http://localhost:5173/)** in your browser.
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
-### 4. Production Build
+### 4. Running Checks & Tests
 ```bash
+# Type check TypeScript without emitting files
+npm run type-check
+
+# Run ESLint across the codebase
+npm run lint
+
+# Run unit and integration tests with Vitest
+npm test
+
+# Build optimized production bundle
 npm run build
-npm run preview
 ```
 
 ---
 
-## ⌨️ Keyboard Shortcuts
-* `Ctrl + K` or `/` — Universal SKU, product, and account search
-* `Escape` — Close active modal dialog
+## 🎨 Design System & Accessibility
+
+* **Neutral Surfaces**: Restrained, modern slate and zinc tones.
+* **Accent Colors**: Subtle enterprise sapphire tokens with semantic status colors (Emerald, Amber, Rose, Sky).
+* **Keyboard Navigation**:
+  * `Ctrl + K` or `Cmd + K` opens the Universal Command Palette.
+  * `Escape` closes any open dialog or modal drawer.
+  * Standard `Tab` navigation with visible outline rings (`:focus-visible`).
+* **Honest Data Presentation**: Phase 1 avoids displaying simulated mock figures. Unimplemented modules and widgets show clear skeleton loaders or "Coming in a later phase" states.
