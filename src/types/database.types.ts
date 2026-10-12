@@ -197,3 +197,200 @@ export interface Lead {
   updated_at: string;
 }
 
+// ============================================================================
+// SALES: QUOTATIONS, ORDERS, INVOICES, PAYMENTS
+// ============================================================================
+
+export type QuotationStatus =
+  | "Draft"
+  | "Sent"
+  | "Accepted"
+  | "Declined"
+  | "Converted"
+  | "Expired";
+
+export type SalesOrderStatus =
+  | "Draft"
+  | "Confirmed"
+  | "In Production"
+  | "Shipped"
+  | "Delivered"
+  | "Invoiced"
+  | "Cancelled";
+
+export type InvoiceStatus =
+  | "Draft"
+  | "Sent"
+  | "Partially Paid"
+  | "Paid"
+  | "Overdue"
+  | "Cancelled";
+
+export type PaymentMethod =
+  | "Cash"
+  | "Bank Transfer"
+  | "Card"
+  | "Online Payment"
+  | "Other";
+
+export type PaymentStatus = "Completed" | "Voided";
+
+export interface QuotationItem {
+  id: string;
+  quotation_id: string;
+  company_id: string;
+  product_id?: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  discount_pct: number;
+  discount_amount: number;
+  tax_pct: number;
+  tax_amount: number;
+  line_total: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface Quotation {
+  id: string;
+  company_id: string;
+  quotation_number: string;
+  customer_id: string;
+  customer?: Customer;
+  lead_id?: string | null;
+  issue_date: string;
+  expiry_date: string;
+  status: QuotationStatus;
+  subtotal: number;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  discount_total: number;
+  tax_rate: number;
+  tax_total: number;
+  grand_total: number;
+  currency: string;
+  notes?: string | null;
+  terms?: string | null;
+  converted_to_type?: "sales_order" | "invoice" | null;
+  converted_to_id?: string | null;
+  converted_at?: string | null;
+  items?: QuotationItem[];
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SalesOrderItem {
+  id: string;
+  sales_order_id: string;
+  company_id: string;
+  product_id?: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  discount_pct: number;
+  discount_amount: number;
+  tax_pct: number;
+  tax_amount: number;
+  line_total: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface SalesOrder {
+  id: string;
+  company_id: string;
+  order_number: string;
+  quotation_id?: string | null;
+  customer_id: string;
+  customer?: Customer;
+  order_date: string;
+  expected_delivery_date?: string | null;
+  status: SalesOrderStatus;
+  subtotal: number;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  discount_total: number;
+  tax_rate: number;
+  tax_total: number;
+  grand_total: number;
+  currency: string;
+  notes?: string | null;
+  terms?: string | null;
+  invoice_id?: string | null;
+  invoiced_at?: string | null;
+  items?: SalesOrderItem[];
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  invoice_id: string;
+  company_id: string;
+  product_id?: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  discount_pct: number;
+  discount_amount: number;
+  tax_pct: number;
+  tax_amount: number;
+  line_total: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface Invoice {
+  id: string;
+  company_id: string;
+  invoice_number: string;
+  customer_id: string;
+  customer?: Customer;
+  sales_order_id?: string | null;
+  quotation_id?: string | null;
+  issue_date: string;
+  due_date: string;
+  status: InvoiceStatus;
+  subtotal: number;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  discount_total: number;
+  tax_rate: number;
+  tax_total: number;
+  grand_total: number;
+  amount_paid: number;
+  amount_due: number;
+  currency: string;
+  notes?: string | null;
+  terms?: string | null;
+  items?: InvoiceItem[];
+  payments?: Payment[];
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Payment {
+  id: string;
+  company_id: string;
+  payment_number: string;
+  invoice_id: string;
+  invoice?: Invoice;
+  customer_id: string;
+  customer?: Customer;
+  amount: number;
+  payment_method: PaymentMethod;
+  transaction_reference?: string | null;
+  payment_date: string;
+  status: PaymentStatus;
+  notes?: string | null;
+  void_reason?: string | null;
+  voided_at?: string | null;
+  voided_by?: string | null;
+  created_by?: string | null;
+  created_at: string;
+}
+

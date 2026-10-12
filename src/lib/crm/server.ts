@@ -264,16 +264,31 @@ export async function getCustomerById(
     activities = memoryTenantStore.activities.filter((a) => a.customer_id === customerId);
   }
 
-  return {
-    customer,
-    notes,
-    activities,
-    links: {
-      invoicesCount: 0, // Placeholder until Invoicing module is enabled
-      paymentsCount: 0,
-      projectsCount: 0,
-    },
-  };
+    // Real Sales & Invoices count
+    let invoicesCount = 0;
+    let paymentsCount = 0;
+    try {
+      const { getInvoices, getPayments } = await import("@/lib/sales/server");
+      const [invList, payList] = await Promise.all([
+        getInvoices(companyId).catch(() => []),
+        getPayments(companyId, { customerId }).catch(() => []),
+      ]);
+      invoicesCount = invList.filter((i) => i.customer_id === customerId).length;
+      paymentsCount = payList.length;
+    } catch {
+      // Fall through
+    }
+
+    return {
+      customer,
+      notes,
+      activities,
+      links: {
+        invoicesCount,
+        paymentsCount,
+        projectsCount: 0,
+      },
+    };
 }
 
 /**

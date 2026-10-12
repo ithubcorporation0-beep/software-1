@@ -116,15 +116,25 @@ export async function GET(request: Request) {
       }
     }
 
-    if ("invoice".includes(query) || "bill".includes(query) || "receivable".includes(query)) {
-      results.push({
-        id: "mod-invoice",
-        title: "Commercial Invoices",
-        subtitle: "Not available until Invoicing module is enabled (Phase 3)",
-        category: "Invoices",
-        badge: "Phase 3",
-        isAvailable: false,
-      });
+    // 4. Real Live Sales Invoices (Tenant-scoped & Permission-checked)
+    if (isSuper || permissions.includes("sales:view") || permissions.includes("finance:view")) {
+      try {
+        const { getInvoices } = await import("@/lib/sales/server");
+        const invoiceList = await getInvoices(companyId, { search: query });
+        for (const inv of invoiceList.slice(0, 10)) {
+          results.push({
+            id: `inv-${inv.id}`,
+            title: `Invoice ${inv.invoice_number}`,
+            subtitle: `${inv.customer?.name ? inv.customer.name + " • " : ""}$${inv.grand_total.toFixed(2)} • Due: $${inv.amount_due.toFixed(2)}`,
+            category: "Invoices",
+            badge: inv.status,
+            href: `/sales/invoices/${inv.id}`,
+            isAvailable: true,
+          });
+        }
+      } catch {
+        // Fall through
+      }
     }
 
     if ("product".includes(query) || "item".includes(query) || "sku".includes(query)) {

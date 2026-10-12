@@ -84,6 +84,21 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
 
   const recentAudits: AuditLog[] = (recentAuditsData as AuditLog[]) || [];
 
+  // 5. Query real live revenue & receivables for this company tenant
+  let revenueTotal = 0;
+  let outstandingTotal = 0;
+  try {
+    const { getInvoices, getPayments } = await import("@/lib/sales/server");
+    const [invList, payList] = await Promise.all([
+      getInvoices(companyId).catch(() => []),
+      getPayments(companyId).catch(() => []),
+    ]);
+    revenueTotal = payList.filter((p) => p.status === "Completed").reduce((acc, p) => acc + p.amount, 0);
+    outstandingTotal = invList.reduce((acc, i) => acc + i.amount_due, 0);
+  } catch {
+    // Fall through
+  }
+
   return {
     company: {
       id: company.id,
@@ -94,12 +109,12 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
     metrics: {
       revenue: {
         key: "revenue",
-        label: "Gross Revenue Turnover",
-        isLive: false,
-        statusMessage: "Not available until module is enabled",
-        moduleName: "Finance & Sales Ledger",
-        phase: "Phase 3",
-        badgeVariant: "outline",
+        label: "Gross Revenue Collected",
+        isLive: true,
+        value: `$${revenueTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        statusMessage: "Live sales payment ledger query",
+        moduleName: "Sales & Payments",
+        badgeVariant: "success",
       },
       expenses: {
         key: "expenses",
@@ -122,11 +137,11 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
       outstandingInvoices: {
         key: "outstandingInvoices",
         label: "Outstanding Invoices",
-        isLive: false,
-        statusMessage: "Not available until module is enabled",
+        isLive: true,
+        value: `$${outstandingTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        statusMessage: "Live accounts receivable query",
         moduleName: "Commercial Invoicing",
-        phase: "Phase 3",
-        badgeVariant: "outline",
+        badgeVariant: "success",
       },
       customers: {
         key: "customers",
@@ -211,6 +226,18 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
         status: "Live",
         badgeVariant: "success",
         detail: "Immutable redaction engine recording security and administrative events",
+      },
+      {
+        name: "CRM Customers & Lead Pipeline",
+        status: "Live",
+        badgeVariant: "success",
+        detail: "Customer directory, 7-stage Kanban board, notes, and activity timeline",
+      },
+      {
+        name: "Sales Orders, Invoicing & Payments",
+        status: "Live",
+        badgeVariant: "success",
+        detail: "Traceable quotes, decimal-safe invoicing, and double-entry payment ledger",
       },
     ],
   };
