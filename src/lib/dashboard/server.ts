@@ -257,6 +257,12 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
         badgeVariant: "success",
         detail: "GAAP Chart of Accounts, balanced double-entry ledger, expense approvals, and real-time financial statements",
       },
+      {
+        name: "Human Resources, Attendance & Leave",
+        status: "Live",
+        badgeVariant: "success",
+        detail: "Protected staff directory, shift attendance ledger with grace periods, and leave workflows",
+      },
     ],
   };
 }

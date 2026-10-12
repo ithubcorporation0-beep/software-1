@@ -593,4 +593,150 @@ export interface APAgingReport {
   }>;
 }
 
+// ============================================================================
+// HR: EMPLOYEES, DEPARTMENTS, ATTENDANCE & LEAVES
+// ============================================================================
+
+export interface Department {
+  id: string;
+  company_id: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  manager_id?: string | null;
+  manager_name?: string | null;
+  is_active: boolean;
+  employee_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EmploymentStatus =
+  | "Active"
+  | "On Leave"
+  | "Probation"
+  | "Terminated"
+  | "Suspended";
+
+export interface HREmployeeDocument {
+  id: string;
+  name: string;
+  url: string;
+  size?: number;
+  mimeType?: string;
+  uploadedAt: string;
+}
+
+export interface HREmployee {
+  id: string;
+  company_id: string;
+  user_id?: string | null;
+  employee_id: string;
+  full_name: string;
+  avatar_url?: string | null;
+  email: string;
+  phone?: string | null;
+  department_id?: string | null;
+  department_name?: string | null;
+  position: string;
+  joining_date: string;
+  employment_status: EmploymentStatus;
+  emergency_contact_name?: string | null;
+  emergency_contact_relation?: string | null;
+  emergency_contact_phone?: string | null;
+  documents: HREmployeeDocument[];
+  // SENSITIVE FIELDS: Masked unless role includes hr.sensitive or user is self
+  cnic?: string | null;
+  salary?: number | null;
+  bank_name?: string | null;
+  bank_account_title?: string | null;
+  bank_account_number?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AttendanceStatus =
+  | "Present"
+  | "Late"
+  | "Half Day"
+  | "Early Departure"
+  | "Absent"
+  | "On Leave"
+  | "Holiday";
+
+export interface HRAttendance {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  employee?: HREmployee;
+  date: string;
+  check_in?: string | null;
+  check_out?: string | null;
+  total_hours: number;
+  status: AttendanceStatus;
+  is_manual_correction: boolean;
+  correction_reason?: string | null;
+  corrected_by?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type LeaveType =
+  | "Annual"
+  | "Casual"
+  | "Sick"
+  | "Maternity/Paternity"
+  | "Unpaid"
+  | "Other";
+
+export type LeaveStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
+
+export interface HRLeave {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  employee?: HREmployee;
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  total_days: number;
+  reason: string;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
+  attachment_size?: number | null;
+  attachment_mime?: string | null;
+  status: LeaveStatus;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  rejection_reason?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HRWorkdaySettings {
+  company_id: string;
+  workday_start: string; // "09:00"
+  workday_end: string;   // "18:00"
+  timezone: string;      // "UTC"
+  grace_period_minutes: number; // 15
+  half_day_hours: number;       // 4.0
+  allow_overnight_shifts: boolean;
+  updated_at: string;
+}
+
+export interface HRAttendanceSummaryReport {
+  date: string;
+  totalEmployees: number;
+  presentCount: number;
+  lateCount: number;
+  halfDayCount: number;
+  earlyDepartureCount: number;
+  absentCount: number;
+  onLeaveCount: number;
+  attendanceRatePct: number;
+}
+
+
 

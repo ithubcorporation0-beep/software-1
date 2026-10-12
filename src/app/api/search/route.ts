@@ -93,6 +93,24 @@ export async function GET(request: Request) {
           });
         }
       }
+
+      try {
+        const { getHREmployees } = await import("@/lib/hr/server");
+        const hrList = await getHREmployees(companyId, { search: query }, user);
+        for (const hr of hrList.slice(0, 5)) {
+          results.push({
+            id: `hremp-${hr.id}`,
+            title: hr.full_name,
+            subtitle: `${hr.employee_id} • ${hr.position} • ${hr.department_name || "Staff"}`,
+            category: "Employees",
+            badge: hr.employment_status,
+            href: "/hr",
+            isAvailable: true,
+          });
+        }
+      } catch {
+        // Fall through
+      }
     }
 
     // 3. Real Live CRM Customers (Tenant-scoped & Permission-checked)
