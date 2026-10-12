@@ -5,17 +5,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Package,
   Users,
   ShoppingCart,
-  Briefcase,
   DollarSign,
-  CreditCard,
   UserCheck,
+  CreditCard,
+  Briefcase,
+  Package,
   BarChart3,
+  Bell,
   Settings,
   Building2,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +27,7 @@ export interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  phase?: string;
-  isCurrentPhase?: boolean;
+  badge?: string;
 }
 
 export interface NavSection {
@@ -38,39 +40,29 @@ export const navigationConfig: NavSection[] = [
     title: "Core Overview",
     items: [
       {
-        title: "Executive Radar",
+        title: "Overview",
         href: "/",
         icon: LayoutDashboard,
-        isCurrentPhase: true,
+      },
+      {
+        title: "Notifications",
+        href: "/notifications",
+        icon: Bell,
       },
     ],
   },
   {
-    title: "Operations & Commerce",
+    title: "Commercial & CRM",
     items: [
       {
-        title: "Inventory & Stock",
-        href: "/inventory",
-        icon: Package,
-        phase: "Phase 2",
-      },
-      {
-        title: "CRM & Accounts",
+        title: "CRM",
         href: "/crm",
         icon: Users,
-        phase: "Phase 2",
       },
       {
-        title: "Sales Orders",
+        title: "Sales and invoicing",
         href: "/sales",
         icon: ShoppingCart,
-        phase: "Phase 2",
-      },
-      {
-        title: "Projects & PMO",
-        href: "/projects",
-        icon: Briefcase,
-        phase: "Phase 3",
       },
     ],
   },
@@ -78,44 +70,54 @@ export const navigationConfig: NavSection[] = [
     title: "Finance & Capital",
     items: [
       {
-        title: "Finance & Ledger",
+        title: "Finance and expenses",
         href: "/finance",
         icon: DollarSign,
-        phase: "Phase 3",
       },
       {
-        title: "Payroll Engine",
+        title: "Payroll",
         href: "/payroll",
         icon: CreditCard,
-        phase: "Phase 3",
       },
     ],
   },
   {
-    title: "Human Capital",
+    title: "Human Resources",
     items: [
       {
-        title: "HR & Directory",
+        title: "HR and attendance",
         href: "/hr",
         icon: UserCheck,
-        phase: "Phase 4",
       },
     ],
   },
   {
-    title: "Intelligence & Admin",
+    title: "Operations & PMO",
     items: [
       {
-        title: "Reports & Audits",
-        href: "/reports",
-        icon: BarChart3,
-        phase: "Phase 4",
+        title: "Projects and tasks",
+        href: "/projects",
+        icon: Briefcase,
       },
       {
-        title: "System Settings",
+        title: "Inventory and purchasing",
+        href: "/inventory",
+        icon: Package,
+      },
+    ],
+  },
+  {
+    title: "Intelligence & Settings",
+    items: [
+      {
+        title: "Reports",
+        href: "/reports",
+        icon: BarChart3,
+      },
+      {
+        title: "Company settings",
         href: "/settings",
         icon: Settings,
-        phase: "Phase 4",
       },
     ],
   },
@@ -123,93 +125,92 @@ export const navigationConfig: NavSection[] = [
 
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = React.useState(false);
 
   return (
     <aside
       aria-label="Sidebar Navigation"
       className={cn(
-        "flex h-screen w-64 flex-col border-r bg-card text-card-foreground select-none",
+        "flex h-screen flex-col border-r bg-card text-card-foreground select-none transition-all duration-200 z-30 shrink-0",
+        collapsed ? "w-16" : "w-64",
         className
       )}
     >
       {/* Workspace Context Switcher Header */}
-      <div className="flex h-16 shrink-0 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold shadow-sm">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b px-3.5">
+        <Link
+          href="/"
+          className={cn(
+            "flex items-center gap-2.5 overflow-hidden transition-all",
+            collapsed && "justify-center w-full"
+          )}
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-xs tracking-wider shadow-sm">
             IT
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold tracking-tight text-foreground">
-              IT-HUB ERP
-            </span>
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Building2 className="h-3 w-3 inline" /> Global Enterprise
-            </span>
-          </div>
-        </div>
-        <div className="text-muted-foreground">
-          <ChevronDown className="h-4 w-4" />
-        </div>
+          {!collapsed && (
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-bold tracking-tight text-foreground truncate">
+                IT-HUB ERP
+              </span>
+              <span className="text-[10px] text-muted-foreground flex items-center gap-1 truncate font-medium">
+                <Building2 className="h-2.5 w-2.5 shrink-0 text-muted-foreground" />
+                Global Enterprise
+              </span>
+            </div>
+          )}
+        </Link>
       </div>
 
       {/* Navigation Sections */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      <div className="flex-1 overflow-y-auto px-2.5 py-3 space-y-5">
         {navigationConfig.map((section) => (
           <div key={section.title} className="space-y-1">
-            <h4 className="px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-              {section.title}
-            </h4>
-            <nav className="space-y-0.5">
+            {!collapsed && (
+              <h4 className="px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                {section.title}
+              </h4>
+            )}
+            <nav className="space-y-0.5" aria-label={section.title}>
               {section.items.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive =
+                  item.href === "/"
+                    ? pathname === "/"
+                    : pathname === item.href || pathname.startsWith(`${item.href}/`);
                 const Icon = item.icon;
+
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
+                    title={collapsed ? item.title : undefined}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "group flex items-center justify-between rounded-md px-2.5 py-2 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-primary text-primary-foreground shadow-sm font-semibold"
+                        : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+                      collapsed && "justify-center px-2 py-2"
                     )}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <Icon
-                        className={cn(
-                          "h-4 w-4 shrink-0 transition-colors",
-                          isActive
-                            ? "text-primary-foreground"
-                            : "text-muted-foreground group-hover:text-foreground"
-                        )}
-                      />
-                      <span className="truncate">{item.title}</span>
-                    </div>
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 shrink-0 transition-colors",
+                        isActive
+                          ? "text-primary-foreground"
+                          : "text-muted-foreground group-hover:text-foreground"
+                      )}
+                    />
+                    {!collapsed && <span className="truncate">{item.title}</span>}
 
-                    {item.isCurrentPhase ? (
+                    {!collapsed && item.badge && (
                       <Badge
                         variant="neutral"
-                        className={cn(
-                          "text-[10px] px-1.5 py-0 h-4 uppercase font-semibold",
-                          isActive
-                            ? "bg-primary-foreground/20 text-primary-foreground border-transparent"
-                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                        )}
+                        className="ml-auto text-[10px] px-1.5 py-0 h-4 uppercase font-semibold"
                       >
-                        v1.0
+                        {item.badge}
                       </Badge>
-                    ) : item.phase ? (
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "text-[9px] px-1 py-0 h-4 border text-muted-foreground",
-                          isActive && "border-primary-foreground/30 text-primary-foreground"
-                        )}
-                      >
-                        {item.phase}
-                      </Badge>
-                    ) : null}
+                    )}
                   </Link>
                 );
               })}
@@ -218,15 +219,30 @@ export function Sidebar({ className }: { className?: string }) {
         ))}
       </div>
 
-      {/* Footer Tenant / Build Metadata */}
-      <div className="border-t p-3 text-[11px] text-muted-foreground bg-muted/20">
+      {/* Footer Tenant / Collapse Toggle */}
+      <div className="border-t p-2 text-xs bg-muted/20">
         <div className="flex items-center justify-between">
-          <span className="font-medium text-foreground">Phase 1 Foundation</span>
-          <span className="font-mono text-[10px] text-muted-foreground">v0.1.0-alpha</span>
+          {!collapsed && (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground truncate px-1">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span className="truncate font-medium">Enterprise Cloud</span>
+            </div>
+          )}
+          <button
+            onClick={() => setCollapsed((prev) => !prev)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors",
+              collapsed && "w-full"
+            )}
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </button>
         </div>
-        <p className="mt-0.5 text-[10px] text-muted-foreground/80">
-          Clean Modular Architecture
-        </p>
       </div>
     </aside>
   );

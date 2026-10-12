@@ -162,10 +162,10 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
                       </div>
                       <div className="flex items-center gap-1.5">
                         {item.isAvailable ? (
-                          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                         ) : (
-                          <Badge variant="warning" className="text-[9px] h-4">
-                            Module Pending
+                          <Badge variant="outline" className="text-[9px] h-4 text-muted-foreground">
+                            Inactive
                           </Badge>
                         )}
                       </div>

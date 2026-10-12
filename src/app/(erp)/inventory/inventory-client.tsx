@@ -431,66 +431,66 @@ export function InventoryClient({
 
       {/* Top Inventory & Procurement KPI Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-slate-900/60 border-slate-800 backdrop-blur-md">
+        <Card className="bg-card border-border shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Master Catalog SKUs</CardTitle>
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Master Catalog SKUs</CardTitle>
             <Package className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-100">{stats.totalSkus}</div>
-            <p className="text-xs text-slate-500 mt-1">
+            <div className="text-2xl font-bold text-foreground font-mono">{stats.totalSkus}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               Active product definitions across depots
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/60 border-slate-800 backdrop-blur-md">
+        <Card className="bg-card border-border shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Inventory Valuation</CardTitle>
-            <DollarSign className="h-4 w-4 text-emerald-400" />
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Inventory Valuation</CardTitle>
+            <DollarSign className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-100">
+            <div className="text-2xl font-bold text-foreground font-mono">
               {currency} {stats.totalValuation.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-slate-500 mt-1">Cost value of on-hand inventory</p>
+            <p className="text-xs text-muted-foreground mt-1">Cost value of on-hand inventory</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/60 border-slate-800 backdrop-blur-md">
+        <Card className="bg-card border-border shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Stockout Defense Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-amber-400" />
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stockout Defense Alerts</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-400">
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 font-mono">
               {stats.lowStockCount + stats.outOfStockCount}
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              <span className="text-amber-400 font-semibold">{stats.lowStockCount}</span> low stock,{" "}
-              <span className="text-red-400 font-semibold">{stats.outOfStockCount}</span> out of stock
+            <p className="text-xs text-muted-foreground mt-1">
+              <span className="text-amber-600 dark:text-amber-400 font-semibold">{stats.lowStockCount}</span> low stock,{" "}
+              <span className="text-rose-600 dark:text-rose-400 font-semibold">{stats.outOfStockCount}</span> out of stock
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/60 border-slate-800 backdrop-blur-md">
+        <Card className="bg-card border-border shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Active Purchases</CardTitle>
-            <Truck className="h-4 w-4 text-blue-400" />
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Purchases</CardTitle>
+            <Truck className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-100">{purchaseOrders.length}</div>
-            <p className="text-xs text-slate-500 mt-1">
-              <span className="text-blue-400 font-semibold">{stats.pendingPOs}</span> awaiting delivery receipt
+            <div className="text-2xl font-bold text-foreground font-mono">{purchaseOrders.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              <span className="text-blue-600 dark:text-blue-400 font-semibold">{stats.pendingPOs}</span> awaiting delivery receipt
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Auditable Ledger Policy Notice */}
-      <div className="p-3 bg-blue-950/20 border border-blue-900/40 rounded-xl text-blue-300 text-xs flex items-center justify-between">
+      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-xl text-blue-900 dark:text-blue-300 text-xs flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ShieldAlert className="h-4 w-4 flex-shrink-0 text-blue-400" />
+          <ShieldAlert className="h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
           <span>
             <strong>Auditable Stock Ledger Guarantee:</strong> Current stock cannot be edited directly as an untraceable number. All balance changes are derived atomically from immutable movement records with actor, timestamp, and reason logs.
           </span>
@@ -498,7 +498,7 @@ export function InventoryClient({
       </div>
 
       {/* Main Tab Controls & Quick Actions */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant={activeTab === "products" ? "default" : "outline"}
@@ -556,7 +556,7 @@ export function InventoryClient({
               setIsMovementModalOpen(true);
             }}
             disabled={products.length === 0}
-            className="gap-1 border-slate-700 hover:bg-slate-800"
+            className="gap-1 border-border hover:bg-muted"
           >
             <RefreshCw className="h-4 w-4" />
             Record Movement
@@ -574,12 +574,12 @@ export function InventoryClient({
 
       {/* TAB 1: PRODUCTS CATALOG */}
       {activeTab === "products" && (
-        <Card className="bg-slate-900/60 border-slate-800 backdrop-blur-md">
-          <CardHeader>
+        <Card className="bg-card border-border shadow-xs">
+          <CardHeader className="p-4 border-b border-border">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-lg text-slate-100">Master Products Catalog</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-base font-semibold text-foreground">Master Products Catalog</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
                   Item SKUs, purchase & selling prices, min threshold triggers, and storage depot.
                 </CardDescription>
               </div>
@@ -587,19 +587,19 @@ export function InventoryClient({
               {/* Filters */}
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative min-w-[200px]">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search SKU, name, brand..."
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
-                    className="pl-9 h-9 bg-slate-950/60 border-slate-800 text-xs"
+                    className="pl-9 h-8 bg-background border-input text-xs"
                   />
                 </div>
 
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="h-9 px-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary"
+                  className="h-8 px-3 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="all">All Statuses</option>
                   <option value="In Stock">In Stock</option>
@@ -610,58 +610,58 @@ export function InventoryClient({
             </div>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="p-0">
             {filteredProducts.length === 0 ? (
-              <div className="p-8 text-center border border-dashed border-slate-800 rounded-xl">
-                <Package className="h-8 w-8 mx-auto text-slate-600 mb-2" />
-                <p className="text-sm font-semibold text-slate-300">No products found</p>
-                <p className="text-xs text-slate-500 mt-1">Register your first SKU in the master catalog.</p>
+              <div className="p-8 text-center border-t border-border">
+                <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm font-semibold text-foreground">No products found</p>
+                <p className="text-xs text-muted-foreground mt-1">Register your first SKU in the master catalog.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400">
-                      <th className="py-3 px-4">SKU</th>
-                      <th className="py-3 px-4">Product Name</th>
-                      <th className="py-3 px-4">Category</th>
-                      <th className="py-3 px-4">Purchase Price</th>
-                      <th className="py-3 px-4">Selling Price</th>
-                      <th className="py-3 px-4">Current Stock</th>
-                      <th className="py-3 px-4">Min Trigger</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
+                    <tr className="border-b border-border bg-muted/40 text-xs font-medium text-muted-foreground">
+                      <th className="py-2.5 px-3.5">SKU</th>
+                      <th className="py-2.5 px-3.5">Product Name</th>
+                      <th className="py-2.5 px-3.5">Category</th>
+                      <th className="py-2.5 px-3.5">Purchase Price</th>
+                      <th className="py-2.5 px-3.5">Selling Price</th>
+                      <th className="py-2.5 px-3.5">Current Stock</th>
+                      <th className="py-2.5 px-3.5">Min Trigger</th>
+                      <th className="py-2.5 px-3.5">Status</th>
+                      <th className="py-2.5 px-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-sm">
+                  <tbody className="divide-y divide-border text-xs">
                     {filteredProducts.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-xs text-primary">
+                      <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-2.5 px-3.5 font-mono font-semibold text-primary">
                           {p.sku}
                         </td>
-                        <td className="py-3 px-4 font-medium text-slate-200">
+                        <td className="py-2.5 px-3.5 font-medium text-foreground">
                           <div>{p.name}</div>
-                          {p.brand && <span className="text-xs text-slate-500">Brand: {p.brand}</span>}
+                          {p.brand && <span className="text-[11px] text-muted-foreground">Brand: {p.brand}</span>}
                         </td>
-                        <td className="py-3 px-4 text-slate-300 text-xs">
+                        <td className="py-2.5 px-3.5 text-muted-foreground">
                           {p.category}
                         </td>
-                        <td className="py-3 px-4 font-mono text-slate-200">
+                        <td className="py-2.5 px-3.5 font-mono text-foreground">
                           {currency} {p.purchase_price.toFixed(2)}
                         </td>
-                        <td className="py-3 px-4 font-mono text-slate-200">
+                        <td className="py-2.5 px-3.5 font-mono text-foreground">
                           {currency} {p.selling_price.toFixed(2)}
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-100">
-                          {p.current_stock} <span className="text-xs text-slate-400 font-normal">{p.unit}</span>
+                        <td className="py-2.5 px-3.5 font-mono font-semibold text-foreground">
+                          {p.current_stock} <span className="text-[11px] text-muted-foreground font-normal">{p.unit}</span>
                         </td>
-                        <td className="py-3 px-4 font-mono text-slate-400 text-xs">
+                        <td className="py-2.5 px-3.5 font-mono text-muted-foreground">
                           {p.minimum_stock}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2.5 px-3.5">
                           {renderStockBadge(p.status)}
                         </td>
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-2.5 px-3.5 text-right">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -686,12 +686,12 @@ export function InventoryClient({
 
       {/* TAB 2: AUDITABLE STOCK MOVEMENTS LEDGER */}
       {activeTab === "movements" && (
-        <Card className="bg-slate-900/60 border-slate-800 backdrop-blur-md">
-          <CardHeader>
+        <Card className="bg-card border-border shadow-xs">
+          <CardHeader className="p-4 border-b border-border">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-lg text-slate-100">Immutable Stock Movements Ledger</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-base font-semibold text-foreground">Immutable Stock Movements Ledger</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
                   Auditable record of Stock In, Stock Out, Physical Adjustments, and Depot Transfers.
                 </CardDescription>
               </div>
@@ -703,19 +703,19 @@ export function InventoryClient({
                   setIsMovementModalOpen(true);
                 }}
                 disabled={products.length === 0}
-                className="gap-1 border-slate-700 hover:bg-slate-800"
+                className="gap-1 h-8 text-xs border-border hover:bg-muted/50"
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="h-3.5 w-3.5" />
                 Record Movement
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {movements.length === 0 ? (
-              <div className="p-8 text-center border border-dashed border-slate-800 rounded-xl">
-                <History className="h-8 w-8 mx-auto text-slate-600 mb-2" />
-                <p className="text-sm font-semibold text-slate-300">No stock movements recorded yet</p>
-                <p className="text-xs text-slate-500 mt-1">
+              <div className="p-8 text-center border-t border-border">
+                <History className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm font-semibold text-foreground">No stock movements recorded yet</p>
+                <p className="text-xs text-muted-foreground mt-1">
                   Perform a stock in or receive a purchase order to populate ledger.
                 </p>
               </div>
@@ -723,56 +723,56 @@ export function InventoryClient({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400">
-                      <th className="py-3 px-4">Movement #</th>
-                      <th className="py-3 px-4">Timestamp</th>
-                      <th className="py-3 px-4">Product / SKU</th>
-                      <th className="py-3 px-4">Type</th>
-                      <th className="py-3 px-4">Qty</th>
-                      <th className="py-3 px-4">Balance Delta</th>
-                      <th className="py-3 px-4">Reason & Ref</th>
-                      <th className="py-3 px-4">Actor</th>
+                    <tr className="border-b border-border bg-muted/40 text-xs font-medium text-muted-foreground">
+                      <th className="py-2.5 px-3.5">Movement #</th>
+                      <th className="py-2.5 px-3.5">Timestamp</th>
+                      <th className="py-2.5 px-3.5">Product / SKU</th>
+                      <th className="py-2.5 px-3.5">Type</th>
+                      <th className="py-2.5 px-3.5">Qty</th>
+                      <th className="py-2.5 px-3.5">Balance Delta</th>
+                      <th className="py-2.5 px-3.5">Reason & Ref</th>
+                      <th className="py-2.5 px-3.5">Actor</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-sm">
+                  <tbody className="divide-y divide-border text-xs">
                     {movements.map((m) => (
-                      <tr key={m.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-xs text-primary">
+                      <tr key={m.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-2.5 px-3.5 font-mono font-semibold text-primary">
                           {m.movement_number}
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-400">
+                        <td className="py-2.5 px-3.5 text-muted-foreground">
                           {new Date(m.created_at).toLocaleString()}
                         </td>
-                        <td className="py-3 px-4 text-slate-200">
+                        <td className="py-2.5 px-3.5 text-foreground">
                           <div className="font-medium">{m.product_name}</div>
-                          <span className="font-mono text-xs text-slate-400">{m.product_sku}</span>
+                          <span className="font-mono text-[11px] text-muted-foreground">{m.product_sku}</span>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2.5 px-3.5">
                           <span
-                            className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                            className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
                               m.type === "Stock In"
-                                ? "bg-emerald-500/20 text-emerald-400"
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
                                 : m.type === "Stock Out"
-                                ? "bg-red-500/20 text-red-400"
+                                ? "bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20"
                                 : m.type === "Adjustment"
-                                ? "bg-blue-500/20 text-blue-400"
-                                : "bg-purple-500/20 text-purple-400"
+                                ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20"
+                                : "bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/20"
                             }`}
                           >
                             {m.type}
                           </span>
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-100">
+                        <td className="py-2.5 px-3.5 font-mono font-semibold text-foreground">
                           {m.quantity}
                         </td>
-                        <td className="py-3 px-4 font-mono text-xs text-slate-300">
-                          {m.previous_stock} → <strong className="text-primary">{m.new_stock}</strong>
+                        <td className="py-2.5 px-3.5 font-mono text-muted-foreground">
+                          {m.previous_stock} → <strong className="text-primary font-semibold">{m.new_stock}</strong>
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-300 max-w-xs truncate">
-                          <div>{m.reason}</div>
-                          {m.reference && <span className="text-slate-500">Ref: {m.reference}</span>}
+                        <td className="py-2.5 px-3.5 text-muted-foreground max-w-xs truncate">
+                          <div className="text-foreground">{m.reason}</div>
+                          {m.reference && <span className="text-[11px] text-muted-foreground">Ref: {m.reference}</span>}
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-400">
+                        <td className="py-2.5 px-3.5 text-muted-foreground">
                           {m.actor_name || "System"}
                         </td>
                       </tr>
@@ -787,12 +787,12 @@ export function InventoryClient({
 
       {/* TAB 3: PURCHASING & ORDERS WORKFLOW */}
       {activeTab === "purchases" && (
-        <Card className="bg-slate-900/60 border-slate-800 backdrop-blur-md">
-          <CardHeader>
+        <Card className="bg-card border-border shadow-xs">
+          <CardHeader className="p-4 border-b border-border">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-lg text-slate-100">Purchasing & Inbound Goods Pipeline</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-base font-semibold text-foreground">Purchasing & Inbound Goods Pipeline</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
                   Purchase Order → Goods Received (stock updated exactly once) → Supplier Payment & GL Posting.
                 </CardDescription>
               </div>
@@ -800,36 +800,36 @@ export function InventoryClient({
                 size="sm"
                 onClick={() => setIsNewPOModalOpen(true)}
                 disabled={suppliers.length === 0}
-                className="gap-1 bg-primary text-primary-foreground"
+                className="gap-1 h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 Create Purchase Order
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {purchaseOrders.length === 0 ? (
-              <div className="p-8 text-center border border-dashed border-slate-800 rounded-xl">
-                <Truck className="h-8 w-8 mx-auto text-slate-600 mb-2" />
-                <p className="text-sm font-semibold text-slate-300">No purchase orders created yet</p>
-                <p className="text-xs text-slate-500 mt-1">Issue a purchase order to your registered suppliers.</p>
+              <div className="p-8 text-center border-t border-border">
+                <Truck className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm font-semibold text-foreground">No purchase orders created yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Issue a purchase order to your registered suppliers.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400">
-                      <th className="py-3 px-4">PO Number</th>
-                      <th className="py-3 px-4">Supplier</th>
-                      <th className="py-3 px-4">Date</th>
-                      <th className="py-3 px-4">Total Amount</th>
-                      <th className="py-3 px-4">Paid Amount</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4">Goods Receipt</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
+                    <tr className="border-b border-border bg-muted/40 text-xs font-medium text-muted-foreground">
+                      <th className="py-2.5 px-3.5">PO Number</th>
+                      <th className="py-2.5 px-3.5">Supplier</th>
+                      <th className="py-2.5 px-3.5">Date</th>
+                      <th className="py-2.5 px-3.5">Total Amount</th>
+                      <th className="py-2.5 px-3.5">Paid Amount</th>
+                      <th className="py-2.5 px-3.5">Status</th>
+                      <th className="py-2.5 px-3.5">Goods Receipt</th>
+                      <th className="py-2.5 px-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-sm">
+                  <tbody className="divide-y divide-border text-xs">
                     {purchaseOrders.map((po) => {
                       const isReceived =
                         po.status === "Goods Received" ||
@@ -838,39 +838,39 @@ export function InventoryClient({
                       const isFullyPaid = po.payment_status === "Paid";
 
                       return (
-                        <tr key={po.id} className="hover:bg-slate-800/30 transition-colors">
-                          <td className="py-3 px-4 font-mono font-bold text-xs text-primary">
+                        <tr key={po.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="py-2.5 px-3.5 font-mono font-semibold text-primary">
                             {po.po_number}
                           </td>
-                          <td className="py-3 px-4 font-medium text-slate-200">
+                          <td className="py-2.5 px-3.5 font-medium text-foreground">
                             {po.supplier_name}
                           </td>
-                          <td className="py-3 px-4 text-xs text-slate-400">
+                          <td className="py-2.5 px-3.5 text-muted-foreground">
                             {po.order_date}
                           </td>
-                          <td className="py-3 px-4 font-mono font-semibold text-slate-100">
+                          <td className="py-2.5 px-3.5 font-mono font-semibold text-foreground">
                             {currency} {po.total_amount.toFixed(2)}
                           </td>
-                          <td className="py-3 px-4 font-mono text-slate-300">
+                          <td className="py-2.5 px-3.5 font-mono text-muted-foreground">
                             {currency} {po.paid_amount.toFixed(2)}
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-2.5 px-3.5">
                             {renderPOStatusBadge(po.status)}
                           </td>
-                          <td className="py-3 px-4 text-xs text-slate-400">
+                          <td className="py-2.5 px-3.5">
                             {po.grn_number ? (
-                              <span className="text-emerald-400 font-mono">GRN: {po.grn_number}</span>
+                              <span className="text-emerald-600 dark:text-emerald-400 font-mono font-medium">GRN: {po.grn_number}</span>
                             ) : (
-                              <span className="text-amber-400">Pending Receipt</span>
+                              <span className="text-amber-600 dark:text-amber-400">Pending Receipt</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-2.5 px-3.5 text-right">
                             <div className="flex items-center justify-end gap-2">
                               {!isReceived && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-7 text-xs border-emerald-700 text-emerald-400 hover:bg-emerald-950"
+                                  className="h-7 text-xs border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                                   onClick={() => setReceivingPO(po)}
                                 >
                                   Receive Goods
@@ -881,7 +881,7 @@ export function InventoryClient({
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-7 text-xs border-purple-700 text-purple-400 hover:bg-purple-950"
+                                  className="h-7 text-xs border-purple-500/30 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30"
                                   onClick={() => setPayingPO(po)}
                                 >
                                   Pay Supplier
@@ -889,7 +889,7 @@ export function InventoryClient({
                               )}
 
                               {isFullyPaid && (
-                                <span className="text-xs text-purple-400 font-medium">Settled</span>
+                                <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">Settled</span>
                               )}
                             </div>
                           </td>
@@ -906,73 +906,73 @@ export function InventoryClient({
 
       {/* TAB 4: SUPPLIERS MASTER */}
       {activeTab === "suppliers" && (
-        <Card className="bg-slate-900/60 border-slate-800 backdrop-blur-md">
-          <CardHeader>
+        <Card className="bg-card border-border shadow-xs">
+          <CardHeader className="p-4 border-b border-border">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-lg text-slate-100">Supplier Directory & Terms</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-base font-semibold text-foreground">Supplier Directory & Terms</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
                   Vendors, contact phone, emails, tax registration, and payment terms.
                 </CardDescription>
               </div>
               <Button
                 size="sm"
                 onClick={() => setIsNewSupplierModalOpen(true)}
-                className="gap-1 bg-primary text-primary-foreground"
+                className="gap-1 h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 Add Supplier
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {suppliers.length === 0 ? (
-              <div className="p-8 text-center border border-dashed border-slate-800 rounded-xl">
-                <Building className="h-8 w-8 mx-auto text-slate-600 mb-2" />
-                <p className="text-sm font-semibold text-slate-300">No suppliers registered</p>
-                <p className="text-xs text-slate-500 mt-1">Add your supply chain partners and vendors.</p>
+              <div className="p-8 text-center border-t border-border">
+                <Building className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm font-semibold text-foreground">No suppliers registered</p>
+                <p className="text-xs text-muted-foreground mt-1">Add your supply chain partners and vendors.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400">
-                      <th className="py-3 px-4">Code</th>
-                      <th className="py-3 px-4">Supplier Name</th>
-                      <th className="py-3 px-4">Company</th>
-                      <th className="py-3 px-4">Email</th>
-                      <th className="py-3 px-4">Phone</th>
-                      <th className="py-3 px-4">Tax ID</th>
-                      <th className="py-3 px-4">Terms</th>
-                      <th className="py-3 px-4">Status</th>
+                    <tr className="border-b border-border bg-muted/40 text-xs font-medium text-muted-foreground">
+                      <th className="py-2.5 px-3.5">Code</th>
+                      <th className="py-2.5 px-3.5">Supplier Name</th>
+                      <th className="py-2.5 px-3.5">Company</th>
+                      <th className="py-2.5 px-3.5">Email</th>
+                      <th className="py-2.5 px-3.5">Phone</th>
+                      <th className="py-2.5 px-3.5">Tax ID</th>
+                      <th className="py-2.5 px-3.5">Terms</th>
+                      <th className="py-2.5 px-3.5">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-sm">
+                  <tbody className="divide-y divide-border text-xs">
                     {suppliers.map((s) => (
-                      <tr key={s.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-xs text-primary">
+                      <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-2.5 px-3.5 font-mono font-semibold text-primary">
                           {s.code}
                         </td>
-                        <td className="py-3 px-4 font-medium text-slate-200">
+                        <td className="py-2.5 px-3.5 font-medium text-foreground">
                           {s.name}
                         </td>
-                        <td className="py-3 px-4 text-slate-300 text-xs">
+                        <td className="py-2.5 px-3.5 text-muted-foreground">
                           {s.company_name || "Independent"}
                         </td>
-                        <td className="py-3 px-4 text-slate-300 text-xs">
+                        <td className="py-2.5 px-3.5 text-muted-foreground">
                           {s.email || "N/A"}
                         </td>
-                        <td className="py-3 px-4 text-slate-300 text-xs font-mono">
+                        <td className="py-2.5 px-3.5 text-muted-foreground font-mono">
                           {s.phone || "N/A"}
                         </td>
-                        <td className="py-3 px-4 text-slate-400 text-xs font-mono">
+                        <td className="py-2.5 px-3.5 text-muted-foreground font-mono">
                           {s.tax_id || "N/A"}
                         </td>
-                        <td className="py-3 px-4 text-slate-300 text-xs">
+                        <td className="py-2.5 px-3.5 text-muted-foreground">
                           {s.payment_terms}
                         </td>
-                        <td className="py-3 px-4">
-                          <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        <td className="py-2.5 px-3.5">
+                          <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                             {s.status}
                           </Badge>
                         </td>
@@ -988,43 +988,43 @@ export function InventoryClient({
 
       {/* TAB 5: WAREHOUSES & DEPOTS */}
       {activeTab === "warehouses" && (
-        <Card className="bg-slate-900/60 border-slate-800 backdrop-blur-md">
-          <CardHeader>
+        <Card className="bg-card border-border shadow-xs">
+          <CardHeader className="p-4 border-b border-border">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-lg text-slate-100">Storage Depots & Logistics Hubs</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-base font-semibold text-foreground">Storage Depots & Logistics Hubs</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
                   Multi-warehouse facilities and physical storage capacities.
                 </CardDescription>
               </div>
               <Button
                 size="sm"
                 onClick={() => setIsNewWarehouseModalOpen(true)}
-                className="gap-1 bg-primary text-primary-foreground"
+                className="gap-1 h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 Add Warehouse
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {warehouses.map((wh) => (
                 <div
                   key={wh.id}
-                  className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2 hover:border-slate-700 transition-colors"
+                  className="p-4 bg-muted/20 border border-border rounded-lg space-y-2 hover:border-border/80 transition-colors"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-primary">{wh.code}</span>
-                    <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <span className="font-mono text-xs font-semibold text-primary">{wh.code}</span>
+                    <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                       Active
                     </Badge>
                   </div>
-                  <h4 className="text-base font-semibold text-slate-100">{wh.name}</h4>
-                  <p className="text-xs text-slate-400">Location: {wh.city || "Corporate Hub"}</p>
-                  <div className="pt-2 border-t border-slate-800 text-xs text-slate-400 flex justify-between">
+                  <h4 className="text-sm font-semibold text-foreground">{wh.name}</h4>
+                  <p className="text-xs text-muted-foreground">Location: {wh.city || "Corporate Hub"}</p>
+                  <div className="pt-2 border-t border-border text-xs text-muted-foreground flex justify-between">
                     <span>Capacity</span>
-                    <span className="font-mono text-slate-200">{wh.capacity.toLocaleString()} units</span>
+                    <span className="font-mono text-foreground font-medium">{wh.capacity.toLocaleString()} units</span>
                   </div>
                 </div>
               ))}
@@ -1035,61 +1035,61 @@ export function InventoryClient({
 
       {/* MODAL: CREATE PRODUCT */}
       {isNewProductModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-slate-100">Register Master Catalog Product</h3>
-              <Button variant="ghost" size="sm" onClick={() => setIsNewProductModalOpen(false)}>✕</Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xs p-4">
+          <div className="bg-card border border-border rounded-lg max-w-lg w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 text-foreground">
+            <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+              <h3 className="text-base font-semibold text-foreground">Register Master Catalog Product</h3>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setIsNewProductModalOpen(false)}>✕</Button>
             </div>
 
             <form onSubmit={handleCreateProduct} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">SKU Code *</label>
-                  <Input name="sku" required placeholder="e.g. LAP-001" className="bg-slate-950/60 border-slate-800 uppercase" />
+                  <label className="block text-xs font-medium text-foreground mb-1">SKU Code *</label>
+                  <Input name="sku" required placeholder="e.g. LAP-001" className="bg-background border-input uppercase text-xs" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Product Name *</label>
-                  <Input name="name" required placeholder="e.g. Dell XPS 15" className="bg-slate-950/60 border-slate-800" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Category</label>
-                  <Input name="category" defaultValue="Electronics" className="bg-slate-950/60 border-slate-800" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Brand</label>
-                  <Input name="brand" placeholder="Dell" className="bg-slate-950/60 border-slate-800" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Unit</label>
-                  <Input name="unit" defaultValue="Units" className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Product Name *</label>
+                  <Input name="name" required placeholder="e.g. Dell XPS 15" className="bg-background border-input text-xs" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Purchase Price ($)</label>
-                  <Input name="purchasePrice" type="number" step="0.01" min="0" defaultValue="100.00" className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Category</label>
+                  <Input name="category" defaultValue="Electronics" className="bg-background border-input text-xs" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Selling Price ($)</label>
-                  <Input name="sellingPrice" type="number" step="0.01" min="0" defaultValue="150.00" className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Brand</label>
+                  <Input name="brand" placeholder="Dell" className="bg-background border-input text-xs" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Min Threshold</label>
-                  <Input name="minimumStock" type="number" min="0" defaultValue="10" className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Unit</label>
+                  <Input name="unit" defaultValue="Units" className="bg-background border-input text-xs" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">Purchase Price ($)</label>
+                  <Input name="purchasePrice" type="number" step="0.01" min="0" defaultValue="100.00" className="bg-background border-input text-xs font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">Selling Price ($)</label>
+                  <Input name="sellingPrice" type="number" step="0.01" min="0" defaultValue="150.00" className="bg-background border-input text-xs font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">Min Threshold</label>
+                  <Input name="minimumStock" type="number" min="0" defaultValue="10" className="bg-background border-input text-xs font-mono" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Preferred Supplier</label>
+                  <label className="block text-xs font-medium text-foreground mb-1">Preferred Supplier</label>
                   <select
                     name="supplierId"
-                    className="w-full h-9 px-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary"
+                    className="w-full h-8 px-3 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     <option value="">None / Open Market</option>
                     {suppliers.map((s) => (
@@ -1098,10 +1098,10 @@ export function InventoryClient({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Default Warehouse</label>
+                  <label className="block text-xs font-medium text-foreground mb-1">Default Warehouse</label>
                   <select
                     name="warehouseId"
-                    className="w-full h-9 px-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary"
+                    className="w-full h-8 px-3 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     {warehouses.map((w) => (
                       <option key={w.id} value={w.id}>{w.name} ({whCode(w.code)})</option>
@@ -1110,11 +1110,11 @@ export function InventoryClient({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsNewProductModalOpen(false)}>
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" className="h-8 text-xs border-border" onClick={() => setIsNewProductModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={isPending} className="bg-primary text-primary-foreground">
+                <Button type="submit" size="sm" disabled={isPending} className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90">
                   {isPending ? "Saving..." : "Register Product"}
                 </Button>
               </div>
@@ -1125,20 +1125,20 @@ export function InventoryClient({
 
       {/* MODAL: RECORD STOCK MOVEMENT */}
       {isMovementModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-slate-100">Record Auditable Stock Movement</h3>
-              <Button variant="ghost" size="sm" onClick={() => setIsMovementModalOpen(false)}>✕</Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xs p-4">
+          <div className="bg-card border border-border rounded-lg max-w-lg w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 text-foreground">
+            <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+              <h3 className="text-base font-semibold text-foreground">Record Auditable Stock Movement</h3>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setIsMovementModalOpen(false)}>✕</Button>
             </div>
 
             <form onSubmit={handleRecordMovement} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Target Product *</label>
+                <label className="block text-xs font-medium text-foreground mb-1">Target Product *</label>
                 <select
                   name="productId"
                   defaultValue={movementProductId || products[0]?.id || ""}
-                  className="w-full h-9 px-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary"
+                  className="w-full h-8 px-3 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -1150,11 +1150,11 @@ export function InventoryClient({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Movement Type *</label>
+                  <label className="block text-xs font-medium text-foreground mb-1">Movement Type *</label>
                   <select
                     name="type"
                     defaultValue="Stock In"
-                    className="w-full h-9 px-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary"
+                    className="w-full h-8 px-3 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     <option value="Stock In">Stock In (Inbound Receipt)</option>
                     <option value="Stock Out">Stock Out (Issue / Sales)</option>
@@ -1164,26 +1164,26 @@ export function InventoryClient({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Quantity *</label>
-                  <Input name="quantity" type="number" min="1" defaultValue="1" required className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Quantity *</label>
+                  <Input name="quantity" type="number" min="1" defaultValue="1" required className="bg-background border-input text-xs font-mono" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Reason / Justification *</label>
-                <Input name="reason" required placeholder="e.g. Initial Opening Stock / Damaged Goods Scrap" className="bg-slate-950/60 border-slate-800" />
+                <label className="block text-xs font-medium text-foreground mb-1">Reason / Justification *</label>
+                <Input name="reason" required placeholder="e.g. Initial Opening Stock / Damaged Goods Scrap" className="bg-background border-input text-xs" />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Document Reference (Optional)</label>
-                <Input name="reference" placeholder="e.g. PO-1001, RMA-402, AUDIT-2026" className="bg-slate-950/60 border-slate-800" />
+                <label className="block text-xs font-medium text-foreground mb-1">Document Reference (Optional)</label>
+                <Input name="reference" placeholder="e.g. PO-1001, RMA-402, AUDIT-2026" className="bg-background border-input text-xs" />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsMovementModalOpen(false)}>
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" className="h-8 text-xs border-border" onClick={() => setIsMovementModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={isPending} className="bg-primary text-primary-foreground">
+                <Button type="submit" size="sm" disabled={isPending} className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90">
                   {isPending ? "Posting..." : "Post Movement"}
                 </Button>
               </div>
@@ -1194,47 +1194,47 @@ export function InventoryClient({
 
       {/* MODAL: CREATE SUPPLIER */}
       {isNewSupplierModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-slate-100">Add Supplier</h3>
-              <Button variant="ghost" size="sm" onClick={() => setIsNewSupplierModalOpen(false)}>✕</Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xs p-4">
+          <div className="bg-card border border-border rounded-lg max-w-lg w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 text-foreground">
+            <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+              <h3 className="text-base font-semibold text-foreground">Add Supplier</h3>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setIsNewSupplierModalOpen(false)}>✕</Button>
             </div>
 
             <form onSubmit={handleCreateSupplier} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Supplier Name *</label>
-                  <Input name="name" required placeholder="e.g. Silicon Supply Co." className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Supplier Name *</label>
+                  <Input name="name" required placeholder="e.g. Silicon Supply Co." className="bg-background border-input text-xs" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Company Entity</label>
-                  <Input name="companyName" placeholder="Silicon Global Ltd" className="bg-slate-950/60 border-slate-800" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Email</label>
-                  <Input name="email" type="email" placeholder="sales@silicon.com" className="bg-slate-950/60 border-slate-800" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Phone</label>
-                  <Input name="phone" placeholder="+1-800-555-0199" className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Company Entity</label>
+                  <Input name="companyName" placeholder="Silicon Global Ltd" className="bg-background border-input text-xs" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Tax / VAT ID</label>
-                  <Input name="taxId" placeholder="TAX-998822" className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Email</label>
+                  <Input name="email" type="email" placeholder="sales@silicon.com" className="bg-background border-input text-xs" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Payment Terms</label>
+                  <label className="block text-xs font-medium text-foreground mb-1">Phone</label>
+                  <Input name="phone" placeholder="+1-800-555-0199" className="bg-background border-input text-xs" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">Tax / VAT ID</label>
+                  <Input name="taxId" placeholder="TAX-998822" className="bg-background border-input text-xs font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">Payment Terms</label>
                   <select
                     name="paymentTerms"
                     defaultValue="Net 30"
-                    className="w-full h-9 px-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary"
+                    className="w-full h-8 px-3 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     <option value="Due on Receipt">Due on Receipt</option>
                     <option value="Net 15">Net 15</option>
@@ -1245,15 +1245,15 @@ export function InventoryClient({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Address</label>
-                <Input name="address" placeholder="100 Semiconductor Way, Suite 400" className="bg-slate-950/60 border-slate-800" />
+                <label className="block text-xs font-medium text-foreground mb-1">Address</label>
+                <Input name="address" placeholder="100 Semiconductor Way, Suite 400" className="bg-background border-input text-xs" />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsNewSupplierModalOpen(false)}>
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" className="h-8 text-xs border-border" onClick={() => setIsNewSupplierModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={isPending} className="bg-primary text-primary-foreground">
+                <Button type="submit" size="sm" disabled={isPending} className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90">
                   {isPending ? "Saving..." : "Add Supplier"}
                 </Button>
               </div>
@@ -1264,41 +1264,41 @@ export function InventoryClient({
 
       {/* MODAL: CREATE WAREHOUSE */}
       {isNewWarehouseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-slate-100">Add Warehouse Facility</h3>
-              <Button variant="ghost" size="sm" onClick={() => setIsNewWarehouseModalOpen(false)}>✕</Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xs p-4">
+          <div className="bg-card border border-border rounded-lg max-w-lg w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 text-foreground">
+            <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+              <h3 className="text-base font-semibold text-foreground">Add Warehouse Facility</h3>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setIsNewWarehouseModalOpen(false)}>✕</Button>
             </div>
 
             <form onSubmit={handleCreateWarehouse} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Depot Code *</label>
-                  <Input name="code" required placeholder="e.g. WH-EAST" className="bg-slate-950/60 border-slate-800 uppercase" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Depot Code *</label>
+                  <Input name="code" required placeholder="e.g. WH-EAST" className="bg-background border-input uppercase text-xs font-mono" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Warehouse Name *</label>
-                  <Input name="name" required placeholder="e.g. East Coast Depot" className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Warehouse Name *</label>
+                  <Input name="name" required placeholder="e.g. East Coast Depot" className="bg-background border-input text-xs" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">City / Region</label>
-                  <Input name="city" placeholder="New York" className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">City / Region</label>
+                  <Input name="city" placeholder="New York" className="bg-background border-input text-xs" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Storage Capacity (Units)</label>
-                  <Input name="capacity" type="number" min="100" defaultValue="25000" className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Storage Capacity (Units)</label>
+                  <Input name="capacity" type="number" min="100" defaultValue="25000" className="bg-background border-input text-xs font-mono" />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsNewWarehouseModalOpen(false)}>
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" className="h-8 text-xs border-border" onClick={() => setIsNewWarehouseModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={isPending} className="bg-primary text-primary-foreground">
+                <Button type="submit" size="sm" disabled={isPending} className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90">
                   {isPending ? "Creating..." : "Add Warehouse"}
                 </Button>
               </div>
@@ -1309,21 +1309,21 @@ export function InventoryClient({
 
       {/* MODAL: CREATE PURCHASE ORDER */}
       {isNewPOModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-slate-100">Issue Purchase Order</h3>
-              <Button variant="ghost" size="sm" onClick={() => setIsNewPOModalOpen(false)}>✕</Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xs p-4">
+          <div className="bg-card border border-border rounded-lg max-w-lg w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 text-foreground">
+            <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+              <h3 className="text-base font-semibold text-foreground">Issue Purchase Order</h3>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setIsNewPOModalOpen(false)}>✕</Button>
             </div>
 
             <form onSubmit={handleCreatePO} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Supplier *</label>
+                <label className="block text-xs font-medium text-foreground mb-1">Supplier *</label>
                 <select
                   name="supplierId"
                   required
                   defaultValue={suppliers[0]?.id || ""}
-                  className="w-full h-9 px-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary"
+                  className="w-full h-8 px-3 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
@@ -1333,23 +1333,23 @@ export function InventoryClient({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Order Date *</label>
-                  <Input name="orderDate" type="date" defaultValue={new Date().toISOString().split("T")[0]} required className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Order Date *</label>
+                  <Input name="orderDate" type="date" defaultValue={new Date().toISOString().split("T")[0]} required className="bg-background border-input text-xs" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Expected Delivery Date</label>
-                  <Input name="expectedDeliveryDate" type="date" className="bg-slate-950/60 border-slate-800" />
+                  <label className="block text-xs font-medium text-foreground mb-1">Expected Delivery Date</label>
+                  <Input name="expectedDeliveryDate" type="date" className="bg-background border-input text-xs" />
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg space-y-3">
-                <span className="text-xs font-semibold text-slate-300">Procured Line Item</span>
+              <div className="p-3 bg-muted/30 border border-border rounded-lg space-y-3">
+                <span className="text-xs font-semibold text-foreground">Procured Line Item</span>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Product SKU *</label>
+                  <label className="block text-xs font-medium text-foreground mb-1">Product SKU *</label>
                   <select
                     name="productId"
                     defaultValue={products[0]?.id || ""}
-                    className="w-full h-9 px-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary"
+                    className="w-full h-8 px-3 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     {products.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -1361,31 +1361,31 @@ export function InventoryClient({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">Quantity *</label>
-                    <Input name="quantityOrdered" type="number" min="1" defaultValue="10" required className="bg-slate-900 border-slate-800" />
+                    <label className="block text-xs font-medium text-foreground mb-1">Quantity *</label>
+                    <Input name="quantityOrdered" type="number" min="1" defaultValue="10" required className="bg-background border-input text-xs font-mono" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">Unit Cost ($)</label>
-                    <Input name="unitPrice" type="number" step="0.01" min="0" defaultValue="100.00" className="bg-slate-900 border-slate-800" />
+                    <label className="block text-xs font-medium text-foreground mb-1">Unit Cost ($)</label>
+                    <Input name="unitPrice" type="number" step="0.01" min="0" defaultValue="100.00" className="bg-background border-input text-xs font-mono" />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Notes / Instructions</label>
+                <label className="block text-xs font-medium text-foreground mb-1">Notes / Instructions</label>
                 <textarea
                   name="notes"
                   rows={2}
-                  className="w-full p-2.5 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary"
+                  className="w-full p-2.5 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Delivery terms, dock receipt instructions..."
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsNewPOModalOpen(false)}>
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" className="h-8 text-xs border-border" onClick={() => setIsNewPOModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={isPending} className="bg-primary text-primary-foreground">
+                <Button type="submit" size="sm" disabled={isPending} className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90">
                   {isPending ? "Generating..." : "Issue Purchase Order"}
                 </Button>
               </div>
@@ -1396,33 +1396,33 @@ export function InventoryClient({
 
       {/* MODAL: RECEIVE GOODS */}
       {receivingPO && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-slate-100">Receive Goods: {receivingPO.po_number}</h3>
-              <Button variant="ghost" size="sm" onClick={() => setReceivingPO(null)}>✕</Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xs p-4">
+          <div className="bg-card border border-border rounded-lg max-w-md w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 text-foreground">
+            <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+              <h3 className="text-base font-semibold text-foreground">Receive Goods: {receivingPO.po_number}</h3>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setReceivingPO(null)}>✕</Button>
             </div>
 
-            <p className="text-xs text-slate-400 mb-4">
-              Confirm inbound delivery for supplier <strong>{receivingPO.supplier_name}</strong>. This will atomically increment stock in the inventory ledger and post balanced double-entry accounting records.
+            <p className="text-xs text-muted-foreground mb-4">
+              Confirm inbound delivery for supplier <strong className="text-foreground">{receivingPO.supplier_name}</strong>. This will atomically increment stock in the inventory ledger and post balanced double-entry accounting records.
             </p>
 
             <form onSubmit={handleReceiveGoods} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Goods Receipt Note (GRN #)</label>
-                <Input name="grnNumber" placeholder="Auto-generated if empty" className="bg-slate-950/60 border-slate-800" />
+                <label className="block text-xs font-medium text-foreground mb-1">Goods Receipt Note (GRN #)</label>
+                <Input name="grnNumber" placeholder="Auto-generated if empty" className="bg-background border-input text-xs" />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Supplier Invoice Number</label>
-                <Input name="supplierInvoiceNumber" placeholder="e.g. INV-SUP-9021" className="bg-slate-950/60 border-slate-800" />
+                <label className="block text-xs font-medium text-foreground mb-1">Supplier Invoice Number</label>
+                <Input name="supplierInvoiceNumber" placeholder="e.g. INV-SUP-9021" className="bg-background border-input text-xs" />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <Button type="button" variant="outline" size="sm" onClick={() => setReceivingPO(null)}>
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" className="h-8 text-xs border-border" onClick={() => setReceivingPO(null)}>
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={isPending} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button type="submit" size="sm" disabled={isPending} className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white">
                   {isPending ? "Processing..." : "Confirm & Update Stock"}
                 </Button>
               </div>
@@ -1433,25 +1433,25 @@ export function InventoryClient({
 
       {/* MODAL: PAY SUPPLIER */}
       {payingPO && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-slate-100">Supplier Payment: {payingPO.po_number}</h3>
-              <Button variant="ghost" size="sm" onClick={() => setPayingPO(null)}>✕</Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xs p-4">
+          <div className="bg-card border border-border rounded-lg max-w-md w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 text-foreground">
+            <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+              <h3 className="text-base font-semibold text-foreground">Supplier Payment: {payingPO.po_number}</h3>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setPayingPO(null)}>✕</Button>
             </div>
 
-            <div className="p-3 bg-slate-950/60 rounded-lg text-xs space-y-1 mb-4 border border-slate-800">
-              <div className="flex justify-between text-slate-400">
+            <div className="p-3 bg-muted/30 rounded-lg text-xs space-y-1 mb-4 border border-border">
+              <div className="flex justify-between text-muted-foreground">
                 <span>Total PO Amount:</span>
-                <span className="font-mono text-slate-200">${payingPO.total_amount.toFixed(2)}</span>
+                <span className="font-mono text-foreground">${payingPO.total_amount.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-slate-400">
+              <div className="flex justify-between text-muted-foreground">
                 <span>Already Paid:</span>
-                <span className="font-mono text-slate-200">${payingPO.paid_amount.toFixed(2)}</span>
+                <span className="font-mono text-foreground">${payingPO.paid_amount.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-slate-200 font-semibold pt-1 border-t border-slate-800">
+              <div className="flex justify-between text-foreground font-semibold pt-1 border-t border-border">
                 <span>Remaining Due:</span>
-                <span className="font-mono text-primary">
+                <span className="font-mono text-primary font-bold">
                   ${(payingPO.total_amount - payingPO.paid_amount).toFixed(2)}
                 </span>
               </div>
@@ -1459,7 +1459,7 @@ export function InventoryClient({
 
             <form onSubmit={handlePaySupplier} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Disbursement Amount ($) *</label>
+                <label className="block text-xs font-medium text-foreground mb-1">Disbursement Amount ($) *</label>
                 <Input
                   name="amount"
                   type="number"
@@ -1468,16 +1468,16 @@ export function InventoryClient({
                   max={(payingPO.total_amount - payingPO.paid_amount).toFixed(2)}
                   defaultValue={(payingPO.total_amount - payingPO.paid_amount).toFixed(2)}
                   required
-                  className="bg-slate-950/60 border-slate-800 font-mono"
+                  className="bg-background border-input font-mono text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Payment Method</label>
+                <label className="block text-xs font-medium text-foreground mb-1">Payment Method</label>
                 <select
                   name="paymentMethod"
                   defaultValue="Bank Transfer"
-                  className="w-full h-9 px-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary"
+                  className="w-full h-8 px-3 bg-background border border-input rounded-md text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="Bank Transfer">Operating Bank Transfer</option>
                   <option value="Cheque">Corporate Cheque</option>
@@ -1485,11 +1485,11 @@ export function InventoryClient({
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <Button type="button" variant="outline" size="sm" onClick={() => setPayingPO(null)}>
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" className="h-8 text-xs border-border" onClick={() => setPayingPO(null)}>
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={isPending} className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Button type="submit" size="sm" disabled={isPending} className="h-8 text-xs bg-purple-600 hover:bg-purple-700 text-white">
                   {isPending ? "Disbursing..." : "Post Payment"}
                 </Button>
               </div>

@@ -6,19 +6,17 @@ import {
   ShoppingCart,
   DollarSign,
   Activity,
-  Layers,
-  Database,
-  ShieldCheck,
   ArrowRight,
-  Info,
   Users,
   CheckSquare,
   Briefcase,
+  ShieldCheck,
+  Building2,
   Clock,
-  PieChart,
-  BarChart3,
-  Calendar,
-  Lock,
+  AlertTriangle,
+  Receipt,
+  Layers,
+  FileText,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { ContentLayout } from "@/components/layout/content-layout";
@@ -39,7 +37,6 @@ export default async function DashboardPage() {
   try {
     dashboardData = await getDashboardTelemetry(companyId);
   } catch (err) {
-    // Fallback if not authenticated or membership pending
     dashboardData = null;
   }
 
@@ -53,489 +50,383 @@ export default async function DashboardPage() {
   return (
     <ContentLayout>
       <PageHeader
-        title="Executive Operations Radar"
-        description={`Real-time operational telemetry and governance console for ${company.name}.`}
-        breadcrumbs={[{ label: "Executive Radar" }]}
+        title="Executive Overview"
+        description={`Real-time operational summary, live financial ledger, and governance telemetry for ${company.name}.`}
+        breadcrumbs={[{ label: "Overview" }]}
         actions={
           <div className="flex items-center gap-2">
-            <Badge variant="success" className="text-xs py-1">
-              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-              Live Tenant Connected
+            <Badge variant="outline" className="text-xs py-1 border-border/80 bg-background">
+              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
+              Tenant Active
             </Badge>
-            <Link href="/settings">
-              <Button variant="outline" size="sm">
-                Company Settings
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            <Link href="/sales">
+              <Button size="sm" className="h-8 text-xs">
+                <Receipt className="mr-1.5 h-3.5 w-3.5" />
+                Invoices
+              </Button>
+            </Link>
+            <Link href="/reports">
+              <Button variant="outline" size="sm" className="h-8 text-xs">
+                <FileText className="mr-1.5 h-3.5 w-3.5" />
+                Reports
               </Button>
             </Link>
           </div>
         }
       />
 
-      {/* Architectural Honesty Banner */}
-      <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-foreground flex items-start gap-3">
-        <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="font-semibold text-foreground">
-            Authentic Telemetry Standard — No Simulated or Fabricated Metrics
-          </p>
-          <p className="text-muted-foreground leading-relaxed">
-            All metrics on this radar are queried directly from authorized multi-tenant tables. Modules scheduled for subsequent phases explicitly state <span className="font-semibold text-foreground">&quot;Not available until module is enabled&quot;</span> in strict accordance with enterprise governance contracts.
-          </p>
-        </div>
-      </div>
-
-      {/* KPI Metrics Grid: 9 Required Core Metrics + Real Audit Events */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-6">
-        {/* 1. Revenue */}
-        <Card className="flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Gross Revenue
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
-              Not available until module is enabled
-            </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className="font-mono text-amber-500">●</span>
-              Awaiting Finance & Invoicing
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* 2. Expenses */}
-        <Card className="flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Operating Expenses
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
-              Not available until module is enabled
-            </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className="font-mono text-amber-500">●</span>
-              Awaiting General Ledger
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* 3. Profit */}
-        <Card className="flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Net Operating Margin
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
-              Not available until module is enabled
-            </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className="font-mono text-amber-500">●</span>
-              Awaiting Accounting P&amp;L
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* 4. Outstanding Invoices */}
-        <Card className="flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Outstanding Invoices
-            </CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
-              Not available until module is enabled
-            </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className="font-mono text-amber-500">●</span>
-              Awaiting Billing & Invoicing
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* 5. Customers (LIVE) */}
-        {metrics?.customers?.isLive ? (
-          <Card className="flex flex-col justify-between border-primary/30 bg-primary/5">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-foreground">
-                Commercial Customers
+      {/* Primary Financial KPIs Bar (4 Cards) */}
+      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+        {/* 1. Gross Revenue */}
+        <Link href="/sales" className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+          <Card className="hover:border-primary/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-4 px-4">
+              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Gross Revenue
               </CardTitle>
-              <Badge variant="success" className="text-[10px] h-4">LIVE</Badge>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <div className="text-2xl font-bold font-mono text-foreground">
-                {metrics.customers.value}
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <DollarSign className="h-4 w-4" />
               </div>
-              <Link
-                href="/crm"
-                className="text-[11px] text-primary hover:underline flex items-center gap-1 mt-1"
-              >
-                <span>View CRM directory</span>
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="flex flex-col justify-between">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
-                Commercial Customers
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="text-xs font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
-                Not available until module is enabled
+            <CardContent className="px-4 pb-4 pt-1">
+              <div className="text-xl font-bold font-mono tracking-tight text-foreground">
+                {metrics?.revenue?.value ?? "$0.00"}
               </div>
-              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                <span className="font-mono text-amber-500">●</span>
-                Awaiting CRM Module (Phase 2)
+              <p className="mt-1 text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Total payments received</span>
+                <span className="text-primary font-medium group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                  Sales <ArrowRight className="h-3 w-3" />
+                </span>
               </p>
             </CardContent>
           </Card>
-        )}
+        </Link>
 
-        {/* 6. Employees (LIVE) */}
-        <Card className="flex flex-col justify-between border-emerald-500/30 bg-emerald-500/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-foreground">
-              Enterprise Employees
-            </CardTitle>
-            <Badge variant="success" className="text-[10px] h-4">LIVE</Badge>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <div className="text-2xl font-bold font-mono text-foreground">
-              {metrics?.employees?.value ?? 1}
-            </div>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
-              Verified tenant memberships
-            </p>
-          </CardContent>
-        </Card>
+        {/* 2. Operating Expenditures */}
+        <Link href="/finance" className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+          <Card className="hover:border-primary/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-4 px-4">
+              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Operating Expenses
+              </CardTitle>
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <TrendingUp className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-1">
+              <div className="text-xl font-bold font-mono tracking-tight text-foreground">
+                {metrics?.expenses?.value ?? "$0.00"}
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Approved claims &amp; ledger</span>
+                <span className="text-primary font-medium group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                  Finance <ArrowRight className="h-3 w-3" />
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        {/* 7. Active Projects */}
-        <Card className="flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Active Projects
-            </CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
-              Not available until module is enabled
-            </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className="font-mono text-amber-500">●</span>
-              Awaiting PMO Module (Phase 4)
-            </p>
-          </CardContent>
-        </Card>
+        {/* 3. Net Margin */}
+        <Link href="/finance" className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+          <Card className="hover:border-primary/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-4 px-4">
+              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Net Operating Margin
+              </CardTitle>
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <Activity className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-1">
+              <div className="text-xl font-bold font-mono tracking-tight text-foreground">
+                {metrics?.profit?.value ?? "$0.00"}
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>P&amp;L operational balance</span>
+                <span className="text-primary font-medium group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                  P&amp;L <ArrowRight className="h-3 w-3" />
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        {/* 8. Pending Tasks */}
-        <Card className="flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Pending Tasks
-            </CardTitle>
-            <CheckSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
-              Not available until module is enabled
-            </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className="font-mono text-amber-500">●</span>
-              Awaiting Workflow Engine
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* 9. Low-Stock Items */}
-        <Card className="flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Low-Stock Items
-            </CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
-              Not available until module is enabled
-            </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className="font-mono text-amber-500">●</span>
-              Awaiting Inventory (Phase 2)
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* 10. Audit Events (LIVE) */}
-        <Card className="flex flex-col justify-between border-sky-500/30 bg-sky-500/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-foreground">
-              Audit Events
-            </CardTitle>
-            <Badge variant="info" className="text-[10px] h-4">LIVE</Badge>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <div className="text-2xl font-bold font-mono text-foreground">
-              {metrics?.auditEvents?.value ?? recentAudits.length}
-            </div>
-            <p className="text-[11px] text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-sky-500 inline-block" />
-              Cryptographically sealed records
-            </p>
-          </CardContent>
-        </Card>
+        {/* 4. Accounts Receivable */}
+        <Link href="/sales" className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+          <Card className="hover:border-primary/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-4 px-4">
+              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Accounts Receivable
+              </CardTitle>
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                <ShoppingCart className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-1">
+              <div className="text-xl font-bold font-mono tracking-tight text-foreground">
+                {metrics?.outstandingInvoices?.value ?? "$0.00"}
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Outstanding invoice balances</span>
+                <span className="text-primary font-medium group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                  Collect <ArrowRight className="h-3 w-3" />
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
-      {/* Chart Areas Grid: Revenue vs Expenses, Monthly Sales, Expense Breakdown, Customer Growth, Project Status, Attendance */}
-      <div className="space-y-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Analytical Visualizations &amp; Trend Charts</h2>
-            <p className="text-xs text-muted-foreground">Visual charts render automatically when respective ledger streams are active.</p>
-          </div>
-          <Badge variant="outline" className="text-xs">
-            Awaiting Ledger Feeds
-          </Badge>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Chart 1: Revenue vs Expenses */}
-          <Card>
-            <CardHeader className="pb-2">
+      {/* Secondary Operational Metrics Strip (5 Compact Cards) */}
+      <div className="grid gap-3.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-5">
+        {/* Customers */}
+        <Link href="/crm" className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+          <Card className="hover:border-primary/40 transition-colors">
+            <CardContent className="p-3.5">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-primary" />
-                  Revenue vs Expenses
-                </CardTitle>
-                <Badge variant="outline" className="text-[10px]">Finance</Badge>
+                <span className="text-xs font-medium text-muted-foreground">Customers</span>
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <CardDescription className="text-xs">Comparative cash inflows vs operating outlays</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EmptyState
-                icon={BarChart3}
-                title="Financial Ledger Inactive"
-                description="Comparative revenue vs expense curves will populate once GAAP journal ledgers begin posting transactions in Phase 3."
-                className="min-h-[190px] border-none bg-muted/20"
-              />
+              <div className="mt-1.5 text-lg font-bold font-mono text-foreground">
+                {metrics?.customers?.value ?? 0}
+              </div>
+              <div className="mt-0.5 text-[10px] text-muted-foreground">Active directory accounts</div>
             </CardContent>
           </Card>
+        </Link>
 
-          {/* Chart 2: Monthly Sales Turnover */}
-          <Card>
-            <CardHeader className="pb-2">
+        {/* Personnel */}
+        <Link href="/hr" className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+          <Card className="hover:border-primary/40 transition-colors">
+            <CardContent className="p-3.5">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
-                  Monthly Sales Volume
-                </CardTitle>
-                <Badge variant="outline" className="text-[10px]">Sales</Badge>
+                <span className="text-xs font-medium text-muted-foreground">Personnel</span>
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <CardDescription className="text-xs">Commercial quote-to-cash velocity</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EmptyState
-                icon={TrendingUp}
-                title="Sales Pipeline Inactive"
-                description="Monthly commercial turnover graphs will activate when the commercial order fulfillment adapter is connected in Phase 2."
-                className="min-h-[190px] border-none bg-muted/20"
-              />
+              <div className="mt-1.5 text-lg font-bold font-mono text-foreground">
+                {metrics?.employees?.value ?? 1}
+              </div>
+              <div className="mt-0.5 text-[10px] text-muted-foreground">Verified tenant roster</div>
             </CardContent>
           </Card>
+        </Link>
 
-          {/* Chart 3: Expense Breakdown */}
-          <Card>
-            <CardHeader className="pb-2">
+        {/* Active Projects */}
+        <Link href="/projects" className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+          <Card className="hover:border-primary/40 transition-colors">
+            <CardContent className="p-3.5">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <PieChart className="h-4 w-4 text-sky-500" />
-                  Expense Breakdown
-                </CardTitle>
-                <Badge variant="outline" className="text-[10px]">Ledger</Badge>
+                <span className="text-xs font-medium text-muted-foreground">PMO Projects</span>
+                <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <CardDescription className="text-xs">Categorical cost allocation by department</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EmptyState
-                icon={PieChart}
-                title="Cost Categories Pending"
-                description="Departmental expense doughnut visualization will render once Accounts Payable accounts are mapped."
-                className="min-h-[190px] border-none bg-muted/20"
-              />
+              <div className="mt-1.5 text-lg font-bold font-mono text-foreground">
+                {metrics?.activeProjects?.value ?? 0}
+              </div>
+              <div className="mt-0.5 text-[10px] text-muted-foreground">Active initiatives</div>
             </CardContent>
           </Card>
+        </Link>
 
-          {/* Chart 4: Customer Growth */}
-          <Card>
-            <CardHeader className="pb-2">
+        {/* Pending Tasks */}
+        <Link href="/projects" className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+          <Card className="hover:border-primary/40 transition-colors">
+            <CardContent className="p-3.5">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Users className="h-4 w-4 text-violet-500" />
-                  Customer Growth Curve
-                </CardTitle>
-                <Badge variant="outline" className="text-[10px]">CRM</Badge>
+                <span className="text-xs font-medium text-muted-foreground">Open Tasks</span>
+                <CheckSquare className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <CardDescription className="text-xs">Net account additions and retention rate</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EmptyState
-                icon={Users}
-                title="CRM Client Directory Inactive"
-                description="Client retention and cohort curves will display once CRM contact accounts are enrolled in Phase 2."
-                className="min-h-[190px] border-none bg-muted/20"
-              />
+              <div className="mt-1.5 text-lg font-bold font-mono text-foreground">
+                {metrics?.pendingTasks?.value ?? 0}
+              </div>
+              <div className="mt-0.5 text-[10px] text-muted-foreground">Kanban deliverables</div>
             </CardContent>
           </Card>
+        </Link>
 
-          {/* Chart 5: Project Status */}
-          <Card>
-            <CardHeader className="pb-2">
+        {/* Low Stock SKUs */}
+        <Link href="/inventory" className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+          <Card className="hover:border-primary/40 transition-colors">
+            <CardContent className="p-3.5">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-amber-500" />
-                  Project Status &amp; Milestones
-                </CardTitle>
-                <Badge variant="outline" className="text-[10px]">PMO</Badge>
+                <span className="text-xs font-medium text-muted-foreground">Low Stock SKUs</span>
+                <Package className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <CardDescription className="text-xs">Capital engineering delivery burn-down</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EmptyState
-                icon={Briefcase}
-                title="PMO Engine Pending"
-                description="Strategic milestone Gantt charts and status bars will activate once PMO project charters are created."
-                className="min-h-[190px] border-none bg-muted/20"
-              />
+              <div className="mt-1.5 text-lg font-bold font-mono text-foreground flex items-center gap-1.5">
+                <span>{metrics?.lowStockItems?.value ?? 0}</span>
+                {Number(metrics?.lowStockItems?.value ?? 0) > 0 && (
+                  <Badge variant="warning" className="text-[9px] px-1 py-0 h-4 font-semibold">
+                    Alert
+                  </Badge>
+                )}
+              </div>
+              <div className="mt-0.5 text-[10px] text-muted-foreground">Stockout risk SKUs</div>
             </CardContent>
           </Card>
-
-          {/* Chart 6: Attendance Telemetry */}
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-teal-500" />
-                  Attendance &amp; Headcount
-                </CardTitle>
-                <Badge variant="outline" className="text-[10px]">HR</Badge>
-              </div>
-              <CardDescription className="text-xs">Biometric punch-in and PTO absence ratios</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EmptyState
-                icon={Clock}
-                title="HR Timesheet Stream Inactive"
-                description="Daily enterprise attendance records will stream once the human capital timesheet engine is linked."
-                className="min-h-[190px] border-none bg-muted/20"
-              />
-            </CardContent>
-          </Card>
-        </div>
+        </Link>
       </div>
 
-      {/* Operational Foundations & Live Audit Activity */}
-      <div className="grid gap-6 lg:grid-cols-7 mb-6">
-        {/* Left Column: Live Immutable Audit Trail Events */}
-        <Card className="lg:col-span-4">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-primary" />
-                  Live Cryptographic Audit Trail
+      {/* Main Operational Split: Left Activity & Shortcuts | Right System Health & Governance */}
+      <div className="grid gap-5 lg:grid-cols-7 mb-6">
+        {/* Left Column (4/7 width): Recent Audit Activity + Quick Actions */}
+        <div className="lg:col-span-4 space-y-5">
+          {/* Quick Module Shortcuts */}
+          <Card>
+            <CardHeader className="py-3.5 px-4 border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Quick Operations
                 </CardTitle>
-                <CardDescription>
-                  Authentic system mutation and access security events
-                </CardDescription>
+                <span className="text-[11px] text-muted-foreground">Frequent workflows</span>
               </div>
-              <Link href="/settings?tab=audit">
-                <Button variant="ghost" size="sm" className="text-xs">
-                  View Full Trail
-                  <ArrowRight className="ml-1 h-3 w-3" />
-                </Button>
+            </CardHeader>
+            <CardContent className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              <Link href="/sales" className="flex items-center gap-2 p-2.5 rounded-md border border-border/80 bg-muted/20 hover:bg-muted/60 transition-colors text-xs font-medium">
+                <Receipt className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">Invoicing</span>
               </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {recentAudits.length === 0 ? (
-              <EmptyState
-                icon={Activity}
-                title="No Events In Current Tenant Window"
-                description="Audit logging engine is active and will stream user and administrative actions here."
-                className="min-h-[200px] border-none bg-muted/20"
-              />
-            ) : (
-              <div className="space-y-3">
-                {recentAudits.map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex items-center justify-between p-2.5 rounded-md border bg-card/60 text-xs"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
-                      <div className="min-w-0">
-                        <div className="font-semibold text-foreground truncate font-mono">
-                          {event.action}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground truncate">
-                          Resource: {event.resource} {event.resource_id ? `(${event.resource_id.substring(0, 8)}...)` : ""}
+              <Link href="/crm" className="flex items-center gap-2 p-2.5 rounded-md border border-border/80 bg-muted/20 hover:bg-muted/60 transition-colors text-xs font-medium">
+                <Users className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">CRM Clients</span>
+              </Link>
+              <Link href="/finance" className="flex items-center gap-2 p-2.5 rounded-md border border-border/80 bg-muted/20 hover:bg-muted/60 transition-colors text-xs font-medium">
+                <DollarSign className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">Expenses &amp; GL</span>
+              </Link>
+              <Link href="/hr" className="flex items-center gap-2 p-2.5 rounded-md border border-border/80 bg-muted/20 hover:bg-muted/60 transition-colors text-xs font-medium">
+                <Clock className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">Attendance</span>
+              </Link>
+              <Link href="/projects" className="flex items-center gap-2 p-2.5 rounded-md border border-border/80 bg-muted/20 hover:bg-muted/60 transition-colors text-xs font-medium">
+                <Briefcase className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">Project Kanban</span>
+              </Link>
+              <Link href="/inventory" className="flex items-center gap-2 p-2.5 rounded-md border border-border/80 bg-muted/20 hover:bg-muted/60 transition-colors text-xs font-medium">
+                <Package className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">Inventory Stock</span>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Recent Governance & Audit Trail */}
+          <Card>
+            <CardHeader className="py-3.5 px-4 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Activity className="h-3.5 w-3.5 text-primary" />
+                    Live Activity &amp; Audit Trail
+                  </CardTitle>
+                </div>
+                <Link href="/settings">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground">
+                    View All Logs
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {recentAudits.length === 0 ? (
+                <EmptyState
+                  icon={Activity}
+                  title="No Audit Events In Window"
+                  description="Tenant activity and administrative operations will log here automatically."
+                  className="min-h-[160px] border-none"
+                />
+              ) : (
+                <div className="divide-y divide-border/60">
+                  {recentAudits.map((event) => (
+                    <div
+                      key={event.id}
+                      className="flex items-center justify-between px-4 py-2.5 text-xs hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                        <div className="min-w-0">
+                          <span className="font-semibold text-foreground font-mono text-xs">
+                            {event.action}
+                          </span>
+                          <span className="text-muted-foreground ml-2 text-[11px] truncate">
+                            {event.resource} {event.resource_id ? `(${event.resource_id.substring(0, 8)}...)` : ""}
+                          </span>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] text-muted-foreground font-mono">
+                      <span className="text-[10px] text-muted-foreground font-mono shrink-0 ml-3">
                         {new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Right Column: Foundation Subsystems Verification */}
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">
-              Platform Subsystem Health
-            </CardTitle>
-            <CardDescription>
-              Architectural components verified against PRD requirements
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {(subsystems || []).map((subsystem, idx) => (
-              <div
-                key={idx}
-                className="flex items-start justify-between p-2.5 rounded-md border bg-card/60 text-xs"
-              >
-                <div className="space-y-0.5 pr-2">
-                  <div className="font-medium text-foreground">{subsystem.name}</div>
-                  <div className="text-[11px] text-muted-foreground">{subsystem.detail}</div>
+                  ))}
                 </div>
-                <Badge variant={subsystem.badgeVariant} className="text-[10px] h-5 shrink-0">
-                  {subsystem.status}
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column (3/7 width): Platform Subsystems & Governance Summary */}
+        <div className="lg:col-span-3 space-y-5">
+          {/* Tenant Governance Summary */}
+          <Card>
+            <CardHeader className="py-3.5 px-4 border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Tenant Boundary Status
+                </CardTitle>
+                <Badge variant="outline" className="text-[10px] h-5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20">
+                  Compliant
                 </Badge>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3 text-xs">
+              <div className="flex items-center justify-between border-b pb-2">
+                <span className="text-muted-foreground">Workspace Tenant</span>
+                <span className="font-semibold text-foreground truncate max-w-[180px]">{company.name}</span>
+              </div>
+              <div className="flex items-center justify-between border-b pb-2">
+                <span className="text-muted-foreground">Database Security</span>
+                <span className="font-medium text-foreground">PostgreSQL Row-Level Security</span>
+              </div>
+              <div className="flex items-center justify-between border-b pb-2">
+                <span className="text-muted-foreground">Isolation Architecture</span>
+                <span className="font-medium text-foreground">Fail-Closed Tenant Isolation</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Subscription Tier</span>
+                <Badge variant="neutral" className="text-[10px] uppercase font-bold">{company.plan}</Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Subsystems Health List */}
+          <Card>
+            <CardHeader className="py-3.5 px-4 border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="h-3.5 w-3.5 text-primary" />
+                  Subsystem Verification
+                </CardTitle>
+                <span className="text-[10px] text-muted-foreground font-mono">{subsystems.length} Modules</span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 max-h-[360px] overflow-y-auto divide-y divide-border/60">
+              {(subsystems || []).map((subsystem, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start justify-between p-3 text-xs hover:bg-muted/30 transition-colors"
+                >
+                  <div className="space-y-0.5 pr-2 min-w-0">
+                    <div className="font-medium text-foreground truncate">{subsystem.name}</div>
+                    <div className="text-[11px] text-muted-foreground line-clamp-1">{subsystem.detail}</div>
+                  </div>
+                  <Badge variant={subsystem.badgeVariant} className="text-[10px] h-4 shrink-0 font-semibold">
+                    {subsystem.status}
+                  </Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </ContentLayout>
   );

@@ -102,15 +102,11 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                         <Icon className="h-4 w-4 shrink-0" />
                         <span>{item.title}</span>
                       </div>
-                      {item.isCurrentPhase ? (
+                      {item.badge && (
                         <Badge variant="neutral" className="text-[9px] h-4">
-                          v1.0
+                          {item.badge}
                         </Badge>
-                      ) : item.phase ? (
-                        <Badge variant="outline" className="text-[9px] h-4">
-                          {item.phase}
-                        </Badge>
-                      ) : null}
+                      )}
                     </Link>
                   );
                 })}
@@ -121,8 +117,8 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
 
         {/* Drawer Footer */}
         <div className="border-t p-3 text-[11px] text-muted-foreground bg-muted/20">
-          <span className="font-medium text-foreground block">IT-HUB SaaS Shell</span>
-          <span className="text-[10px]">Phase 1 Foundation Active</span>
+          <span className="font-semibold text-foreground block">IT HUB ERP Enterprise</span>
+          <span className="text-[10px] text-muted-foreground">Multi-Tenant Cloud RLS Active</span>
         </div>
       </div>
     </div>

@@ -20,11 +20,13 @@ export function UserMenu() {
   const [userName, setUserName] = React.useState<string>("ERP Lead");
 
   React.useEffect(() => {
-    if (document.documentElement.classList.contains("dark")) {
-      setIsDark(true);
-    } else {
+    const savedTheme = typeof window !== "undefined" ? localStorage.getItem("theme") : null;
+    if (savedTheme === "dark") {
       document.documentElement.classList.add("dark");
       setIsDark(true);
+    } else {
+      document.documentElement.classList.remove("dark");
+      setIsDark(false);
     }
 
     // Check if client session exists
@@ -49,8 +51,10 @@ export function UserMenu() {
     setIsDark(nextDark);
     if (nextDark) {
       document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
     }
   };
 

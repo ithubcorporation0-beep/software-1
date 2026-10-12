@@ -145,11 +145,11 @@ export function InvoiceDetailClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <div className="flex items-center gap-3">
           <Link href="/sales">
-            <Button variant="outline" size="sm" className="border-neutral-800 text-neutral-300">
+            <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
               <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Sales Hub
             </Button>
           </Link>
-          <span className="text-sm font-mono text-neutral-400">
+          <span className="text-sm font-mono text-muted-foreground font-medium">
             Invoice #{invState.invoice_number}
           </span>
         </div>
@@ -159,9 +159,9 @@ export function InvoiceDetailClient({
             variant="outline"
             size="sm"
             onClick={handlePrint}
-            className="border-neutral-800 hover:bg-neutral-800 text-neutral-200"
+            className="border-border hover:bg-muted text-foreground"
           >
-            <Printer className="h-4 w-4 mr-1.5 text-sky-400" />
+            <Printer className="h-4 w-4 mr-1.5 text-primary" />
             Print / PDF
           </Button>
 
@@ -169,9 +169,9 @@ export function InvoiceDetailClient({
             variant="outline"
             size="sm"
             onClick={() => setShowEmailModal(true)}
-            className="border-neutral-800 hover:bg-neutral-800 text-neutral-200"
+            className="border-border hover:bg-muted text-foreground"
           >
-            <Mail className="h-4 w-4 mr-1.5 text-indigo-400" />
+            <Mail className="h-4 w-4 mr-1.5 text-indigo-500" />
             Send Email
           </Button>
 
@@ -179,9 +179,9 @@ export function InvoiceDetailClient({
             variant="outline"
             size="sm"
             onClick={() => setShowWhatsAppModal(true)}
-            className="border-neutral-800 hover:bg-neutral-800 text-neutral-200"
+            className="border-border hover:bg-muted text-foreground"
           >
-            <Share2 className="h-4 w-4 mr-1.5 text-emerald-400" />
+            <Share2 className="h-4 w-4 mr-1.5 text-emerald-600" />
             Share WhatsApp
           </Button>
 
@@ -195,7 +195,7 @@ export function InvoiceDetailClient({
                 });
                 setShowPaymentModal(true);
               }}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-sm"
             >
               <CreditCard className="h-4 w-4 mr-1.5" />
               Record Payment
@@ -207,16 +207,16 @@ export function InvoiceDetailClient({
       {/* Notification Banner */}
       {notification && (
         <div
-          className={`p-4 rounded-lg flex items-center justify-between text-sm print:hidden ${
+          className={`p-3 rounded-md flex items-center justify-between text-sm print:hidden ${
             notification.type === "success"
-              ? "bg-emerald-950/40 border border-emerald-500/30 text-emerald-300"
-              : "bg-rose-950/40 border border-rose-500/30 text-rose-300"
+              ? "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
+              : "bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300"
           }`}
         >
           <span>{notification.text}</span>
           <button
             onClick={() => setNotification(null)}
-            className="text-neutral-400 hover:text-white text-xs font-semibold underline"
+            className="text-muted-foreground hover:text-foreground text-xs font-semibold underline"
           >
             Dismiss
           </button>
@@ -412,61 +412,61 @@ export function InvoiceDetailClient({
 
       {/* Payment History Ledger on Detail Page (Hidden when printing) */}
       <div className="max-w-4xl mx-auto print:hidden">
-        <Card className="bg-neutral-900/60 border-neutral-800">
-          <CardHeader className="p-4 border-b border-neutral-800">
-            <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-emerald-400" />
+        <Card className="bg-card border-border shadow-sm">
+          <CardHeader className="p-4 border-b border-border">
+            <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-emerald-600" />
               Recorded Payment Ledger for this Invoice
             </CardTitle>
-            <CardDescription className="text-xs text-neutral-400">
+            <CardDescription className="text-xs text-muted-foreground">
               Audit-compliant transaction history with reversal capabilities.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             {payments.length === 0 ? (
-              <div className="p-6 text-center text-sm text-neutral-500">
+              <div className="p-6 text-center text-xs text-muted-foreground">
                 No payments recorded yet for this invoice.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-900 text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
+                  <thead className="bg-muted/50 text-muted-foreground uppercase tracking-wider font-semibold border-b border-border">
                     <tr>
-                      <th className="p-3">Payment #</th>
-                      <th className="p-3">Date</th>
-                      <th className="p-3">Method</th>
-                      <th className="p-3">Reference</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3 text-right">Amount</th>
-                      <th className="p-3 text-center">Action</th>
+                      <th className="py-2.5 px-3">Payment #</th>
+                      <th className="py-2.5 px-3">Date</th>
+                      <th className="py-2.5 px-3">Method</th>
+                      <th className="py-2.5 px-3">Reference</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3 text-right">Amount</th>
+                      <th className="py-2.5 px-3 text-center">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-800">
+                  <tbody className="divide-y divide-border">
                     {payments.map((p) => (
-                      <tr key={p.id}>
-                        <td className="p-3 font-mono font-medium text-emerald-400">{p.payment_number}</td>
-                        <td className="p-3 text-neutral-400">{p.payment_date}</td>
-                        <td className="p-3 text-neutral-200">{p.payment_method}</td>
-                        <td className="p-3 font-mono text-neutral-400">{p.transaction_reference || "—"}</td>
-                        <td className="p-3">
+                      <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-2.5 px-3 font-mono font-medium text-emerald-600 dark:text-emerald-400">{p.payment_number}</td>
+                        <td className="py-2.5 px-3 text-muted-foreground">{p.payment_date}</td>
+                        <td className="py-2.5 px-3 text-foreground font-medium">{p.payment_method}</td>
+                        <td className="py-2.5 px-3 font-mono text-muted-foreground">{p.transaction_reference || "—"}</td>
+                        <td className="py-2.5 px-3">
                           {p.status === "Completed" ? (
-                            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                            <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 text-[10px]">
                               Completed
                             </Badge>
                           ) : (
-                            <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20">
+                            <Badge variant="outline" className="bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800 text-[10px]">
                               Voided
                             </Badge>
                           )}
                         </td>
-                        <td className="p-3 text-right font-medium">
+                        <td className="py-2.5 px-3 text-right font-medium">
                           {p.status === "Completed" ? (
-                            <span className="text-emerald-400">+${p.amount.toFixed(2)}</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">+${p.amount.toFixed(2)}</span>
                           ) : (
-                            <span className="text-neutral-500 line-through">${p.amount.toFixed(2)}</span>
+                            <span className="text-muted-foreground line-through font-mono">${p.amount.toFixed(2)}</span>
                           )}
                         </td>
-                        <td className="p-3 text-center">
+                        <td className="py-2.5 px-3 text-center">
                           {p.status === "Completed" && (
                             <Button
                               size="sm"
@@ -475,7 +475,7 @@ export function InvoiceDetailClient({
                                 setSelectedPaymentForVoid(p);
                                 setShowVoidModal(true);
                               }}
-                              className="h-6 px-2 text-xs text-rose-400 border-rose-900 hover:bg-rose-950/40"
+                              className="h-6 px-2 text-xs text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                             >
                               <Ban className="h-3 w-3 mr-1" />
                               Void
@@ -494,16 +494,16 @@ export function InvoiceDetailClient({
 
       {/* RECORD PAYMENT MODAL */}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-emerald-400" />
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border shadow-xl rounded-lg max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-emerald-600" />
                 Record Payment
               </h3>
               <button
                 onClick={() => setShowPaymentModal(false)}
-                className="text-neutral-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground text-sm"
               >
                 ✕
               </button>
@@ -511,7 +511,7 @@ export function InvoiceDetailClient({
 
             <form onSubmit={handleRecordPayment} className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-neutral-400">Payment Amount ($) *</label>
+                <label className="text-xs font-medium text-foreground">Payment Amount ($) *</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -519,20 +519,20 @@ export function InvoiceDetailClient({
                   max={invState.amount_due}
                   value={paymentForm.amount}
                   onChange={(e) => setPaymentForm({ ...paymentForm, amount: parseFloat(e.target.value) || 0 })}
-                  className="mt-1 bg-neutral-800 border-neutral-700 text-base font-bold text-emerald-400"
+                  className="mt-1 text-base font-bold text-emerald-600 dark:text-emerald-400"
                   required
                 />
-                <p className="text-xs text-neutral-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Remaining due: ${invState.amount_due.toFixed(2)}. Overpayments are prevented.
                 </p>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-400">Payment Method *</label>
+                <label className="text-xs font-medium text-foreground">Payment Method *</label>
                 <select
                   value={paymentForm.paymentMethod}
                   onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value as any })}
-                  className="w-full mt-1 bg-neutral-800 border border-neutral-700 rounded-md p-2 text-sm text-neutral-200"
+                  className="w-full mt-1 bg-background border border-input rounded-md p-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   required
                 >
                   <option value="Bank Transfer">Bank Wire / ACH</option>
@@ -544,32 +544,31 @@ export function InvoiceDetailClient({
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-400">Transaction Reference</label>
+                <label className="text-xs font-medium text-foreground">Transaction Reference</label>
                 <Input
                   placeholder="e.g. WIRE-89420 or Check #301"
                   value={paymentForm.transactionReference}
                   onChange={(e) => setPaymentForm({ ...paymentForm, transactionReference: e.target.value })}
-                  className="mt-1 bg-neutral-800 border-neutral-700 text-sm text-neutral-200"
+                  className="mt-1 text-xs"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-400">Payment Date *</label>
+                <label className="text-xs font-medium text-foreground">Payment Date *</label>
                 <Input
                   type="date"
                   value={paymentForm.paymentDate}
                   onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
-                  className="mt-1 bg-neutral-800 border-neutral-700 text-sm text-neutral-200"
+                  className="mt-1 text-xs"
                   required
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
+              <div className="flex justify-end gap-2 pt-2 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowPaymentModal(false)}
-                  className="border-neutral-700"
                 >
                   Cancel
                 </Button>
@@ -584,24 +583,24 @@ export function InvoiceDetailClient({
 
       {/* EMAIL INTEGRATION MODAL */}
       {showEmailModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Mail className="h-5 w-5 text-indigo-400" />
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border shadow-xl rounded-lg max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Mail className="h-5 w-5 text-indigo-500" />
                 Dispatch Invoice via Email
               </h3>
               <button
                 onClick={() => setShowEmailModal(false)}
-                className="text-neutral-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground text-sm"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-4 bg-amber-950/30 border border-amber-500/30 rounded-lg text-xs text-amber-300 space-y-2">
-              <div className="flex items-center gap-2 font-bold">
-                <AlertTriangle className="h-4 w-4 text-amber-400" />
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md text-xs text-amber-900 dark:text-amber-300 space-y-2">
+              <div className="flex items-center gap-2 font-semibold">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 Email Provider Not Configured
               </div>
               <p>
@@ -612,11 +611,10 @@ export function InvoiceDetailClient({
               </p>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
               <Button
                 variant="outline"
                 onClick={() => setShowEmailModal(false)}
-                className="border-neutral-700"
               >
                 Close
               </Button>
@@ -632,44 +630,44 @@ export function InvoiceDetailClient({
 
       {/* WHATSAPP SHARING MODAL */}
       {showWhatsAppModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Share2 className="h-5 w-5 text-emerald-400" />
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border shadow-xl rounded-lg max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Share2 className="h-5 w-5 text-emerald-600" />
                 Share Invoice via WhatsApp
               </h3>
               <button
                 onClick={() => setShowWhatsAppModal(false)}
-                className="text-neutral-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground text-sm"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-3 text-xs text-neutral-300">
-              <p>
+            <div className="space-y-3 text-xs text-foreground">
+              <p className="text-muted-foreground">
                 Send invoice summary and payment instructions directly to customer mobile:
               </p>
 
-              <div className="bg-neutral-950 p-3 rounded border border-neutral-800 font-mono text-[11px] text-neutral-400 whitespace-pre-line">
+              <div className="bg-muted/50 p-3 rounded border border-border font-mono text-[11px] text-foreground whitespace-pre-line">
                 {whatsAppMessage}
               </div>
 
               {cleanPhone ? (
-                <div className="flex items-center gap-2 text-emerald-400">
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-medium">
                   <CheckCircle2 className="h-4 w-4" />
                   <span>Customer WhatsApp number detected: +{cleanPhone}</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-amber-400">
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                   <AlertTriangle className="h-4 w-4" />
                   <span>No international phone recorded for this customer. Copy text to send manually.</span>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -677,7 +675,6 @@ export function InvoiceDetailClient({
                   setNotification({ text: "Invoice message copied to clipboard.", type: "success" });
                   setShowWhatsAppModal(false);
                 }}
-                className="border-neutral-700"
               >
                 <Copy className="h-3.5 w-3.5 mr-1" />
                 Copy Message
@@ -698,44 +695,43 @@ export function InvoiceDetailClient({
 
       {/* VOID PAYMENT MODAL */}
       {showVoidModal && selectedPaymentForVoid && (
-        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Ban className="h-5 w-5 text-rose-400" />
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border shadow-xl rounded-lg max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Ban className="h-5 w-5 text-rose-600 dark:text-rose-400" />
                 Void Financial Transaction
               </h3>
               <button
                 onClick={() => setShowVoidModal(false)}
-                className="text-neutral-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground text-sm"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-neutral-400">
-              Reversing payment <strong className="text-white">{selectedPaymentForVoid.payment_number}</strong> (${selectedPaymentForVoid.amount.toFixed(2)}).
+            <p className="text-xs text-muted-foreground">
+              Reversing payment <strong className="text-foreground">{selectedPaymentForVoid.payment_number}</strong> (${selectedPaymentForVoid.amount.toFixed(2)}).
               This transaction will be marked as Voided and the invoice balance due will be increased back.
             </p>
 
             <form onSubmit={handleVoidPayment} className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-neutral-400">Reason for Voiding *</label>
+                <label className="text-xs font-medium text-foreground">Reason for Voiding *</label>
                 <textarea
                   value={voidReason}
                   onChange={(e) => setVoidReason(e.target.value)}
                   placeholder="e.g. Check bounced or customer payment reversed..."
-                  className="w-full mt-1 bg-neutral-800 border border-neutral-700 rounded-md p-2 text-sm text-neutral-200 h-24"
+                  className="w-full mt-1 bg-background border border-input rounded-md p-2 text-xs text-foreground h-24 focus:outline-none focus:ring-1 focus:ring-primary"
                   required
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
+              <div className="flex justify-end gap-2 pt-2 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowVoidModal(false)}
-                  className="border-neutral-700"
                 >
                   Cancel
                 </Button>
