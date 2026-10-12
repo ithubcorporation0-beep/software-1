@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -66,17 +66,29 @@ export async function middleware(request: NextRequest) {
     if (!user && !isAuthRoute) {
       const redirectUrl = new URL("/login", request.url);
       redirectUrl.searchParams.set("redirectTo", pathname);
-      return NextResponse.redirect(redirectUrl);
+      const redirectResponse = NextResponse.redirect(redirectUrl);
+      // Preserve any updated or refreshed cookies
+      response.cookies.getAll().forEach((c) => {
+        redirectResponse.cookies.set(c.name, c.value);
+      });
+      return redirectResponse;
     }
 
     // Auth Route: already authenticated user -> redirect to /
     if (user && isAuthRoute) {
-      return NextResponse.redirect(new URL("/", request.url));
+      const redirectResponse = NextResponse.redirect(new URL("/", request.url));
+      response.cookies.getAll().forEach((c) => {
+        redirectResponse.cookies.set(c.name, c.value);
+      });
+      return redirectResponse;
     }
   }
 
   return response;
 }
+
+// Support default export as well
+export default proxy;
 
 export const config = {
   matcher: [

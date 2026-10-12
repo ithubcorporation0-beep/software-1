@@ -24,22 +24,34 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // 1. Authenticate server-side to set HTTP session cookies reliably
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
-      if (error) {
-        setErrorMessage(error.message);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setErrorMessage(result.error || "Invalid email or password.");
         setLoading(false);
         return;
       }
 
-      if (data?.user) {
-        router.push(redirectTo);
-        router.refresh();
+      // 2. Also initialize client-side Supabase session for immediate client SDK operations
+      try {
+        const supabase = createClient();
+        await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+      } catch {
+        // Non-critical: HTTP cookie session is already set by server endpoint
       }
+
+      // 3. Perform a full browser navigation to guarantee cookies are sent with all requests
+      window.location.href = redirectTo;
     } catch (err: any) {
       setErrorMessage(err.message || "An unexpected error occurred during login.");
       setLoading(false);
@@ -67,9 +79,10 @@ function LoginForm() {
         </div>
       )}
 
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleLogin} method="POST" className="space-y-4">
         <Input
           label="Company Email"
+          name="email"
           type="email"
           required
           autoComplete="email"
@@ -81,6 +94,7 @@ function LoginForm() {
         <div className="space-y-1">
           <Input
             label="Password"
+            name="password"
             type="password"
             required
             autoComplete="current-password"
