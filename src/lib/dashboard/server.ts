@@ -263,6 +263,12 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
         badgeVariant: "success",
         detail: "Protected staff directory, shift attendance ledger with grace periods, and leave workflows",
       },
+      {
+        name: "Controlled Payroll & Compensation Engine",
+        status: "Live",
+        badgeVariant: "success",
+        detail: "Deterministic PRD formula, salary slip generation, approval gates, and traceable GL posting",
+      },
     ],
   };
 }

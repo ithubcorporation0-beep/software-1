@@ -479,7 +479,7 @@ export interface Account {
 }
 
 export type JournalEntryStatus = "Draft" | "Posted" | "Reversed";
-export type JournalEntrySourceType = "manual" | "invoice" | "payment" | "expense" | "reversal";
+export type JournalEntrySourceType = "manual" | "invoice" | "payment" | "expense" | "reversal" | "payroll" | "payroll_reversal";
 
 export interface JournalEntryLine {
   id: string;
@@ -737,6 +737,110 @@ export interface HRAttendanceSummaryReport {
   onLeaveCount: number;
   attendanceRatePct: number;
 }
+
+// ============================================================================
+// PAYROLL SUBSYSTEM TYPES
+// ============================================================================
+
+export type PayrollStatus = "Draft" | "Approved" | "Finalized" | "Reversed";
+export type PayrollTaxCalculationMode = "Manual" | "Percentage" | "StatutoryBrackets";
+export type PayrollRoundMode = "cent" | "dollar" | "none";
+
+export interface PayrollSettings {
+  company_id: string;
+  currency: string;
+  tax_calculation_mode: PayrollTaxCalculationMode;
+  statutory_rules_confirmed: boolean;
+  statutory_rules_confirmed_by?: string | null;
+  statutory_rules_confirmed_at?: string | null;
+  default_overtime_hourly_multiplier: number;
+  overtime_rate_confirmed: boolean;
+  standard_working_days_per_month: number;
+  round_to_nearest: PayrollRoundMode;
+  auto_post_to_accounting: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayrollRun {
+  id: string;
+  company_id: string;
+  run_number: string;
+  period_start: string;
+  period_end: string;
+  pay_date: string;
+  status: PayrollStatus;
+  total_basic: number;
+  total_allowances: number;
+  total_bonus: number;
+  total_overtime: number;
+  total_deductions: number;
+  total_tax: number;
+  total_advance: number;
+  total_net: number;
+  employee_count: number;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  finalized_by?: string | null;
+  finalized_at?: string | null;
+  reversal_reason?: string | null;
+  reversed_by?: string | null;
+  reversed_at?: string | null;
+  journal_entry_id?: string | null;
+  notes?: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayrollItem {
+  id: string;
+  payroll_run_id: string;
+  company_id: string;
+  employee_id: string;
+  employee_name: string;
+  employee_code: string;
+  department_name?: string | null;
+  designation?: string | null;
+  basic_salary: number;
+  allowances: number;
+  bonus: number;
+  overtime: number;
+  deductions: number;
+  tax: number;
+  advance: number;
+  net_salary: number;
+  currency: string;
+  status: PayrollStatus;
+  bank_name?: string | null;
+  bank_account_title?: string | null;
+  bank_account_number?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayrollCalculationResult {
+  grossEarnings: number;
+  totalReductions: number;
+  netSalary: number;
+}
+
+export interface PayrollSlipData {
+  item: PayrollItem;
+  run: PayrollRun;
+  company: {
+    id: string;
+    name: string;
+    currency: string;
+    address?: string | null;
+    tax_id?: string | null;
+  };
+  calculation: PayrollCalculationResult;
+  verifiedApprover?: string | null;
+  verifiedFinalizer?: string | null;
+}
+
 
 
 

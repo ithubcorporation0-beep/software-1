@@ -6,7 +6,7 @@ export interface SearchResultItem {
   id: string;
   title: string;
   subtitle: string;
-  category: "Navigation" | "Employees" | "Customers" | "Invoices" | "Expenses" | "Finance" | "Products" | "Projects" | "Tasks" | "Suppliers";
+  category: "Navigation" | "Employees" | "Customers" | "Invoices" | "Expenses" | "Finance" | "Payroll" | "Products" | "Projects" | "Tasks" | "Suppliers";
   href?: string;
   badge?: string;
   isAvailable: boolean;
@@ -183,6 +183,29 @@ export async function GET(request: Request) {
             href: "/finance",
             isAvailable: true,
           });
+        }
+      } catch {
+        // Fall through
+      }
+    }
+
+    // 6. Real Live Payroll Runs (Tenant-scoped & Permission-checked - Never exposes raw salary amounts to unauthorized roles)
+    if (isSuper || permissions.includes("payroll.read") || permissions.includes("payroll.admin") || permissions.includes("*")) {
+      try {
+        const { getPayrollRuns } = await import("@/lib/payroll/server");
+        const payrollRuns = await getPayrollRuns(companyId, {}, user);
+        for (const run of payrollRuns.slice(0, 5)) {
+          if (!query || run.run_number.toLowerCase().includes(query) || run.status.toLowerCase().includes(query)) {
+            results.push({
+              id: `pay-${run.id}`,
+              title: `Payroll ${run.run_number}`,
+              subtitle: `Period: ${run.period_start} to ${run.period_end} • ${run.employee_count} Employees`,
+              category: "Payroll",
+              badge: run.status,
+              href: "/payroll",
+              isAvailable: true,
+            });
+          }
         }
       } catch {
         // Fall through
