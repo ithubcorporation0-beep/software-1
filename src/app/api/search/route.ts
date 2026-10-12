@@ -6,7 +6,7 @@ export interface SearchResultItem {
   id: string;
   title: string;
   subtitle: string;
-  category: "Navigation" | "Employees" | "Customers" | "Invoices" | "Products" | "Projects" | "Tasks" | "Suppliers";
+  category: "Navigation" | "Employees" | "Customers" | "Invoices" | "Expenses" | "Finance" | "Products" | "Projects" | "Tasks" | "Suppliers";
   href?: string;
   badge?: string;
   isAvailable: boolean;
@@ -129,6 +129,40 @@ export async function GET(request: Request) {
             category: "Invoices",
             badge: inv.status,
             href: `/sales/invoices/${inv.id}`,
+            isAvailable: true,
+          });
+        }
+      } catch {
+        // Fall through
+      }
+    }
+
+    // 5. Real Live Expenses & General Ledger (Tenant-scoped & Permission-checked)
+    if (isSuper || permissions.includes("finance:view") || permissions.includes("finance.read")) {
+      try {
+        const { getExpenses, getAccounts } = await import("@/lib/finance/server");
+        const expenseList = await getExpenses(companyId, { search: query });
+        for (const exp of expenseList.slice(0, 5)) {
+          results.push({
+            id: `exp-${exp.id}`,
+            title: `Expense ${exp.expense_number}: ${exp.vendor}`,
+            subtitle: `${exp.category} • $${exp.amount.toFixed(2)} • ${exp.description}`,
+            category: "Expenses",
+            badge: exp.approval_status,
+            href: "/finance",
+            isAvailable: true,
+          });
+        }
+
+        const accountList = await getAccounts(companyId);
+        for (const acc of accountList.filter((a) => a.code.includes(query) || a.name.toLowerCase().includes(query)).slice(0, 5)) {
+          results.push({
+            id: `acc-${acc.id}`,
+            title: `Account [${acc.code}] ${acc.name}`,
+            subtitle: `${acc.account_type} • ${acc.description || "General Ledger Account"}`,
+            category: "Finance",
+            badge: acc.account_type,
+            href: "/finance",
             isAvailable: true,
           });
         }

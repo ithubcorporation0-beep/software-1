@@ -394,3 +394,203 @@ export interface Payment {
   created_at: string;
 }
 
+// ============================================================================
+// EXPENSES & ACCOUNTING LEDGER TYPES
+// ============================================================================
+
+export type ExpenseCategory =
+  | "Rent"
+  | "Utilities"
+  | "Salaries"
+  | "Marketing"
+  | "Transportation"
+  | "Office Supplies"
+  | "Software"
+  | "Equipment"
+  | "Other";
+
+export type ExpensePaymentMethod =
+  | "Cash"
+  | "Bank Transfer"
+  | "Credit Card"
+  | "Check"
+  | "Other";
+
+export type ExpenseApprovalStatus =
+  | "Draft"
+  | "Submitted"
+  | "Approved"
+  | "Rejected";
+
+export interface ExpenseReceipt {
+  url: string;
+  name: string;
+  size?: number;
+  mimeType?: string;
+}
+
+export interface Expense {
+  id: string;
+  company_id: string;
+  expense_number: string;
+  category: ExpenseCategory;
+  amount: number;
+  currency: string;
+  date: string;
+  vendor: string;
+  payment_method: ExpensePaymentMethod;
+  description: string;
+  receipt_url?: string | null;
+  receipt_name?: string | null;
+  receipt_size?: number | null;
+  receipt_mime?: string | null;
+  employee_id?: string | null;
+  employee_name?: string | null;
+  employee_email?: string | null;
+  approval_status: ExpenseApprovalStatus;
+  rejection_reason?: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  journal_entry_id?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AccountType =
+  | "Asset"
+  | "Liability"
+  | "Equity"
+  | "Revenue"
+  | "Expense";
+
+export interface Account {
+  id: string;
+  company_id: string;
+  code: string;
+  name: string;
+  account_type: AccountType;
+  description?: string | null;
+  is_system: boolean;
+  is_active: boolean;
+  balance?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type JournalEntryStatus = "Draft" | "Posted" | "Reversed";
+export type JournalEntrySourceType = "manual" | "invoice" | "payment" | "expense" | "reversal";
+
+export interface JournalEntryLine {
+  id: string;
+  journal_entry_id: string;
+  company_id: string;
+  account_id: string;
+  account?: Account;
+  account_code?: string;
+  account_name?: string;
+  description?: string | null;
+  debit: number;
+  credit: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  company_id: string;
+  entry_number: string;
+  entry_date: string;
+  description: string;
+  reference?: string | null;
+  status: JournalEntryStatus;
+  source_type?: JournalEntrySourceType | null;
+  source_id?: string | null;
+  reversal_of_id?: string | null;
+  total_debit: number;
+  total_credit: number;
+  posted_at?: string | null;
+  posted_by?: string | null;
+  lines?: JournalEntryLine[];
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Financial Report Interfaces
+export interface ProfitLossReport {
+  period: { from: string; to: string };
+  revenue: {
+    items: Array<{ code: string; name: string; amount: number }>;
+    total: number;
+  };
+  expenses: {
+    items: Array<{ category: string; amount: number; percentage: number }>;
+    total: number;
+  };
+  netOperatingIncome: number;
+  netProfitMarginPct: number;
+}
+
+export interface BalanceSheetReport {
+  asOfDate: string;
+  assets: {
+    current: Array<{ code: string; name: string; amount: number }>;
+    nonCurrent: Array<{ code: string; name: string; amount: number }>;
+    total: number;
+  };
+  liabilities: {
+    current: Array<{ code: string; name: string; amount: number }>;
+    nonCurrent: Array<{ code: string; name: string; amount: number }>;
+    total: number;
+  };
+  equity: {
+    items: Array<{ code: string; name: string; amount: number }>;
+    currentPeriodEarnings: number;
+    total: number;
+  };
+  totalLiabilitiesAndEquity: number;
+  isBalanced: boolean;
+  variance: number;
+}
+
+export interface CashFlowReport {
+  period: { from: string; to: string };
+  operatingInflows: Array<{ name: string; amount: number }>;
+  totalInflows: number;
+  operatingOutflows: Array<{ name: string; amount: number }>;
+  totalOutflows: number;
+  netOperatingCashFlow: number;
+}
+
+export interface ARAgingReport {
+  asOfDate: string;
+  totalAR: number;
+  current: number;
+  days1_30: number;
+  days31_60: number;
+  days61_90: number;
+  days90Plus: number;
+  customers: Array<{
+    customerId: string;
+    customerName: string;
+    total: number;
+    current: number;
+    days1_30: number;
+    days31_60: number;
+    days61_90: number;
+    days90Plus: number;
+  }>;
+}
+
+export interface APAgingReport {
+  asOfDate: string;
+  totalAP: number;
+  vendors: Array<{
+    vendor: string;
+    total: number;
+    expenseCount: number;
+  }>;
+}
+
+

@@ -99,6 +99,18 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
     // Fall through
   }
 
+  // 6. Query real live operating expenses & net profit for this company tenant
+  let expensesTotal = 0;
+  let netOperatingIncome = 0;
+  try {
+    const { getProfitLossReport } = await import("@/lib/finance/server");
+    const pl = await getProfitLossReport(companyId, {});
+    expensesTotal = pl.expenses.total;
+    netOperatingIncome = pl.netOperatingIncome;
+  } catch {
+    // Fall through
+  }
+
   return {
     company: {
       id: company.id,
@@ -119,20 +131,20 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
       expenses: {
         key: "expenses",
         label: "Operating Expenditures",
-        isLive: false,
-        statusMessage: "Not available until module is enabled",
-        moduleName: "General Ledger & Accounts Payable",
-        phase: "Phase 3",
-        badgeVariant: "outline",
+        isLive: true,
+        value: `$${expensesTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        statusMessage: "Live approved operating expense ledger",
+        moduleName: "General Ledger & Expenses",
+        badgeVariant: "success",
       },
       profit: {
         key: "profit",
         label: "Net Operating Margin",
-        isLive: false,
-        statusMessage: "Not available until module is enabled",
+        isLive: true,
+        value: `$${netOperatingIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        statusMessage: "Live P&L statement net income",
         moduleName: "Corporate Accounting & P&L",
-        phase: "Phase 3",
-        badgeVariant: "outline",
+        badgeVariant: "success",
       },
       outstandingInvoices: {
         key: "outstandingInvoices",
@@ -238,6 +250,12 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
         status: "Live",
         badgeVariant: "success",
         detail: "Traceable quotes, decimal-safe invoicing, and double-entry payment ledger",
+      },
+      {
+        name: "Expenses & Double-Entry General Ledger",
+        status: "Live",
+        badgeVariant: "success",
+        detail: "GAAP Chart of Accounts, balanced double-entry ledger, expense approvals, and real-time financial statements",
       },
     ],
   };

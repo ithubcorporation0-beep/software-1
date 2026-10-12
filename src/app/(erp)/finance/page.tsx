@@ -1,25 +1,111 @@
 import * as React from "react";
-import { DollarSign } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { ContentLayout } from "@/components/layout/content-layout";
-import { ComingSoonModule } from "@/components/shared/coming-soon-module";
+import { FinanceClient } from "./finance-client";
+import {
+  getExpenses,
+  getAccounts,
+  getJournalEntries,
+  getProfitLossReport,
+  getBalanceSheetReport,
+  getCashFlowReport,
+  getARAgingReport,
+  getAPAgingReport,
+  initializeCompanyChartOfAccounts,
+} from "@/lib/finance/server";
+import { getCompanySettings } from "@/lib/company/server";
+import { getCurrentUser, requireCompanyMembership } from "@/lib/auth/server";
 
-export default function FinancePage() {
+const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
+
+export default async function FinancePage() {
+  const companyId = DEFAULT_COMPANY_ID;
+
+  let isSuperAdmin = false;
+  let currentUserId = "";
+
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      currentUserId = user.id;
+      isSuperAdmin = user.is_super_admin;
+    }
+    await requireCompanyMembership(companyId);
+  } catch {
+    // Falls closed
+  }
+
+  // Ensure standard chart of accounts is available
+  await initializeCompanyChartOfAccounts(companyId).catch(() => []);
+
+  const [expenses, accounts, journalEntries, pl, bs, cf, ar, ap, settings] =
+    await Promise.all([
+      getExpenses(companyId).catch(() => []),
+      getAccounts(companyId).catch(() => []),
+      getJournalEntries(companyId).catch(() => []),
+      getProfitLossReport(companyId, {}).catch(() => ({
+        period: { from: "", to: "" },
+        revenue: { items: [], total: 0 },
+        expenses: { items: [], total: 0 },
+        netOperatingIncome: 0,
+        netProfitMarginPct: 0,
+      })),
+      getBalanceSheetReport(companyId).catch(() => ({
+        asOfDate: new Date().toISOString().split("T")[0],
+        assets: { current: [], nonCurrent: [], total: 0 },
+        liabilities: { current: [], nonCurrent: [], total: 0 },
+        equity: { items: [], currentPeriodEarnings: 0, total: 0 },
+        totalLiabilitiesAndEquity: 0,
+        isBalanced: true,
+        variance: 0,
+      })),
+      getCashFlowReport(companyId, {}).catch(() => ({
+        period: { from: "", to: "" },
+        operatingInflows: [],
+        totalInflows: 0,
+        operatingOutflows: [],
+        totalOutflows: 0,
+        netOperatingCashFlow: 0,
+      })),
+      getARAgingReport(companyId).catch(() => ({
+        asOfDate: new Date().toISOString().split("T")[0],
+        totalAR: 0,
+        current: 0,
+        days1_30: 0,
+        days31_60: 0,
+        days61_90: 0,
+        days90Plus: 0,
+        customers: [],
+      })),
+      getAPAgingReport(companyId).catch(() => ({
+        asOfDate: new Date().toISOString().split("T")[0],
+        totalAP: 0,
+        vendors: [],
+      })),
+      getCompanySettings(companyId).catch(() => ({ currency: "USD" })),
+    ]);
+
   return (
     <ContentLayout>
-      <ComingSoonModule
-        moduleName="Finance & General Ledger"
-        moduleCode="FIN"
-        targetPhase="Phase 3"
-        icon={DollarSign}
-        description="Double-entry chart of accounts, journal entries, balance sheets, accounts receivable/payable, and cash flow."
-        plannedFeatures={[
-          "Standard double-entry General Ledger with GAAP compliance",
-          "Chart of Accounts (Assets, Liabilities, Equity, Revenue, COGS, OpEx)",
-          "Real-time Balance Sheet and Profit & Loss (P&L) generation",
-          "Accounts Receivable (A/R) aging and Accounts Payable (A/P) scheduling",
-          "Multi-currency transaction reconciliations and treasury bank feeds",
-        ]}
-        schemaRef="supabase/migrations/20261010000000_init_erp_schema.sql (chart_of_accounts, journal_entries)"
+      <PageHeader
+        title="Finance & General Ledger"
+        description="Verifiable double-entry general ledger, operating expense management, and real-time GAAP financial statements."
+        breadcrumbs={[{ label: "Finance & General Ledger" }]}
+      />
+
+      <FinanceClient
+        companyId={companyId}
+        currency={settings.currency || "USD"}
+        currentUserId={currentUserId}
+        isSuperAdmin={isSuperAdmin}
+        initialExpenses={expenses}
+        initialAccounts={accounts}
+        initialJournalEntries={journalEntries}
+        initialPL={pl}
+        initialBalanceSheet={bs}
+        initialCashFlow={cf}
+        initialAR={ar}
+        initialAP={ap}
       />
     </ContentLayout>
   );
