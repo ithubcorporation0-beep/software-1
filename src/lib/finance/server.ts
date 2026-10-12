@@ -268,7 +268,7 @@ export const expensePaymentMethodSchema = z.enum([
 export const createExpenseSchema = z.object({
   category: expenseCategorySchema,
   amount: z.coerce.number().positive("Expense amount must be greater than 0"),
-  currency: z.string().default("USD"),
+  currency: z.string().default("PKR"),
   date: z.string().min(1, "Expense date is required"),
   vendor: z.string().trim().min(1, "Vendor name is required").max(200),
   paymentMethod: expensePaymentMethodSchema,
@@ -433,7 +433,7 @@ export async function createExpense(
     expense_number: expenseNumber,
     category: validated.category,
     amount: roundMoney(validated.amount),
-    currency: validated.currency || "USD",
+    currency: validated.currency || "PKR",
     date: validated.date,
     vendor: validated.vendor,
     payment_method: validated.paymentMethod,

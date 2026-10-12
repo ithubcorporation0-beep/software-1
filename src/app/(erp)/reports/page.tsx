@@ -19,7 +19,7 @@ export default async function ReportsPage() {
 
   const reports = await getComprehensiveReports(companyId, {}, currentUser || undefined).catch(() => ({
     companyId,
-    currency: "USD",
+    currency: "PKR",
     salesSummary: {
       byMonth: [],
       byCustomer: [],

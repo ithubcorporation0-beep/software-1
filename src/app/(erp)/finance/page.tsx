@@ -82,7 +82,7 @@ export default async function FinancePage() {
         totalAP: 0,
         vendors: [],
       })),
-      getCompanySettings(companyId).catch(() => ({ currency: "USD" })),
+      getCompanySettings(companyId).catch(() => ({ currency: "PKR" })),
     ]);
 
   return (
@@ -95,7 +95,7 @@ export default async function FinancePage() {
 
       <FinanceClient
         companyId={companyId}
-        currency={settings.currency || "USD"}
+        currency={settings.currency || "PKR"}
         currentUserId={currentUserId}
         isSuperAdmin={isSuperAdmin}
         initialExpenses={expenses}

@@ -208,7 +208,7 @@ export async function exportFinancialReportCSVAction(
   try {
     let reportData: any;
     let companyName = "ERP Tenant";
-    let currency = "USD";
+    let currency = "PKR";
 
     try {
       const settings = await getCompanySettings(companyId);

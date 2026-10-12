@@ -25,7 +25,7 @@ export default async function ProjectsPage() {
     getTasks(companyId, {}, currentUser || undefined).catch(() => []),
     getCustomers(companyId).catch(() => ({ data: [] })),
     getHREmployees(companyId, {}, currentUser || undefined).catch(() => []),
-    getCompanySettings(companyId).catch(() => ({ currency: "USD" })),
+    getCompanySettings(companyId).catch(() => ({ currency: "PKR" })),
   ]);
 
   return (
@@ -38,7 +38,7 @@ export default async function ProjectsPage() {
 
       <ProjectsClient
         companyId={companyId}
-        currency={companySettings.currency || "USD"}
+        currency={companySettings.currency || "PKR"}
         initialProjects={projects}
         initialTasks={tasks}
         customers={customerResult.data || []}

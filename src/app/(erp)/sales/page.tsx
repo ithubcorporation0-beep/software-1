@@ -30,7 +30,7 @@ export default async function SalesPage() {
       getQuotations(companyId).catch(() => []),
       getPayments(companyId).catch(() => []),
       getCustomers(companyId, { pageSize: 100 }).catch(() => ({ data: [] })),
-      getCompanySettings(companyId).catch(() => ({ currency: "USD" })),
+      getCompanySettings(companyId).catch(() => ({ currency: "PKR" })),
     ]);
 
   return (
@@ -43,7 +43,7 @@ export default async function SalesPage() {
 
       <SalesClient
         companyId={companyId}
-        currency={settings.currency || "USD"}
+        currency={settings.currency || "PKR"}
         initialInvoices={invoices}
         initialSalesOrders={salesOrders}
         initialQuotations={quotations}

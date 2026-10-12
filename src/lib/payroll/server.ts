@@ -115,7 +115,7 @@ export function calculateNetSalary(params: {
 
 export const DEFAULT_PAYROLL_SETTINGS: PayrollSettings = {
   company_id: "default",
-  currency: "USD",
+  currency: "PKR",
   tax_calculation_mode: "Manual",
   statutory_rules_confirmed: false,
   statutory_rules_confirmed_by: null,

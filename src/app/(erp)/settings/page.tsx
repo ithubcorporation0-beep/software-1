@@ -34,7 +34,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       slug: "it-hub-global",
       plan: "ENTERPRISE",
       status: "ACTIVE",
-      currency: "USD",
+      currency: "PKR",
       timezone: "UTC",
       fiscalYearStart: "01-01",
       theme: "obsidian",

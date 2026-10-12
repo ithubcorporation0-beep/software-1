@@ -23,7 +23,7 @@ export default async function InventoryPage() {
       getWarehouses(companyId).catch(() => []),
       getSuppliers(companyId).catch(() => []),
       getPurchaseOrders(companyId).catch(() => []),
-      getCompanySettings(companyId).catch(() => ({ currency: "USD" })),
+      getCompanySettings(companyId).catch(() => ({ currency: "PKR" })),
     ]);
 
   return (
@@ -36,7 +36,7 @@ export default async function InventoryPage() {
 
       <InventoryClient
         companyId={companyId}
-        currency={companySettings.currency || "USD"}
+        currency={companySettings.currency || "PKR"}
         initialProducts={products}
         initialMovements={movements}
         initialWarehouses={warehouses}

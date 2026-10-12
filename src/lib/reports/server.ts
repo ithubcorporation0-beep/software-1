@@ -190,7 +190,7 @@ export async function getComprehensiveReports(
 
   return {
     companyId,
-    currency: "USD",
+    currency: "PKR",
     salesSummary: {
       byMonth: Object.values(monthMap).sort((a, b) => b.periodKey.localeCompare(a.periodKey)),
       byCustomer: Object.values(customerMap).sort((a, b) => b.grossSales - a.grossSales),
@@ -267,7 +267,7 @@ export function exportReportToCSV(
       lines.push("IT-Hub ERP Financial Summary Schedule");
       lines.push(`Generated: ${new Date().toISOString()}`);
       lines.push("");
-      lines.push("Metric,Amount (USD)");
+      lines.push("Metric,Amount (PKR)");
       lines.push(`Gross Revenue Collected,${data.finance.revenueTotal.toFixed(2)}`);
       lines.push(`Operating Expenditures,${data.finance.expensesTotal.toFixed(2)}`);
       lines.push(`Net Operating Margin,${data.finance.netOperatingIncome.toFixed(2)}`);

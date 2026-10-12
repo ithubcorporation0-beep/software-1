@@ -48,7 +48,7 @@ export default async function PayrollPage() {
     getEmployeeSalarySlips(companyId, undefined, currentUser).catch(() => []),
     getPayrollSettings(companyId, currentUser).catch(() => ({
       company_id: companyId,
-      currency: "USD",
+      currency: "PKR",
       tax_calculation_mode: "Manual" as const,
       statutory_rules_confirmed: false,
       statutory_rules_confirmed_by: null,

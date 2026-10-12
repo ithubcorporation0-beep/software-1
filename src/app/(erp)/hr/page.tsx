@@ -65,7 +65,7 @@ export default async function HrPage() {
         onLeaveCount: 0,
         attendanceRatePct: 0,
       })),
-      getCompanySettings(companyId).catch(() => ({ currency: "USD" })),
+      getCompanySettings(companyId).catch(() => ({ currency: "PKR" })),
     ]);
 
   return (
@@ -78,7 +78,7 @@ export default async function HrPage() {
 
       <HRClient
         companyId={companyId}
-        currency={companySettings.currency || "USD"}
+        currency={companySettings.currency || "PKR"}
         canViewSensitive={canViewSensitive}
         initialEmployees={employees}
         initialDepartments={departments}

@@ -11,8 +11,8 @@ export function cn(...inputs: ClassValue[]): string {
 /**
  * Formats a currency number with specified ISO code.
  */
-export function formatCurrency(amount: number, currency: string = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
+export function formatCurrency(amount: number, currency: string = "PKR"): string {
+  return new Intl.NumberFormat("en-PK", {
     style: "currency",
     currency,
     minimumFractionDigits: 2,

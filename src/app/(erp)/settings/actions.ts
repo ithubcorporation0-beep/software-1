@@ -35,7 +35,7 @@ export async function saveCompanySettingsAction(
       email: (formData.get("email") as string) || "",
       website: (formData.get("website") as string) || "",
       taxInformation: (formData.get("taxInformation") as string) || "",
-      currency: (formData.get("currency") as string) || "USD",
+      currency: (formData.get("currency") as string) || "PKR",
       timezone: (formData.get("timezone") as string) || "UTC",
       language: (formData.get("language") as string) || "en",
       dateFormat: (formData.get("dateFormat") as any) || "YYYY-MM-DD",

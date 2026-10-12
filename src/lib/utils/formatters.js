@@ -1,6 +1,6 @@
-export function formatCurrency(amount, currency = 'USD') {
-  if (amount === undefined || amount === null || isNaN(amount)) return '$0.00';
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(amount, currency = 'PKR') {
+  if (amount === undefined || amount === null || isNaN(amount)) return 'Rs 0.00';
+  return new Intl.NumberFormat('en-PK', {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,
