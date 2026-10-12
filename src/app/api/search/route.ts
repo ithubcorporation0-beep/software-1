@@ -212,48 +212,72 @@ export async function GET(request: Request) {
       }
     }
 
-    if ("product".includes(query) || "item".includes(query) || "sku".includes(query)) {
-      results.push({
-        id: "mod-product",
-        title: "Product Catalog",
-        subtitle: "Not available until Inventory module is enabled (Phase 2)",
-        category: "Products",
-        badge: "Phase 2",
-        isAvailable: false,
-      });
+    // 7. Real Live Projects & Tasks (Tenant-scoped & Permission-checked)
+    if (isSuper || permissions.includes("projects.read") || permissions.includes("*")) {
+      try {
+        const { getProjects, getTasks } = await import("@/lib/projects/server");
+        const projectList = await getProjects(companyId, { search: query }, user);
+        for (const prj of projectList.slice(0, 5)) {
+          results.push({
+            id: `prj-${prj.id}`,
+            title: `Project: ${prj.name} (${prj.project_code})`,
+            subtitle: `Status: ${prj.status} • Budget: $${(prj.budget || 0).toLocaleString()} • ${prj.progress_pct || 0}% Complete`,
+            category: "Projects",
+            badge: prj.status,
+            href: "/projects",
+            isAvailable: true,
+          });
+        }
+
+        const taskList = await getTasks(companyId, { search: query }, user);
+        for (const t of taskList.slice(0, 5)) {
+          results.push({
+            id: `tsk-${t.id}`,
+            title: `Task: ${t.name} (${t.task_code})`,
+            subtitle: `Priority: ${t.priority} • Status: ${t.status} • Assigned: ${t.assigned_employee_name || "Unassigned"}`,
+            category: "Tasks",
+            badge: t.priority,
+            href: "/projects",
+            isAvailable: true,
+          });
+        }
+      } catch {
+        // Fall through
+      }
     }
 
-    if ("project".includes(query) || "milestone".includes(query)) {
-      results.push({
-        id: "mod-project",
-        title: "Capital Projects",
-        subtitle: "Not available until PMO module is enabled (Phase 4)",
-        category: "Projects",
-        badge: "Phase 4",
-        isAvailable: false,
-      });
-    }
+    // 8. Real Live Products, Suppliers, & Purchase Orders (Tenant-scoped & Permission-checked)
+    if (isSuper || permissions.includes("inventory.read") || permissions.includes("purchases.read") || permissions.includes("*")) {
+      try {
+        const { getProducts, getSuppliers } = await import("@/lib/inventory/server");
+        const productList = await getProducts(companyId, { search: query });
+        for (const prod of productList.slice(0, 5)) {
+          results.push({
+            id: `prod-${prod.id}`,
+            title: `Product: ${prod.name} (SKU: ${prod.sku})`,
+            subtitle: `Stock: ${prod.current_stock} ${prod.unit} • Price: $${prod.selling_price.toFixed(2)} • ${prod.status}`,
+            category: "Products",
+            badge: prod.status,
+            href: "/inventory",
+            isAvailable: true,
+          });
+        }
 
-    if ("task".includes(query) || "todo".includes(query)) {
-      results.push({
-        id: "mod-task",
-        title: "Workflow Tasks",
-        subtitle: "Not available until Task Management is enabled (Phase 4)",
-        category: "Tasks",
-        badge: "Phase 4",
-        isAvailable: false,
-      });
-    }
-
-    if ("supplier".includes(query) || "vendor".includes(query)) {
-      results.push({
-        id: "mod-supplier",
-        title: "Supplier Directory",
-        subtitle: "Not available until Procurement module is enabled (Phase 2)",
-        category: "Suppliers",
-        badge: "Phase 2",
-        isAvailable: false,
-      });
+        const supplierList = await getSuppliers(companyId, { search: query });
+        for (const sup of supplierList.slice(0, 5)) {
+          results.push({
+            id: `sup-${sup.id}`,
+            title: `Supplier: ${sup.name} (${sup.code})`,
+            subtitle: `${sup.company_name || ""} • Terms: ${sup.payment_terms} • ${sup.status}`,
+            category: "Suppliers",
+            badge: sup.status,
+            href: "/inventory",
+            isAvailable: true,
+          });
+        }
+      } catch {
+        // Fall through
+      }
     }
 
     return NextResponse.json({ results });

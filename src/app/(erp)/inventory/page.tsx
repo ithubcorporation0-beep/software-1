@@ -1,25 +1,47 @@
 import * as React from "react";
-import { Package } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { ContentLayout } from "@/components/layout/content-layout";
-import { ComingSoonModule } from "@/components/shared/coming-soon-module";
+import { InventoryClient } from "./inventory-client";
+import {
+  getProducts,
+  getStockMovements,
+  getWarehouses,
+  getSuppliers,
+  getPurchaseOrders,
+} from "@/lib/inventory/server";
+import { getCompanySettings } from "@/lib/company/server";
 
-export default function InventoryPage() {
+const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
+
+export default async function InventoryPage() {
+  const companyId = DEFAULT_COMPANY_ID;
+
+  const [products, movements, warehouses, suppliers, purchaseOrders, companySettings] =
+    await Promise.all([
+      getProducts(companyId).catch(() => []),
+      getStockMovements(companyId).catch(() => []),
+      getWarehouses(companyId).catch(() => []),
+      getSuppliers(companyId).catch(() => []),
+      getPurchaseOrders(companyId).catch(() => []),
+      getCompanySettings(companyId).catch(() => ({ currency: "USD" })),
+    ]);
+
   return (
     <ContentLayout>
-      <ComingSoonModule
-        moduleName="Inventory & Multi-Depot Logistics"
-        moduleCode="INV"
-        targetPhase="Phase 2"
-        icon={Package}
-        description="Comprehensive SKU master catalog, multi-warehouse stock balances, barcode scanning, and stock movement ledgers."
-        plannedFeatures={[
-          "Product catalog with automated SKU and UPC/EAN barcode generators",
-          "Multi-warehouse storage depot tracking and bin location allocations",
-          "Inbound/Outbound movement journal with negative-stock prevention",
-          "Automated stockout defense and replenishment threshold calculations",
-          "Cycle counting audit reconciliation and scrap management",
-        ]}
-        schemaRef="supabase/migrations/20261010000000_init_erp_schema.sql (products, warehouses, stock_movements)"
+      <PageHeader
+        title="Inventory, Warehouses & Purchasing"
+        description="Master SKU product catalog, auditable stock movements ledger, suppliers, and procurement workflow."
+        breadcrumbs={[{ label: "Inventory & Purchasing" }]}
+      />
+
+      <InventoryClient
+        companyId={companyId}
+        currency={companySettings.currency || "USD"}
+        initialProducts={products}
+        initialMovements={movements}
+        initialWarehouses={warehouses}
+        initialSuppliers={suppliers}
+        initialPurchaseOrders={purchaseOrders}
       />
     </ContentLayout>
   );

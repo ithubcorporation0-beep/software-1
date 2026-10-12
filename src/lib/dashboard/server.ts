@@ -111,6 +111,31 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
     // Fall through
   }
 
+  // 7. Query real live projects & tasks for this company tenant
+  let activeProjectsCount = 0;
+  let pendingTasksCount = 0;
+  try {
+    const { getProjects, getTasks } = await import("@/lib/projects/server");
+    const [projectList, taskList] = await Promise.all([
+      getProjects(companyId).catch(() => []),
+      getTasks(companyId).catch(() => []),
+    ]);
+    activeProjectsCount = projectList.filter((p) => p.status === "Active").length;
+    pendingTasksCount = taskList.filter((t) => t.status !== "Completed").length;
+  } catch {
+    // Fall through
+  }
+
+  // 8. Query real live inventory low-stock alerts for this company tenant
+  let lowStockCount = 0;
+  try {
+    const { getProducts } = await import("@/lib/inventory/server");
+    const productList = await getProducts(companyId);
+    lowStockCount = productList.filter((p) => p.status === "Low Stock" || p.status === "Out of Stock").length;
+  } catch {
+    // Fall through
+  }
+
   return {
     company: {
       id: company.id,
@@ -178,29 +203,32 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
       activeProjects: {
         key: "activeProjects",
         label: "Active PMO Projects",
-        isLive: false,
-        statusMessage: "Not available until module is enabled",
+        isLive: true,
+        value: activeProjectsCount,
+        unit: "active initiatives",
+        statusMessage: "Live PMO capital portfolio query",
         moduleName: "Projects & PMO",
-        phase: "Phase 4",
-        badgeVariant: "outline",
+        badgeVariant: "success",
       },
       pendingTasks: {
         key: "pendingTasks",
         label: "Pending Deliverables",
-        isLive: false,
-        statusMessage: "Not available until module is enabled",
+        isLive: true,
+        value: pendingTasksCount,
+        unit: "open tasks",
+        statusMessage: "Live Kanban workflow delivery query",
         moduleName: "Task Management Engine",
-        phase: "Phase 4",
-        badgeVariant: "outline",
+        badgeVariant: "success",
       },
       lowStockItems: {
         key: "lowStockItems",
         label: "Low-Stock SKU Alerts",
-        isLive: false,
-        statusMessage: "Not available until module is enabled",
+        isLive: true,
+        value: lowStockCount,
+        unit: "stockout risk items",
+        statusMessage: "Live auditable stock balance threshold query",
         moduleName: "Inventory & Warehouses",
-        phase: "Phase 2",
-        badgeVariant: "outline",
+        badgeVariant: lowStockCount > 0 ? "warning" : "success",
       },
       auditEvents: {
         key: "auditEvents",
@@ -268,6 +296,18 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
         status: "Live",
         badgeVariant: "success",
         detail: "Deterministic PRD formula, salary slip generation, approval gates, and traceable GL posting",
+      },
+      {
+        name: "Projects & Functional Task Kanban Engine",
+        status: "Live",
+        badgeVariant: "success",
+        detail: "Capital initiatives, 4-column drag/advance Kanban board, deadlines, and dynamic progress calculation",
+      },
+      {
+        name: "Auditable Inventory Ledger & Procurement",
+        status: "Live",
+        badgeVariant: "success",
+        detail: "No untraceable stock editing, immutable movement ledger, multi-warehouse, PO goods receipt, and GL posting",
       },
     ],
   };

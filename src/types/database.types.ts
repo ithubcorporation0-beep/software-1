@@ -841,6 +841,192 @@ export interface PayrollSlipData {
   verifiedFinalizer?: string | null;
 }
 
+// ============================================================================
+// PROJECTS & TASKS SUBSYSTEM TYPES
+// ============================================================================
+
+export type ProjectStatus = "Planning" | "Active" | "On Hold" | "Completed" | "Cancelled";
+export type TaskStatus = "To Do" | "In Progress" | "Review" | "Completed";
+export type TaskPriority = "Low" | "Medium" | "High" | "Urgent";
+
+export interface Project {
+  id: string;
+  company_id: string;
+  project_code: string;
+  name: string;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  manager_id?: string | null;
+  manager_name?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  budget: number;
+  status: ProjectStatus;
+  description?: string | null;
+  progress_pct: number;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskAttachment {
+  id: string;
+  name: string;
+  url: string;
+  size?: number;
+  mimeType?: string;
+}
+
+export interface Task {
+  id: string;
+  company_id: string;
+  project_id: string;
+  task_code: string;
+  name: string;
+  assigned_employee_id?: string | null;
+  assigned_employee_name?: string | null;
+  priority: TaskPriority;
+  start_date?: string | null;
+  due_date?: string | null;
+  status: TaskStatus;
+  description?: string | null;
+  attachments?: TaskAttachment[];
+  sort_order: number;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================================
+// INVENTORY & WAREHOUSES SUBSYSTEM TYPES
+// ============================================================================
+
+export type ProductStatus = "In Stock" | "Low Stock" | "Out of Stock";
+export type StockMovementType = "Stock In" | "Stock Out" | "Adjustment" | "Transfer";
+
+export interface Warehouse {
+  id: string;
+  company_id: string;
+  code: string;
+  name: string;
+  city?: string | null;
+  capacity: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InventorySupplier {
+  id: string;
+  company_id: string;
+  code: string;
+  name: string;
+  company_name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  tax_id?: string | null;
+  payment_terms?: string | null;
+  status: "Active" | "Inactive";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Product {
+  id: string;
+  company_id: string;
+  sku: string;
+  name: string;
+  category: string;
+  brand?: string | null;
+  unit: string;
+  purchase_price: number;
+  selling_price: number;
+  current_stock: number;
+  minimum_stock: number;
+  supplier_id?: string | null;
+  supplier_name?: string | null;
+  warehouse_id?: string | null;
+  warehouse_name?: string | null;
+  status: ProductStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockMovement {
+  id: string;
+  company_id: string;
+  movement_number: string;
+  product_id: string;
+  product_name: string;
+  product_sku: string;
+  type: StockMovementType;
+  quantity: number;
+  previous_stock: number;
+  new_stock: number;
+  source_warehouse_id?: string | null;
+  destination_warehouse_id?: string | null;
+  reason: string;
+  reference?: string | null;
+  actor_id?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+}
+
+// ============================================================================
+// PURCHASING & SUPPLIERS SUBSYSTEM TYPES
+// ============================================================================
+
+export type PurchaseOrderStatus =
+  | "Purchase Request"
+  | "Purchase Order"
+  | "Goods Received"
+  | "Invoiced"
+  | "Paid"
+  | "Cancelled";
+
+export type PurchasePaymentStatus = "Unpaid" | "Partially Paid" | "Paid";
+
+export interface PurchaseOrderItem {
+  id: string;
+  purchase_order_id: string;
+  company_id: string;
+  product_id?: string | null;
+  product_name: string;
+  product_sku: string;
+  quantity_ordered: number;
+  quantity_received: number;
+  unit_price: number;
+  subtotal: number;
+  created_at: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  company_id: string;
+  po_number: string;
+  supplier_id: string;
+  supplier_name: string;
+  order_date: string;
+  expected_delivery_date?: string | null;
+  status: PurchaseOrderStatus;
+  total_amount: number;
+  paid_amount: number;
+  payment_status: PurchasePaymentStatus;
+  received_at?: string | null;
+  received_by?: string | null;
+  grn_number?: string | null;
+  supplier_invoice_number?: string | null;
+  journal_entry_id?: string | null;
+  payment_journal_entry_id?: string | null;
+  notes?: string | null;
+  items?: PurchaseOrderItem[];
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+
 
 
 
