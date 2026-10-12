@@ -2,61 +2,19 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { LogIn, AlertCircle } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { loginAction } from "./actions";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get("redirectTo") || "/";
 
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setLoading(true);
-
-    try {
-      // 1. Authenticate server-side to set HTTP session cookies reliably
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        setErrorMessage(result.error || "Invalid email or password.");
-        setLoading(false);
-        return;
-      }
-
-      // 2. Also initialize client-side Supabase session for immediate client SDK operations
-      try {
-        const supabase = createClient();
-        await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-      } catch {
-        // Non-critical: HTTP cookie session is already set by server endpoint
-      }
-
-      // 3. Perform a full browser navigation to guarantee cookies are sent with all requests
-      window.location.href = redirectTo;
-    } catch (err: any) {
-      setErrorMessage(err.message || "An unexpected error occurred during login.");
-      setLoading(false);
-    }
-  };
+  const [state, formAction, isPending] = React.useActionState(loginAction, {
+    error: null,
+  });
 
   return (
     <div className="space-y-6">
@@ -69,17 +27,19 @@ function LoginForm() {
         </p>
       </div>
 
-      {errorMessage && (
+      {state?.error && (
         <div
           role="alert"
           className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
         >
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <span>{errorMessage}</span>
+          <span>{state.error}</span>
         </div>
       )}
 
-      <form onSubmit={handleLogin} method="POST" className="space-y-4">
+      <form action={formAction} className="space-y-4">
+        <input type="hidden" name="redirectTo" value={redirectTo} />
+
         <Input
           label="Company Email"
           name="email"
@@ -87,8 +47,6 @@ function LoginForm() {
           required
           autoComplete="email"
           placeholder="colleague@company.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
         />
 
         <div className="space-y-1">
@@ -99,8 +57,6 @@ function LoginForm() {
             required
             autoComplete="current-password"
             placeholder="••••••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
           />
           <div className="flex justify-end pt-1">
             <Link
@@ -112,7 +68,7 @@ function LoginForm() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full" isLoading={loading}>
+        <Button type="submit" className="w-full" isLoading={isPending}>
           <LogIn className="mr-2 h-4 w-4" />
           Sign In
         </Button>

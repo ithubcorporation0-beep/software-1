@@ -2,60 +2,16 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { UserPlus, ShieldAlert, CheckCircle2, AlertCircle } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { registerAction } from "./actions";
 
 export default function RegisterPage() {
-  const router = useRouter();
-
-  const [fullName, setFullName] = React.useState("");
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [inviteCode, setInviteCode] = React.useState("");
-  const [companyName, setCompanyName] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    setLoading(true);
-
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            requested_company: companyName,
-            invite_code: inviteCode,
-          },
-          emailRedirectTo: `${window.location.origin}/login`,
-        },
-      });
-
-      if (error) {
-        setErrorMessage(error.message);
-        setLoading(false);
-        return;
-      }
-
-      setSuccessMessage(
-        "Registration initiated successfully. Please verify your email address to confirm your account. Your company administrator will verify your role assignment."
-      );
-      setLoading(false);
-    } catch (err: any) {
-      setErrorMessage(err.message || "An unexpected error occurred during registration.");
-      setLoading(false);
-    }
-  };
+  const [state, formAction, isPending] = React.useActionState(registerAction, {
+    error: null,
+    success: false,
+  });
 
   return (
     <div className="space-y-6">
@@ -81,22 +37,24 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {errorMessage && (
+      {state?.error && (
         <div
           role="alert"
           className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
         >
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <span>{errorMessage}</span>
+          <span>{state.error}</span>
         </div>
       )}
 
-      {successMessage ? (
+      {state?.success ? (
         <div className="space-y-4 text-center py-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 mx-auto">
             <CheckCircle2 className="h-6 w-6" />
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">{successMessage}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Registration initiated successfully. Please verify your email address to confirm your account. Your company administrator will verify your role assignment.
+          </p>
           <Link href="/login">
             <Button variant="default" size="sm" className="mt-2">
               Proceed to Sign In
@@ -104,49 +62,44 @@ export default function RegisterPage() {
           </Link>
         </div>
       ) : (
-        <form onSubmit={handleRegister} className="space-y-3.5">
+        <form action={formAction} className="space-y-3.5">
           <Input
             label="Full Name"
+            name="fullName"
             required
             placeholder="Jane Doe"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
           />
 
           <Input
             label="Work Email"
+            name="email"
             type="email"
             required
             placeholder="jane@enterprise.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
           />
 
           <Input
             label="Password"
+            name="password"
             type="password"
             required
             placeholder="At least 8 characters"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
           />
 
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="Company Name"
+              name="companyName"
               placeholder="e.g. Acme Logistics"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
             />
             <Input
               label="Invite Code (Optional)"
+              name="inviteCode"
               placeholder="INV-XXXXX"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
             />
           </div>
 
-          <Button type="submit" className="w-full mt-2" isLoading={loading}>
+          <Button type="submit" className="w-full mt-2" isLoading={isPending}>
             <UserPlus className="mr-2 h-4 w-4" />
             Submit Registration
           </Button>
