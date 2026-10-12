@@ -18,6 +18,7 @@ import type {
   PaymentMethod,
   PaymentStatus,
   Customer,
+  Profile,
 } from "@/types/database.types";
 
 // ============================================================================
@@ -412,15 +413,27 @@ const memorySalesStore: MemorySalesStore = {
   },
 };
 
+export function resetMemorySalesStore(): void {
+  memorySalesStore.quotations = [];
+  memorySalesStore.quotationItems = [];
+  memorySalesStore.salesOrders = [];
+  memorySalesStore.salesOrderItems = [];
+  memorySalesStore.invoices = [];
+  memorySalesStore.invoiceItems = [];
+  memorySalesStore.payments = [];
+  memorySalesStore.sequences = {};
+}
+
 // ============================================================================
 // QUOTATIONS SERVICE
 // ============================================================================
 
 export async function getQuotations(
   companyId: string,
-  options?: { search?: string; status?: string }
+  options?: { search?: string; status?: string },
+  viewingUser?: Profile
 ): Promise<Quotation[]> {
-  await requirePermission(companyId, "sales:view");
+  await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
   try {
@@ -471,9 +484,10 @@ export async function getQuotations(
 
 export async function getQuotationById(
   companyId: string,
-  quotationId: string
+  quotationId: string,
+  viewingUser?: Profile
 ): Promise<Quotation | null> {
-  await requirePermission(companyId, "sales:view");
+  await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
   try {
@@ -504,9 +518,10 @@ export async function getQuotationById(
 
 export async function createQuotation(
   companyId: string,
-  rawData: unknown
+  rawData: unknown,
+  creatorUser?: Profile
 ): Promise<{ success: boolean; data?: Quotation; error?: string; errors?: Record<string, string[]> }> {
-  const user = await requireUser();
+  const user = creatorUser || (await requireUser());
   await requirePermission(companyId, "sales:create", user);
 
   const parsed = quotationSchema.safeParse(rawData);
@@ -603,9 +618,10 @@ export async function createQuotation(
  */
 export async function convertQuotationToSalesOrder(
   companyId: string,
-  quotationId: string
+  quotationId: string,
+  actorUser?: Profile
 ): Promise<{ success: boolean; data?: SalesOrder; error?: string }> {
-  const user = await requireUser();
+  const user = actorUser || (await requireUser());
   await requirePermission(companyId, "sales:create", user);
 
   const quotation = await getQuotationById(companyId, quotationId);
@@ -711,15 +727,137 @@ export async function convertQuotationToSalesOrder(
   return { success: true, data: { ...newSalesOrder, items: lineItems } };
 }
 
+/**
+ * Converts a quotation directly to an Invoice with duplicate-conversion safeguards.
+ */
+export async function convertQuotationToInvoice(
+  companyId: string,
+  quotationId: string,
+  actorUser?: Profile
+): Promise<{ success: boolean; data?: Invoice; error?: string }> {
+  const user = actorUser || (await requireUser());
+  await requirePermission(companyId, "sales:create", user);
+
+  const quotation = await getQuotationById(companyId, quotationId);
+  if (!quotation) {
+    return { success: false, error: "Quotation not found" };
+  }
+
+  // Duplicate conversion protection
+  if (quotation.status === "Converted" || quotation.converted_to_id) {
+    return {
+      success: false,
+      error: `Duplicate Conversion Prohibited: Quotation '${quotation.quotation_number}' has already been converted to ${quotation.converted_to_type || "a record"} (ID: ${quotation.converted_to_id}).`,
+    };
+  }
+
+  const invoiceNumber = await getNextDocumentNumber(companyId, "invoice");
+  const now = new Date().toISOString();
+  const invoiceId = crypto.randomUUID();
+
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + 30);
+  const dueDateStr = dueDate.toISOString().split("T")[0];
+
+  const newInvoice: Invoice = {
+    id: invoiceId,
+    company_id: companyId,
+    invoice_number: invoiceNumber,
+    customer_id: quotation.customer_id,
+    sales_order_id: null,
+    quotation_id: quotation.id,
+    issue_date: new Date().toISOString().split("T")[0],
+    due_date: dueDateStr,
+    status: "Sent",
+    subtotal: quotation.subtotal,
+    discount_type: quotation.discount_type,
+    discount_value: quotation.discount_value,
+    discount_total: quotation.discount_total,
+    tax_rate: quotation.tax_rate,
+    tax_total: quotation.tax_total,
+    grand_total: quotation.grand_total,
+    amount_paid: 0.0,
+    amount_due: quotation.grand_total,
+    currency: quotation.currency,
+    notes: `Generated from Quotation ${quotation.quotation_number}. ${quotation.notes || ""}`.trim(),
+    terms: quotation.terms,
+    created_by: user.id,
+    created_at: now,
+    updated_at: now,
+  };
+
+  const lineItems: InvoiceItem[] = (quotation.items || []).map((it, idx) => ({
+    id: crypto.randomUUID(),
+    invoice_id: invoiceId,
+    company_id: companyId,
+    product_id: it.product_id || null,
+    description: it.description,
+    quantity: it.quantity,
+    unit_price: it.unit_price,
+    discount_pct: it.discount_pct,
+    discount_amount: it.discount_amount,
+    tax_pct: it.tax_pct,
+    tax_amount: it.tax_amount,
+    line_total: it.line_total,
+    sort_order: idx,
+    created_at: now,
+  }));
+
+  const supabase = await createClient();
+  try {
+    await supabase.from("invoices").insert(newInvoice);
+    if (lineItems.length > 0) {
+      await supabase.from("invoice_items").insert(lineItems);
+    }
+    await supabase
+      .from("quotations")
+      .update({
+        status: "Converted",
+        converted_to_type: "invoice",
+        converted_to_id: invoiceId,
+        converted_at: now,
+        updated_at: now,
+      })
+      .eq("id", quotation.id);
+  } catch {
+    // Memory store
+  }
+
+  // Update in memory
+  memorySalesStore.invoices.unshift(newInvoice);
+  memorySalesStore.invoiceItems.push(...lineItems);
+  const qIdx = memorySalesStore.quotations.findIndex(
+    (item) => item.company_id === companyId && item.id === quotationId
+  );
+  if (qIdx !== -1) {
+    memorySalesStore.quotations[qIdx].status = "Converted";
+    memorySalesStore.quotations[qIdx].converted_to_type = "invoice";
+    memorySalesStore.quotations[qIdx].converted_to_id = invoiceId;
+    memorySalesStore.quotations[qIdx].converted_at = now;
+  }
+
+  await recordAuditLog({
+    companyId,
+    userId: user.id,
+    action: "sales.quotation_convert",
+    resource: "quotations",
+    resourceId: quotationId,
+    details: { convertedTo: "invoice", targetId: invoiceId, invoiceNumber },
+  });
+
+  return { success: true, data: { ...newInvoice, items: lineItems } };
+}
+
 // ============================================================================
 // SALES ORDERS SERVICE
 // ============================================================================
 
 export async function getSalesOrders(
   companyId: string,
-  options?: { search?: string; status?: string }
+  options?: { search?: string; status?: string },
+  viewingUser?: Profile
 ): Promise<SalesOrder[]> {
-  await requirePermission(companyId, "sales:view");
+  await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
   try {
@@ -770,9 +908,10 @@ export async function getSalesOrders(
 
 export async function getSalesOrderById(
   companyId: string,
-  orderId: string
+  orderId: string,
+  viewingUser?: Profile
 ): Promise<SalesOrder | null> {
-  await requirePermission(companyId, "sales:view");
+  await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
   try {
@@ -803,9 +942,10 @@ export async function getSalesOrderById(
 
 export async function createSalesOrder(
   companyId: string,
-  rawData: unknown
+  rawData: unknown,
+  creatorUser?: Profile
 ): Promise<{ success: boolean; data?: SalesOrder; error?: string; errors?: Record<string, string[]> }> {
-  const user = await requireUser();
+  const user = creatorUser || (await requireUser());
   await requirePermission(companyId, "sales:create", user);
 
   const parsed = salesOrderSchema.safeParse(rawData);
@@ -902,9 +1042,10 @@ export async function createSalesOrder(
  */
 export async function convertSalesOrderToInvoice(
   companyId: string,
-  orderId: string
+  orderId: string,
+  actorUser?: Profile
 ): Promise<{ success: boolean; data?: Invoice; error?: string }> {
-  const user = await requireUser();
+  const user = actorUser || (await requireUser());
   await requirePermission(companyId, "sales:create", user);
 
   const order = await getSalesOrderById(companyId, orderId);
@@ -1021,9 +1162,10 @@ export async function convertSalesOrderToInvoice(
 
 export async function getInvoices(
   companyId: string,
-  options?: { search?: string; status?: string }
+  options?: { search?: string; status?: string },
+  viewingUser?: Profile
 ): Promise<Invoice[]> {
-  await requirePermission(companyId, "sales:view");
+  await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
   try {
@@ -1075,9 +1217,10 @@ export async function getInvoices(
 
 export async function getInvoiceById(
   companyId: string,
-  invoiceId: string
+  invoiceId: string,
+  viewingUser?: Profile
 ): Promise<Invoice | null> {
-  await requirePermission(companyId, "sales:view");
+  await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
   try {
@@ -1109,9 +1252,10 @@ export async function getInvoiceById(
 
 export async function createInvoice(
   companyId: string,
-  rawData: unknown
+  rawData: unknown,
+  creatorUser?: Profile
 ): Promise<{ success: boolean; data?: Invoice; error?: string; errors?: Record<string, string[]> }> {
-  const user = await requireUser();
+  const user = creatorUser || (await requireUser());
   await requirePermission(companyId, "sales:create", user);
 
   const parsed = invoiceSchema.safeParse(rawData);
@@ -1213,9 +1357,10 @@ export async function createInvoice(
 
 export async function getPayments(
   companyId: string,
-  options?: { invoiceId?: string; customerId?: string }
+  options?: { invoiceId?: string; customerId?: string },
+  viewingUser?: Profile
 ): Promise<Payment[]> {
-  await requirePermission(companyId, "sales:view");
+  await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
   try {
@@ -1256,9 +1401,10 @@ export async function getPayments(
  */
 export async function recordPayment(
   companyId: string,
-  rawData: unknown
+  rawData: unknown,
+  creatorUser?: Profile
 ): Promise<{ success: boolean; data?: Payment; error?: string }> {
-  const user = await requireUser();
+  const user = creatorUser || (await requireUser());
   await requirePermission(companyId, "sales:edit", user);
 
   const parsed = paymentSchema.safeParse(rawData);
@@ -1386,9 +1532,10 @@ export async function recordPayment(
 export async function voidPayment(
   companyId: string,
   paymentId: string,
-  rawData: unknown
+  rawData: unknown,
+  actorUser?: Profile
 ): Promise<{ success: boolean; error?: string }> {
-  const user = await requireUser();
+  const user = actorUser || (await requireUser());
   await requirePermission(companyId, "sales:edit", user);
 
   const parsed = voidPaymentSchema.safeParse(rawData);
@@ -1508,3 +1655,4 @@ export async function voidPayment(
 
   return { success: true };
 }
+

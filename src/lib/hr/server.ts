@@ -48,15 +48,15 @@ export class OverlappingLeaveError extends Error {
 export function canViewSensitiveHR(
   context: {
     user: Profile;
-    permissions: string[];
+    permissions?: string[];
     employeeUserId?: string | null;
     employeeId?: string;
   }
 ): boolean {
   if (context.user.is_super_admin) return true;
-  if (context.permissions.includes("*")) return true;
-  if (context.permissions.includes("hr.sensitive")) return true;
-  if (context.permissions.includes("hr.admin")) return true;
+  if (context.permissions?.includes("*")) return true;
+  if (context.permissions?.includes("hr.sensitive")) return true;
+  if (context.permissions?.includes("hr.admin")) return true;
   // An employee can view their own salary and personal details
   if (context.employeeUserId && context.user.id === context.employeeUserId) return true;
   return false;

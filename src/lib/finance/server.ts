@@ -404,7 +404,7 @@ export async function getExpenseById(companyId: string, expenseId: string): Prom
 
 export async function createExpense(
   companyId: string,
-  input: z.infer<typeof createExpenseSchema>,
+  input: z.input<typeof createExpenseSchema>,
   creatorUser?: Profile
 ): Promise<Expense> {
   await requirePermission(companyId, "finance.write", creatorUser);

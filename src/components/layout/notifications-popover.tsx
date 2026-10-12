@@ -49,6 +49,31 @@ const initialNotifications: NotificationItem[] = [
 export function NotificationsPopover() {
   const [notifications, setNotifications] = React.useState<NotificationItem[]>(initialNotifications);
   const [filter, setFilter] = React.useState<"all" | "unread">("all");
+  const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
+
+  // Fetch live notifications on mount
+  React.useEffect(() => {
+    let mounted = true;
+    import("@/app/(erp)/notifications/actions").then(({ fetchNotificationsAction }) => {
+      fetchNotificationsAction(DEFAULT_COMPANY_ID).then((res) => {
+        if (mounted && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped: NotificationItem[] = res.data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            message: item.message,
+            time: new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            type: item.type === "low_stock" || item.type === "overdue_invoice" ? "warning" : "info",
+            read: item.read,
+            category: (item.category as any) || "System",
+          }));
+          setNotifications(mapped);
+        }
+      }).catch(() => {});
+    }).catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -56,6 +81,9 @@ export function NotificationsPopover() {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    import("@/app/(erp)/notifications/actions").then(({ markNotificationReadAction }) => {
+      markNotificationReadAction(DEFAULT_COMPANY_ID, id).catch(() => {});
+    }).catch(() => {});
   };
 
   const toggleReadStatus = (id: string, e: React.MouseEvent) => {
@@ -63,10 +91,16 @@ export function NotificationsPopover() {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n))
     );
+    import("@/app/(erp)/notifications/actions").then(({ markNotificationReadAction }) => {
+      markNotificationReadAction(DEFAULT_COMPANY_ID, id).catch(() => {});
+    }).catch(() => {});
   };
 
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    import("@/app/(erp)/notifications/actions").then(({ markAllNotificationsReadAction }) => {
+      markAllNotificationsReadAction(DEFAULT_COMPANY_ID).catch(() => {});
+    }).catch(() => {});
   };
 
   const clearRead = () => {

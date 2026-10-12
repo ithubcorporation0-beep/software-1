@@ -12,6 +12,7 @@ import {
   Lead,
   LeadStatus,
   LeadSource,
+  Profile,
 } from "@/types/database.types";
 
 // ============================================================================
@@ -79,6 +80,14 @@ const memoryTenantStore: {
   leads: [],
 };
 
+export function resetMemoryTenantStore(): void {
+  memoryTenantStore.customers = [];
+  memoryTenantStore.notes = [];
+  memoryTenantStore.activities = [];
+  memoryTenantStore.leads = [];
+}
+export const resetMemoryCRMStore = resetMemoryTenantStore;
+
 function generateCode(prefix: string): string {
   const rand = Math.floor(1000 + Math.random() * 9000);
   return `${prefix}-${rand}`;
@@ -111,9 +120,10 @@ export interface PaginatedResult<T> {
  */
 export async function getCustomers(
   companyId: string,
-  options?: CustomerListOptions
+  options?: CustomerListOptions,
+  viewingUser?: Profile
 ): Promise<PaginatedResult<Customer>> {
-  await requirePermission(companyId, "crm:view");
+  await requirePermission(companyId, "crm:view", viewingUser);
 
   const page = Math.max(1, options?.page || 1);
   const pageSize = Math.max(1, Math.min(100, options?.pageSize || 10));
@@ -197,7 +207,8 @@ export async function getCustomers(
  */
 export async function getCustomerById(
   companyId: string,
-  customerId: string
+  customerId: string,
+  viewingUser?: Profile
 ): Promise<{
   customer: Customer;
   notes: CustomerNote[];
@@ -208,7 +219,7 @@ export async function getCustomerById(
     projectsCount: number;
   };
 } | null> {
-  await requirePermission(companyId, "crm:view");
+  await requirePermission(companyId, "crm:view", viewingUser);
 
   const supabase = await createClient();
 
@@ -297,9 +308,10 @@ export async function getCustomerById(
  */
 export async function createCustomer(
   companyId: string,
-  rawData: unknown
+  rawData: unknown,
+  creatorUser?: Profile
 ): Promise<{ success: boolean; data?: Customer; error?: string; errors?: Record<string, string[]> }> {
-  const user = await requireUser();
+  const user = creatorUser || (await requireUser());
   await requirePermission(companyId, "crm:create", user);
 
   const parsed = customerSchema.safeParse(rawData);
@@ -432,9 +444,10 @@ export async function createCustomer(
 export async function updateCustomer(
   companyId: string,
   customerId: string,
-  rawData: unknown
+  rawData: unknown,
+  actorUser?: Profile
 ): Promise<{ success: boolean; data?: Customer; error?: string; errors?: Record<string, string[]> }> {
-  const user = await requireUser();
+  const user = actorUser || (await requireUser());
   await requirePermission(companyId, "crm:edit", user);
 
   const parsed = customerSchema.safeParse(rawData);
@@ -541,9 +554,10 @@ export async function updateCustomer(
  */
 export async function archiveCustomer(
   companyId: string,
-  customerId: string
+  customerId: string,
+  actorUser?: Profile
 ): Promise<{ success: boolean; error?: string }> {
-  const user = await requireUser();
+  const user = actorUser || (await requireUser());
   await requirePermission(companyId, "crm:edit", user);
 
   const supabase = await createClient();
@@ -601,9 +615,10 @@ export async function archiveCustomer(
  */
 export async function deleteCustomer(
   companyId: string,
-  customerId: string
+  customerId: string,
+  actorUser?: Profile
 ): Promise<{ success: boolean; error?: string }> {
-  const user = await requireUser();
+  const user = actorUser || (await requireUser());
   await requirePermission(companyId, "crm:delete", user);
 
   const detail = await getCustomerById(companyId, customerId);
@@ -650,9 +665,10 @@ export async function deleteCustomer(
 export async function addCustomerNote(
   companyId: string,
   customerId: string,
-  content: string
+  content: string,
+  actorUser?: Profile
 ): Promise<{ success: boolean; data?: CustomerNote; error?: string }> {
-  const user = await requireUser();
+  const user = actorUser || (await requireUser());
   await requirePermission(companyId, "crm:edit", user);
 
   const parsed = customerNoteSchema.safeParse({ content });
@@ -738,9 +754,10 @@ export const KANBAN_STAGES: LeadStatus[] = [
  */
 export async function getLeads(
   companyId: string,
-  options?: LeadFilterOptions
+  options?: LeadFilterOptions,
+  viewingUser?: Profile
 ): Promise<{ leads: Lead[]; totalPipelineValue: number }> {
-  await requirePermission(companyId, "crm:view");
+  await requirePermission(companyId, "crm:view", viewingUser);
 
   const supabase = await createClient();
   let leads: Lead[] = [];
@@ -806,9 +823,10 @@ export async function getLeads(
  */
 export async function createLead(
   companyId: string,
-  rawData: unknown
+  rawData: unknown,
+  creatorUser?: Profile
 ): Promise<{ success: boolean; data?: Lead; error?: string; errors?: Record<string, string[]> }> {
-  const user = await requireUser();
+  const user = creatorUser || (await requireUser());
   await requirePermission(companyId, "crm:create", user);
 
   const parsed = leadSchema.safeParse(rawData);
@@ -878,9 +896,10 @@ export async function moveLeadStage(
   companyId: string,
   leadId: string,
   newStage: LeadStatus,
-  lostReason?: string
+  lostReason?: string,
+  actorUser?: Profile
 ): Promise<{ success: boolean; data?: Lead; error?: string }> {
-  const user = await requireUser();
+  const user = actorUser || (await requireUser());
   await requirePermission(companyId, "crm:edit", user);
 
   if (!KANBAN_STAGES.includes(newStage)) {

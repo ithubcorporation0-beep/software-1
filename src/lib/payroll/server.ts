@@ -182,31 +182,31 @@ export function getNextPayrollRunNumber(companyId: string, periodStart: string):
 
 export function canAccessPayroll(context: {
   user: Profile;
-  permissions: string[];
+  permissions?: string[];
   employeeId?: string;
   employeeUserId?: string | null;
 }): boolean {
   if (context.user.is_super_admin) return true;
-  if (context.permissions.includes("*")) return true;
-  if (context.permissions.includes("payroll.admin")) return true;
-  if (context.permissions.includes("payroll.read")) return true;
-  if (context.permissions.includes("payroll.write")) return true;
-  if (context.permissions.includes("payroll.approve")) return true;
-  if (context.permissions.includes("payroll.finalize")) return true;
+  if (context.permissions?.includes("*")) return true;
+  if (context.permissions?.includes("payroll.admin")) return true;
+  if (context.permissions?.includes("payroll.read")) return true;
+  if (context.permissions?.includes("payroll.write")) return true;
+  if (context.permissions?.includes("payroll.approve")) return true;
+  if (context.permissions?.includes("payroll.finalize")) return true;
   if (context.employeeUserId && context.user.id === context.employeeUserId) return true;
   return false;
 }
 
 export function canManageOrViewAllPayroll(context: {
   user: Profile;
-  permissions: string[];
+  permissions?: string[];
 }): boolean {
   if (context.user.is_super_admin) return true;
-  if (context.permissions.includes("*")) return true;
-  if (context.permissions.includes("payroll.admin")) return true;
-  if (context.permissions.includes("payroll.write")) return true;
-  if (context.permissions.includes("payroll.approve")) return true;
-  if (context.permissions.includes("payroll.finalize")) return true;
+  if (context.permissions?.includes("*")) return true;
+  if (context.permissions?.includes("payroll.admin")) return true;
+  if (context.permissions?.includes("payroll.write")) return true;
+  if (context.permissions?.includes("payroll.approve")) return true;
+  if (context.permissions?.includes("payroll.finalize")) return true;
   return false;
 }
 
