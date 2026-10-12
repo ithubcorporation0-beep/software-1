@@ -95,73 +95,80 @@ export async function GET(request: Request) {
       }
     }
 
-    // 3. Unimplemented modules: Explicit categorized notices matching user query
-    if (query) {
-      if ("customers".includes(query) || "client".includes(query) || "account".includes(query)) {
-        results.push({
-          id: "mod-crm",
-          title: "Customer Records",
-          subtitle: "Not available until CRM module is enabled (Phase 2)",
-          category: "Customers",
-          badge: "Phase 2",
-          isAvailable: false,
-        });
+    // 3. Real Live CRM Customers (Tenant-scoped & Permission-checked)
+    if (isSuper || permissions.includes("crm:view")) {
+      try {
+        const { getCustomers } = await import("@/lib/crm/server");
+        const { data: customerList } = await getCustomers(companyId, { search: query, pageSize: 10 });
+        for (const cust of customerList) {
+          results.push({
+            id: `cust-${cust.id}`,
+            title: cust.name,
+            subtitle: `${cust.company_name ? cust.company_name + " • " : ""}${cust.customer_code} • ${cust.status}`,
+            category: "Customers",
+            badge: cust.customer_type,
+            href: `/crm/customers/${cust.id}`,
+            isAvailable: true,
+          });
+        }
+      } catch {
+        // Fall through
       }
+    }
 
-      if ("invoice".includes(query) || "bill".includes(query) || "receivable".includes(query)) {
-        results.push({
-          id: "mod-invoice",
-          title: "Commercial Invoices",
-          subtitle: "Not available until Invoicing module is enabled (Phase 3)",
-          category: "Invoices",
-          badge: "Phase 3",
-          isAvailable: false,
-        });
-      }
+    if ("invoice".includes(query) || "bill".includes(query) || "receivable".includes(query)) {
+      results.push({
+        id: "mod-invoice",
+        title: "Commercial Invoices",
+        subtitle: "Not available until Invoicing module is enabled (Phase 3)",
+        category: "Invoices",
+        badge: "Phase 3",
+        isAvailable: false,
+      });
+    }
 
-      if ("product".includes(query) || "item".includes(query) || "sku".includes(query)) {
-        results.push({
-          id: "mod-product",
-          title: "Product Catalog",
-          subtitle: "Not available until Inventory module is enabled (Phase 2)",
-          category: "Products",
-          badge: "Phase 2",
-          isAvailable: false,
-        });
-      }
+    if ("product".includes(query) || "item".includes(query) || "sku".includes(query)) {
+      results.push({
+        id: "mod-product",
+        title: "Product Catalog",
+        subtitle: "Not available until Inventory module is enabled (Phase 2)",
+        category: "Products",
+        badge: "Phase 2",
+        isAvailable: false,
+      });
+    }
 
-      if ("project".includes(query) || "milestone".includes(query)) {
-        results.push({
-          id: "mod-project",
-          title: "Capital Projects",
-          subtitle: "Not available until PMO module is enabled (Phase 4)",
-          category: "Projects",
-          badge: "Phase 4",
-          isAvailable: false,
-        });
-      }
+    if ("project".includes(query) || "milestone".includes(query)) {
+      results.push({
+        id: "mod-project",
+        title: "Capital Projects",
+        subtitle: "Not available until PMO module is enabled (Phase 4)",
+        category: "Projects",
+        badge: "Phase 4",
+        isAvailable: false,
+      });
+    }
 
-      if ("task".includes(query) || "todo".includes(query)) {
-        results.push({
-          id: "mod-task",
-          title: "Workflow Tasks",
-          subtitle: "Not available until Task Management is enabled (Phase 4)",
-          category: "Tasks",
-          badge: "Phase 4",
-          isAvailable: false,
-        });
-      }
+    if ("task".includes(query) || "todo".includes(query)) {
+      results.push({
+        id: "mod-task",
+        title: "Workflow Tasks",
+        subtitle: "Not available until Task Management is enabled (Phase 4)",
+        category: "Tasks",
+        badge: "Phase 4",
+        isAvailable: false,
+      });
+    }
 
-      if ("supplier".includes(query) || "vendor".includes(query)) {
-        results.push({
-          id: "mod-supplier",
-          title: "Supplier Directory",
-          subtitle: "Not available until Procurement module is enabled (Phase 2)",
-          category: "Suppliers",
-          badge: "Phase 2",
-          isAvailable: false,
-        });
-      }
+    if ("supplier".includes(query) || "vendor".includes(query)) {
+      results.push({
+        id: "mod-supplier",
+        title: "Supplier Directory",
+        subtitle: "Not available until Procurement module is enabled (Phase 2)",
+        category: "Suppliers",
+        badge: "Phase 2",
+        isAvailable: false,
+      });
     }
 
     return NextResponse.json({ results });

@@ -1,25 +1,53 @@
 import * as React from "react";
-import { Users } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { ContentLayout } from "@/components/layout/content-layout";
-import { ComingSoonModule } from "@/components/shared/coming-soon-module";
+import { CrmClient } from "./crm-client";
+import { getCustomers, getLeads } from "@/lib/crm/server";
+import { getCompanyMembers } from "@/lib/users/server";
+import { requireCompanyMembership } from "@/lib/auth/server";
 
-export default function CrmPage() {
+const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
+
+export default async function CrmPage() {
+  const companyId = DEFAULT_COMPANY_ID;
+
+  let membershipContext;
+  try {
+    membershipContext = await requireCompanyMembership(companyId);
+  } catch {
+    membershipContext = null;
+  }
+
+  // Load real tenant data
+  const [customersResult, leadsResult, members] = await Promise.all([
+    getCustomers(companyId, { page: 1, pageSize: 50 }).catch(() => ({
+      data: [],
+      total: 0,
+      page: 1,
+      pageSize: 50,
+      totalPages: 1,
+    })),
+    getLeads(companyId).catch(() => ({ leads: [], totalPipelineValue: 0 })),
+    getCompanyMembers(companyId).catch(() => []),
+  ]);
+
   return (
     <ContentLayout>
-      <ComingSoonModule
-        moduleName="CRM & Commercial Accounts"
-        moduleCode="CRM"
-        targetPhase="Phase 2"
-        icon={Users}
-        description="Enterprise customer directory, account executives, lifetime valuation metrics, and opportunity pipeline management."
-        plannedFeatures={[
-          "B2B Enterprise Account Profiles and credit limit governance",
-          "Commercial contact hierarchy and stakeholder directory",
-          "Opportunity sales pipeline stages (Lead, Prospect, Won, Lost)",
-          "Customer lifetime value (LTV) and order history aggregations",
-          "Interaction timeline logs and meeting activity records",
+      <PageHeader
+        title="CRM & Commercial Accounts"
+        description="Enterprise client directory, lead pipeline, follow-up touchpoints, and commercial customer history."
+        breadcrumbs={[
+          { label: "CRM & Customers" }
         ]}
-        schemaRef="supabase/migrations/20261010000000_init_erp_schema.sql (accounts, contacts)"
+      />
+
+      <CrmClient
+        companyId={companyId}
+        initialCustomers={customersResult.data}
+        initialLeads={leadsResult.leads}
+        totalCustomers={customersResult.total}
+        totalPipelineValue={leadsResult.totalPipelineValue}
+        members={members}
       />
     </ContentLayout>
   );

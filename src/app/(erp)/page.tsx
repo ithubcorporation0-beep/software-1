@@ -163,24 +163,47 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 5. Customers */}
-        <Card className="flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Commercial Customers
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
-              Not available until module is enabled
-            </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className="font-mono text-amber-500">●</span>
-              Awaiting CRM Module (Phase 2)
-            </p>
-          </CardContent>
-        </Card>
+        {/* 5. Customers (LIVE) */}
+        {metrics?.customers?.isLive ? (
+          <Card className="flex flex-col justify-between border-primary/30 bg-primary/5">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-foreground">
+                Commercial Customers
+              </CardTitle>
+              <Badge variant="success" className="text-[10px] h-4">LIVE</Badge>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <div className="text-2xl font-bold font-mono text-foreground">
+                {metrics.customers.value}
+              </div>
+              <Link
+                href="/crm"
+                className="text-[11px] text-primary hover:underline flex items-center gap-1 mt-1"
+              >
+                <span>View CRM directory</span>
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="flex flex-col justify-between">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                Commercial Customers
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-xs font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
+                Not available until module is enabled
+              </div>
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <span className="font-mono text-amber-500">●</span>
+                Awaiting CRM Module (Phase 2)
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 6. Employees (LIVE) */}
         <Card className="flex flex-col justify-between border-emerald-500/30 bg-emerald-500/5">

@@ -98,3 +98,102 @@ export interface AuditLog {
   user_agent?: string | null;
   created_at: string;
 }
+
+export type CustomerType = "B2B" | "B2C" | "Enterprise" | "SMB" | "Government" | "Wholesale";
+export type CustomerStatus = "Active" | "Inactive" | "Lead" | "Archived";
+
+export interface CustomerDocument {
+  id: string;
+  name: string;
+  url: string;
+  size?: string;
+  uploaded_at: string;
+  uploaded_by?: string | null;
+}
+
+export interface Customer {
+  id: string;
+  company_id: string;
+  customer_code: string;
+  name: string;
+  company_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  address?: string | null;
+  city?: string | null;
+  country: string;
+  tax_number?: string | null;
+  customer_type: CustomerType;
+  status: CustomerStatus;
+  notes?: string | null;
+  documents: CustomerDocument[];
+  total_spend: number;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomerNote {
+  id: string;
+  company_id: string;
+  customer_id: string;
+  author_id?: string | null;
+  author_name: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomerActivity {
+  id: string;
+  company_id: string;
+  customer_id: string;
+  user_id?: string | null;
+  type: string;
+  title: string;
+  description?: string | null;
+  metadata: Json;
+  created_at: string;
+}
+
+export type LeadSource =
+  | "Website"
+  | "Referral"
+  | "Inbound Call"
+  | "Conference / Event"
+  | "LinkedIn / Social"
+  | "Cold Outreach"
+  | "Partner"
+  | "Other";
+
+export type LeadStatus =
+  | "New"
+  | "Contacted"
+  | "Qualified"
+  | "Proposal"
+  | "Negotiation"
+  | "Won"
+  | "Lost";
+
+export interface Lead {
+  id: string;
+  company_id: string;
+  lead_code: string;
+  name: string;
+  company_name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  source: LeadSource;
+  assigned_to?: string | null;
+  status: LeadStatus;
+  expected_value: number;
+  notes?: string | null;
+  follow_up_date?: string | null;
+  customer_id?: string | null;
+  lost_reason?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+

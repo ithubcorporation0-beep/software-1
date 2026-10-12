@@ -64,7 +64,17 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
     .select("id", { count: "exact", head: true })
     .eq("company_id", companyId);
 
-  // 3. Query recent audit records
+  // 3. Query real live customer count for this company tenant
+  let customerCount = 0;
+  try {
+    const { getCustomers } = await import("@/lib/crm/server");
+    const custRes = await getCustomers(companyId);
+    customerCount = custRes.total;
+  } catch {
+    customerCount = 0;
+  }
+
+  // 4. Query recent audit records
   const { data: recentAuditsData } = await supabase
     .from("audit_logs")
     .select("*")
@@ -121,11 +131,12 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
       customers: {
         key: "customers",
         label: "Commercial Customers",
-        isLive: false,
-        statusMessage: "Not available until module is enabled",
+        isLive: true,
+        value: customerCount,
+        unit: "active accounts",
+        statusMessage: "Real-time client directory query",
         moduleName: "CRM & Client Roster",
-        phase: "Phase 2",
-        badgeVariant: "outline",
+        badgeVariant: "success",
       },
       employees: {
         key: "employees",
