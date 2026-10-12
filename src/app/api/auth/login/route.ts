@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { recordAuditLog } from "@/lib/audit/server";
 
 export async function POST(request: Request) {
   try {
@@ -25,6 +26,16 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
+
+    // Record audit event
+    await recordAuditLog({
+      userId: data.user.id,
+      action: "auth.login",
+      resource: "auth",
+      resourceId: data.user.id,
+      details: { email: data.user.email, method: "password" },
+      userAgent: request.headers.get("user-agent") || null,
+    });
 
     return NextResponse.json({
       success: true,
