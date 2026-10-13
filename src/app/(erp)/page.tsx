@@ -41,12 +41,13 @@ export default async function DashboardPage() {
     dashboardData = null;
   }
 
-  const { metrics, recentAudits, subsystems, company } = dashboardData || {
-    company: { name: "IT-HUB Global Technologies Corp", plan: "ENTERPRISE" },
-    metrics: null,
-    recentAudits: [],
-    subsystems: [],
-  };
+  const {
+    metrics,
+    recentAudits = [],
+    recentInvoices = [],
+    recentTasks = [],
+    company = { name: "IT-HUB Global Technologies Corp", plan: "ENTERPRISE" },
+  } = dashboardData || {};
 
   return (
     <ContentLayout>
@@ -364,67 +365,127 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        {/* Right Column (3/7 width): Platform Subsystems & Governance Summary */}
+        {/* Right Column (3/7 width): Recent Invoices & Operational Action Items */}
         <div className="lg:col-span-3 space-y-5">
-          {/* Tenant Governance Summary */}
+          {/* Recent Sales Invoices */}
           <Card>
             <CardHeader className="py-3.5 px-4 border-b">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                  Tenant Boundary Status
+                  <Receipt className="h-3.5 w-3.5 text-primary" />
+                  Recent Invoices
                 </CardTitle>
-                <Badge variant="outline" className="text-[10px] h-5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20">
-                  Compliant
-                </Badge>
+                <Link href="/sales">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground">
+                    Sales Desk
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Button>
+                </Link>
               </div>
             </CardHeader>
-            <CardContent className="p-4 space-y-3 text-xs">
-              <div className="flex items-center justify-between border-b pb-2">
-                <span className="text-muted-foreground">Workspace Tenant</span>
-                <span className="font-semibold text-foreground truncate max-w-[180px]">{company.name}</span>
-              </div>
-              <div className="flex items-center justify-between border-b pb-2">
-                <span className="text-muted-foreground">Database Security</span>
-                <span className="font-medium text-foreground">PostgreSQL Row-Level Security</span>
-              </div>
-              <div className="flex items-center justify-between border-b pb-2">
-                <span className="text-muted-foreground">Isolation Architecture</span>
-                <span className="font-medium text-foreground">Fail-Closed Tenant Isolation</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Subscription Tier</span>
-                <Badge variant="neutral" className="text-[10px] uppercase font-bold">{company.plan}</Badge>
-              </div>
+            <CardContent className="p-0">
+              {recentInvoices.length === 0 ? (
+                <EmptyState
+                  icon={Receipt}
+                  title="No Invoices Issued Yet"
+                  description="Quotes and customer billings created in Sales will appear here."
+                  className="min-h-[160px] border-none"
+                  action={
+                    <Link href="/sales">
+                      <Button size="sm" variant="outline" className="text-xs h-7">
+                        Create Invoice
+                      </Button>
+                    </Link>
+                  }
+                />
+              ) : (
+                <div className="divide-y divide-border/60">
+                  {recentInvoices.map((inv: any) => (
+                    <Link
+                      key={inv.id}
+                      href={`/sales/invoices/${inv.id}`}
+                      className="flex items-center justify-between p-3 text-xs hover:bg-muted/30 transition-colors block"
+                    >
+                      <div className="space-y-0.5 min-w-0 pr-2">
+                        <div className="font-semibold text-foreground truncate">
+                          {inv.invoice_number}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {inv.customer?.name || "Standard Client"} • Due: {inv.due_date}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="font-mono font-bold text-foreground">
+                          ₨ {(inv.grand_total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <Badge
+                          variant={inv.status === "Paid" ? "success" : inv.status === "Overdue" ? "destructive" : "warning"}
+                          className="text-[9px] px-1.5 py-0 h-4 mt-0.5"
+                        >
+                          {inv.status}
+                        </Badge>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Subsystems Health List */}
+          {/* Pending Tasks & Action Items */}
           <Card>
             <CardHeader className="py-3.5 px-4 border-b">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Layers className="h-3.5 w-3.5 text-primary" />
-                  Subsystem Verification
+                  <CheckSquare className="h-3.5 w-3.5 text-primary" />
+                  Deliverables &amp; Open Tasks
                 </CardTitle>
-                <span className="text-[10px] text-muted-foreground font-mono">{subsystems.length} Modules</span>
+                <Link href="/projects">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground">
+                    PMO Kanban
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Button>
+                </Link>
               </div>
             </CardHeader>
-            <CardContent className="p-0 max-h-[360px] overflow-y-auto divide-y divide-border/60">
-              {(subsystems || []).map((subsystem, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start justify-between p-3 text-xs hover:bg-muted/30 transition-colors"
-                >
-                  <div className="space-y-0.5 pr-2 min-w-0">
-                    <div className="font-medium text-foreground truncate">{subsystem.name}</div>
-                    <div className="text-[11px] text-muted-foreground line-clamp-1">{subsystem.detail}</div>
-                  </div>
-                  <Badge variant={subsystem.badgeVariant} className="text-[10px] h-4 shrink-0 font-semibold">
-                    {subsystem.status}
-                  </Badge>
+            <CardContent className="p-0">
+              {recentTasks.length === 0 ? (
+                <EmptyState
+                  icon={CheckSquare}
+                  title="No Pending Deliverables"
+                  description="All project deliverables and team assignments are currently up to date."
+                  className="min-h-[160px] border-none"
+                  action={
+                    <Link href="/projects">
+                      <Button size="sm" variant="outline" className="text-xs h-7">
+                        Open PMO
+                      </Button>
+                    </Link>
+                  }
+                />
+              ) : (
+                <div className="divide-y divide-border/60">
+                  {recentTasks.map((t: any) => (
+                    <div
+                      key={t.id}
+                      className="flex items-center justify-between p-3 text-xs hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="space-y-0.5 min-w-0 pr-2">
+                        <div className="font-medium text-foreground truncate">{t.name}</div>
+                        <div className="text-[11px] text-muted-foreground truncate font-mono">
+                          {t.task_code} • Assigned: {t.assigned_employee_name || "Unassigned"}
+                        </div>
+                      </div>
+                      <Badge
+                        variant={t.priority === "Urgent" ? "destructive" : t.priority === "High" ? "warning" : "secondary"}
+                        className="text-[9px] px-1.5 py-0 h-4 shrink-0"
+                      >
+                        {t.priority}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
         </div>
