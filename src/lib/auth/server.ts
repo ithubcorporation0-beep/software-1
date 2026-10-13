@@ -34,20 +34,24 @@ import { verifyAdminSessionToken, SESSION_COOKIE_NAME } from "./admin-session";
 export async function getCurrentUser(): Promise<Profile | null> {
   try {
     // 1. Check for signed administrative session cookie
-    const cookieStore = await cookies();
-    const adminCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-    const adminSession = verifyAdminSessionToken(adminCookie);
+    try {
+      const cookieStore = await cookies();
+      const adminCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+      const adminSession = verifyAdminSessionToken(adminCookie);
 
-    if (adminSession) {
-      return {
-        id: "392c9ef9-a33e-4387-9c16-6a56b81f2191",
-        email: adminSession.email,
-        full_name: "Platform Super Administrator",
-        avatar_url: null,
-        is_super_admin: true,
-        created_at: "2026-10-10T08:48:22.323638+00:00",
-        updated_at: new Date().toISOString(),
-      };
+      if (adminSession) {
+        return {
+          id: "392c9ef9-a33e-4387-9c16-6a56b81f2191",
+          email: adminSession.email,
+          full_name: "Platform Super Administrator",
+          avatar_url: null,
+          is_super_admin: true,
+          created_at: "2026-10-10T08:48:22.323638+00:00",
+          updated_at: new Date().toISOString(),
+        };
+      }
+    } catch {
+      // Fall through if cookies() is called outside request scope (e.g. testing)
     }
 
     // 2. Check for live Supabase user

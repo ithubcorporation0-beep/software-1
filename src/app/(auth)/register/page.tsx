@@ -53,7 +53,7 @@ export default function RegisterPage() {
             <CheckCircle2 className="h-6 w-6" />
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Registration initiated successfully. Please verify your email address to confirm your account. Your company administrator will verify your role assignment.
+            Registration successful! Your account has been provisioned and confirmed. You can now proceed directly to sign in.
           </p>
           <Link href="/login">
             <Button variant="default" size="sm" className="mt-2">
