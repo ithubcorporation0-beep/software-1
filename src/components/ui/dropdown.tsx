@@ -45,9 +45,25 @@ export function DropdownTrigger({ children, asChild }: { children: React.ReactNo
   const context = React.useContext(DropdownContext);
   if (!context) throw new Error("DropdownTrigger must be used within a Dropdown");
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    context.setOpen((prev) => !prev);
+  };
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<any>, {
+      onClick: (e: React.MouseEvent) => {
+        (children.props as any)?.onClick?.(e);
+        handleClick(e);
+      },
+      "aria-expanded": context.open,
+      "aria-haspopup": "true",
+    });
+  }
+
   return (
     <div
-      onClick={() => context.setOpen((prev) => !prev)}
+      onClick={handleClick}
       aria-expanded={context.open}
       aria-haspopup="true"
       className="cursor-pointer inline-flex"
@@ -75,7 +91,7 @@ export function DropdownContent({
     <div
       role="menu"
       className={cn(
-        "absolute z-50 mt-2 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-80",
+        "absolute top-full z-50 mt-2 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-80",
         align === "right" ? "right-0" : "left-0",
         className
       )}
