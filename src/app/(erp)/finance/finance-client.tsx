@@ -110,6 +110,11 @@ export function FinanceClient({
     "pl" | "balance_sheet" | "cash_flow" | "ar_aging" | "ap_aging" | "breakdown"
   >("pl");
 
+  const formatMoney = (amount: number) => {
+    const symbol = currency === "PKR" ? "₨ " : (currency === "USD" ? "$" : `${currency} `);
+    return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   // Data States
   const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenses);
   const [accounts, setAccounts] = React.useState<Account[]>(initialAccounts);
@@ -304,7 +309,7 @@ export function FinanceClient({
     e.preventDefault();
     if (!isJEBalanced) {
       setNotification({
-        text: `Unbalanced journal entry! Debits ($${totalFormDebits.toFixed(2)}) must equal credits ($${totalFormCredits.toFixed(2)}).`,
+        text: `Unbalanced journal entry! Debits (${formatMoney(totalFormDebits)}) must equal credits (${formatMoney(totalFormCredits)}).`,
         type: "error",
       });
       return;
@@ -857,10 +862,10 @@ export function FinanceClient({
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-slate-900 dark:text-white">
-                      ${je.total_debit.toFixed(2)}
+                      {formatMoney(je.total_debit)}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-slate-900 dark:text-white">
-                      ${je.total_credit.toFixed(2)}
+                      {formatMoney(je.total_credit)}
                     </td>
                     <td className="px-4 py-3">
                       {je.status === "Posted" ? (
@@ -1047,13 +1052,13 @@ export function FinanceClient({
                           <span className="text-slate-800 dark:text-slate-200">
                             [{r.code}] {r.name}
                           </span>
-                          <span className="font-mono font-medium">${r.amount.toFixed(2)}</span>
+                          <span className="font-mono font-medium">{formatMoney(r.amount)}</span>
                         </div>
                       ))
                     )}
                     <div className="py-3 flex items-center justify-between font-bold text-slate-900 dark:text-white">
                       <span>Total Revenue</span>
-                      <span className="font-mono text-base">${plReport.revenue.total.toFixed(2)}</span>
+                      <span className="font-mono text-base">{formatMoney(plReport.revenue.total)}</span>
                     </div>
                   </div>
                 </div>
@@ -1070,14 +1075,14 @@ export function FinanceClient({
                           {e.category} ({e.percentage.toFixed(1)}%)
                         </span>
                         <span className="font-mono font-medium text-rose-600 dark:text-rose-400">
-                          (${e.amount.toFixed(2)})
+                          ({formatMoney(e.amount)})
                         </span>
                       </div>
                     ))}
                     <div className="py-3 flex items-center justify-between font-bold text-slate-900 dark:text-white">
                       <span>Total Operating Expenses</span>
                       <span className="font-mono text-base text-rose-600 dark:text-rose-400">
-                        (${plReport.expenses.total.toFixed(2)})
+                        ({formatMoney(plReport.expenses.total)})
                       </span>
                     </div>
                   </div>
@@ -1091,7 +1096,7 @@ export function FinanceClient({
                       plReport.netOperatingIncome >= 0 ? "text-emerald-600" : "text-rose-600"
                     }`}
                   >
-                    ${plReport.netOperatingIncome.toFixed(2)}
+                    {formatMoney(plReport.netOperatingIncome)}
                   </span>
                 </div>
               </CardContent>
@@ -1113,7 +1118,7 @@ export function FinanceClient({
                     </Badge>
                   ) : (
                     <Badge className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-none">
-                      Variance: ${bsReport.variance.toFixed(2)}
+                      Variance: {formatMoney(bsReport.variance)}
                     </Badge>
                   )}
                 </div>
@@ -1128,12 +1133,12 @@ export function FinanceClient({
                     {bsReport.assets.current.map((a) => (
                       <div key={a.code} className="py-2 flex items-center justify-between">
                         <span>[{a.code}] {a.name}</span>
-                        <span className="font-mono">${a.amount.toFixed(2)}</span>
+                        <span className="font-mono">{formatMoney(a.amount)}</span>
                       </div>
                     ))}
                     <div className="py-2.5 flex items-center justify-between font-bold text-slate-900 dark:text-white">
                       <span>Total Assets</span>
-                      <span className="font-mono text-base">${bsReport.assets.total.toFixed(2)}</span>
+                      <span className="font-mono text-base">{formatMoney(bsReport.assets.total)}</span>
                     </div>
                   </div>
                 </div>
@@ -1147,12 +1152,12 @@ export function FinanceClient({
                     {bsReport.liabilities.current.map((l) => (
                       <div key={l.code} className="py-2 flex items-center justify-between">
                         <span>[{l.code}] {l.name}</span>
-                        <span className="font-mono">${l.amount.toFixed(2)}</span>
+                        <span className="font-mono">{formatMoney(l.amount)}</span>
                       </div>
                     ))}
                     <div className="py-2.5 flex items-center justify-between font-bold text-slate-900 dark:text-white">
                       <span>Total Liabilities</span>
-                      <span className="font-mono text-base">${bsReport.liabilities.total.toFixed(2)}</span>
+                      <span className="font-mono text-base">{formatMoney(bsReport.liabilities.total)}</span>
                     </div>
                   </div>
                 </div>
@@ -1166,16 +1171,16 @@ export function FinanceClient({
                     {bsReport.equity.items.map((eq) => (
                       <div key={eq.code} className="py-2 flex items-center justify-between">
                         <span>[{eq.code}] {eq.name}</span>
-                        <span className="font-mono">${eq.amount.toFixed(2)}</span>
+                        <span className="font-mono">{formatMoney(eq.amount)}</span>
                       </div>
                     ))}
                     <div className="py-2 flex items-center justify-between text-blue-600 dark:text-blue-400">
                       <span>Current Period Net Earnings</span>
-                      <span className="font-mono">${bsReport.equity.currentPeriodEarnings.toFixed(2)}</span>
+                      <span className="font-mono">{formatMoney(bsReport.equity.currentPeriodEarnings)}</span>
                     </div>
                     <div className="py-2.5 flex items-center justify-between font-bold text-slate-900 dark:text-white">
                       <span>Total Equity</span>
-                      <span className="font-mono text-base">${bsReport.equity.total.toFixed(2)}</span>
+                      <span className="font-mono text-base">{formatMoney(bsReport.equity.total)}</span>
                     </div>
                   </div>
                 </div>
@@ -1183,7 +1188,7 @@ export function FinanceClient({
                 {/* Accounting Equation Verification Footer */}
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between font-bold text-base border border-slate-200 dark:border-slate-700">
                   <span>Total Liabilities & Equity</span>
-                  <span className="font-mono text-lg">${bsReport.totalLiabilitiesAndEquity.toFixed(2)}</span>
+                  <span className="font-mono text-lg">{formatMoney(bsReport.totalLiabilitiesAndEquity)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -1205,12 +1210,12 @@ export function FinanceClient({
                     {cfReport.operatingInflows.map((inf, idx) => (
                       <div key={idx} className="py-2 flex items-center justify-between">
                         <span>{inf.name}</span>
-                        <span className="font-mono text-emerald-600">+${inf.amount.toFixed(2)}</span>
+                        <span className="font-mono text-emerald-600">+{formatMoney(inf.amount)}</span>
                       </div>
                     ))}
                     <div className="py-2.5 flex items-center justify-between font-bold">
                       <span>Total Inflows</span>
-                      <span className="font-mono text-emerald-600">${cfReport.totalInflows.toFixed(2)}</span>
+                      <span className="font-mono text-emerald-600">{formatMoney(cfReport.totalInflows)}</span>
                     </div>
                   </div>
                 </div>
@@ -1223,12 +1228,12 @@ export function FinanceClient({
                     {cfReport.operatingOutflows.map((out, idx) => (
                       <div key={idx} className="py-2 flex items-center justify-between">
                         <span>{out.name}</span>
-                        <span className="font-mono text-rose-600">-${out.amount.toFixed(2)}</span>
+                        <span className="font-mono text-rose-600">-{formatMoney(out.amount)}</span>
                       </div>
                     ))}
                     <div className="py-2.5 flex items-center justify-between font-bold">
                       <span>Total Outflows</span>
-                      <span className="font-mono text-rose-600">${cfReport.totalOutflows.toFixed(2)}</span>
+                      <span className="font-mono text-rose-600">{formatMoney(cfReport.totalOutflows)}</span>
                     </div>
                   </div>
                 </div>
@@ -1240,7 +1245,7 @@ export function FinanceClient({
                       cfReport.netOperatingCashFlow >= 0 ? "text-emerald-600" : "text-rose-600"
                     }`}
                   >
-                    ${cfReport.netOperatingCashFlow.toFixed(2)}
+                    {formatMoney(cfReport.netOperatingCashFlow)}
                   </span>
                 </div>
               </CardContent>
@@ -1258,23 +1263,23 @@ export function FinanceClient({
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div className="p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 text-center">
                     <div className="text-xs text-slate-500">Current (0-30d)</div>
-                    <div className="text-lg font-bold font-mono">${arReport.current.toFixed(2)}</div>
+                    <div className="text-lg font-bold font-mono">{formatMoney(arReport.current)}</div>
                   </div>
                   <div className="p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 text-center">
                     <div className="text-xs text-slate-500">1-30 Days Past</div>
-                    <div className="text-lg font-bold font-mono">${arReport.days1_30.toFixed(2)}</div>
+                    <div className="text-lg font-bold font-mono">{formatMoney(arReport.days1_30)}</div>
                   </div>
                   <div className="p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 text-center">
                     <div className="text-xs text-slate-500">31-60 Days Past</div>
-                    <div className="text-lg font-bold font-mono">${arReport.days31_60.toFixed(2)}</div>
+                    <div className="text-lg font-bold font-mono">{formatMoney(arReport.days31_60)}</div>
                   </div>
                   <div className="p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 text-center">
                     <div className="text-xs text-slate-500">61-90 Days Past</div>
-                    <div className="text-lg font-bold font-mono">${arReport.days61_90.toFixed(2)}</div>
+                    <div className="text-lg font-bold font-mono">{formatMoney(arReport.days61_90)}</div>
                   </div>
                   <div className="p-3 rounded-lg border bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 text-center border-rose-200">
                     <div className="text-xs font-semibold">90+ Days Past Due</div>
-                    <div className="text-lg font-bold font-mono">${arReport.days90Plus.toFixed(2)}</div>
+                    <div className="text-lg font-bold font-mono">{formatMoney(arReport.days90Plus)}</div>
                   </div>
                 </div>
 
@@ -1302,12 +1307,12 @@ export function FinanceClient({
                         arReport.customers.map((c) => (
                           <tr key={c.customerId}>
                             <td className="px-4 py-2 font-medium">{c.customerName}</td>
-                            <td className="px-4 py-2 text-right font-mono">${c.current.toFixed(2)}</td>
-                            <td className="px-4 py-2 text-right font-mono">${c.days1_30.toFixed(2)}</td>
-                            <td className="px-4 py-2 text-right font-mono">${c.days31_60.toFixed(2)}</td>
-                            <td className="px-4 py-2 text-right font-mono">${c.days61_90.toFixed(2)}</td>
-                            <td className="px-4 py-2 text-right font-mono text-rose-600">${c.days90Plus.toFixed(2)}</td>
-                            <td className="px-4 py-2 text-right font-mono font-bold">${c.total.toFixed(2)}</td>
+                            <td className="px-4 py-2 text-right font-mono">{formatMoney(c.current)}</td>
+                            <td className="px-4 py-2 text-right font-mono">{formatMoney(c.days1_30)}</td>
+                            <td className="px-4 py-2 text-right font-mono">{formatMoney(c.days31_60)}</td>
+                            <td className="px-4 py-2 text-right font-mono">{formatMoney(c.days61_90)}</td>
+                            <td className="px-4 py-2 text-right font-mono text-rose-600">{formatMoney(c.days90Plus)}</td>
+                            <td className="px-4 py-2 text-right font-mono font-bold">{formatMoney(c.total)}</td>
                           </tr>
                         ))
                       )}
@@ -1347,7 +1352,7 @@ export function FinanceClient({
                           <tr key={v.vendor}>
                             <td className="px-4 py-2.5 font-medium">{v.vendor}</td>
                             <td className="px-4 py-2.5 text-center">{v.expenseCount}</td>
-                            <td className="px-4 py-2.5 text-right font-mono font-bold">${v.total.toFixed(2)}</td>
+                            <td className="px-4 py-2.5 text-right font-mono font-bold">{formatMoney(v.total)}</td>
                           </tr>
                         ))
                       )}
@@ -1371,7 +1376,7 @@ export function FinanceClient({
                     <div key={it.category} className="space-y-1">
                       <div className="flex items-center justify-between text-xs font-medium">
                         <span>{it.category}</span>
-                        <span>${it.amount.toFixed(2)} ({it.percentage.toFixed(1)}%)</span>
+                        <span>{formatMoney(it.amount)} ({it.percentage.toFixed(1)}%)</span>
                       </div>
                       <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div
@@ -1763,7 +1768,7 @@ export function FinanceClient({
                 }`}
               >
                 <span>
-                  Total Debits: ${totalFormDebits.toFixed(2)} | Total Credits: ${totalFormCredits.toFixed(2)}
+                  Total Debits: {formatMoney(totalFormDebits)} | Total Credits: {formatMoney(totalFormCredits)}
                 </span>
                 <span>
                   {isJEBalanced ? (
@@ -1772,8 +1777,8 @@ export function FinanceClient({
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-rose-600 font-bold">
-                      <AlertTriangle className="h-4 w-4" /> Difference: $
-                      {Math.abs(totalFormDebits - totalFormCredits).toFixed(2)}
+                      <AlertTriangle className="h-4 w-4" /> Difference:{" "}
+                      {formatMoney(Math.abs(totalFormDebits - totalFormCredits))}
                     </span>
                   )}
                 </span>

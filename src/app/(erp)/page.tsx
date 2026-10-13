@@ -4,7 +4,8 @@ import {
   TrendingUp,
   Package,
   ShoppingCart,
-  DollarSign,
+  Wallet,
+  Banknote,
   Activity,
   ArrowRight,
   Users,
@@ -85,12 +86,12 @@ export default async function DashboardPage() {
                 Gross Revenue
               </CardTitle>
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <DollarSign className="h-4 w-4" />
+                <Wallet className="h-4 w-4" />
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-1">
               <div className="text-xl font-bold font-mono tracking-tight text-foreground">
-                {metrics?.revenue?.value ?? "$0.00"}
+                {metrics?.revenue?.value ?? "₨ 0.00"}
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground flex items-center justify-between">
                 <span>Total payments received</span>
@@ -115,7 +116,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-1">
               <div className="text-xl font-bold font-mono tracking-tight text-foreground">
-                {metrics?.expenses?.value ?? "$0.00"}
+                {metrics?.expenses?.value ?? "₨ 0.00"}
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground flex items-center justify-between">
                 <span>Approved claims &amp; ledger</span>
@@ -140,7 +141,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-1">
               <div className="text-xl font-bold font-mono tracking-tight text-foreground">
-                {metrics?.profit?.value ?? "$0.00"}
+                {metrics?.profit?.value ?? "₨ 0.00"}
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground flex items-center justify-between">
                 <span>P&amp;L operational balance</span>
@@ -165,7 +166,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-1">
               <div className="text-xl font-bold font-mono tracking-tight text-foreground">
-                {metrics?.outstandingInvoices?.value ?? "$0.00"}
+                {metrics?.outstandingInvoices?.value ?? "₨ 0.00"}
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground flex items-center justify-between">
                 <span>Outstanding invoice balances</span>
@@ -290,7 +291,7 @@ export default async function DashboardPage() {
                 <span className="truncate">CRM Clients</span>
               </Link>
               <Link href="/finance" className="flex items-center gap-2 p-2.5 rounded-md border border-border/80 bg-muted/20 hover:bg-muted/60 transition-colors text-xs font-medium">
-                <DollarSign className="h-4 w-4 text-primary shrink-0" />
+                <Banknote className="h-4 w-4 text-primary shrink-0" />
                 <span className="truncate">Expenses &amp; GL</span>
               </Link>
               <Link href="/hr" className="flex items-center gap-2 p-2.5 rounded-md border border-border/80 bg-muted/20 hover:bg-muted/60 transition-colors text-xs font-medium">

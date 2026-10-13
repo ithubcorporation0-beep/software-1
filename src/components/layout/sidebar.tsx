@@ -7,7 +7,7 @@ import {
   LayoutDashboard,
   Users,
   ShoppingCart,
-  DollarSign,
+  Banknote,
   UserCheck,
   CreditCard,
   Briefcase,
@@ -72,7 +72,7 @@ export const navigationConfig: NavSection[] = [
       {
         title: "Finance and expenses",
         href: "/finance",
-        icon: DollarSign,
+        icon: Banknote,
       },
       {
         title: "Payroll",

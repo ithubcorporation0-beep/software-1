@@ -18,6 +18,7 @@ import {
   ArrowDownRight,
   Layers,
   FileSpreadsheet,
+  Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,12 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isExporting, setIsExporting] = React.useState(false);
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
+
+  const formatMoney = (amount: number) => {
+    const curr = reports.currency || "PKR";
+    const symbol = curr === "PKR" ? "₨ " : (curr === "USD" ? "$" : `${curr} `);
+    return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   const handleExportCSV = async () => {
     setIsExporting(true);
@@ -86,7 +93,7 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-100">
-              ${reports.salesSummary.totalSales.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {formatMoney(reports.salesSummary.totalSales)}
             </div>
             <p className="text-xs text-slate-500 mt-1">From commercial sales invoices</p>
           </CardContent>
@@ -95,11 +102,11 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
         <Card className="bg-slate-900/60 border-slate-800 backdrop-blur-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-400">Net Operating Margin</CardTitle>
-            <DollarSign className="h-4 w-4 text-emerald-400" />
+            <Banknote className="h-4 w-4 text-emerald-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-400">
-              ${reports.finance.netOperatingIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {formatMoney(reports.finance.netOperatingIncome)}
             </div>
             <p className="text-xs text-slate-500 mt-1">GAAP P&L net operating income</p>
           </CardContent>
@@ -112,7 +119,7 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-100">
-              ${reports.inventory.totalValuation.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {formatMoney(reports.inventory.totalValuation)}
             </div>
             <p className="text-xs text-slate-500 mt-1">
               Across {reports.inventory.totalStockUnits} stock units ({reports.inventory.totalSkus} SKUs)
@@ -128,7 +135,7 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
           <CardContent>
             <div className="text-2xl font-bold text-slate-100">{reports.workforce.totalStaff} Personnel</div>
             <p className="text-xs text-slate-500 mt-1">
-              ${reports.workforce.totalPayrollDisbursed.toLocaleString()} disbursed compensation
+              {formatMoney(reports.workforce.totalPayrollDisbursed)} disbursed compensation
             </p>
           </CardContent>
         </Card>
@@ -236,9 +243,9 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
                         <tr key={row.periodKey} className="hover:bg-slate-800/30">
                           <td className="py-2.5 px-3 text-slate-200 font-semibold">{row.periodKey}</td>
                           <td className="py-2.5 px-3 text-slate-300">{row.invoiceCount}</td>
-                          <td className="py-2.5 px-3 text-slate-100 font-bold">${row.grossSales.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 text-emerald-400">${row.paymentsReceived.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 text-amber-400">${row.outstandingBalance.toFixed(2)}</td>
+                          <td className="py-2.5 px-3 text-slate-100 font-bold">{formatMoney(row.grossSales)}</td>
+                          <td className="py-2.5 px-3 text-emerald-400">{formatMoney(row.paymentsReceived)}</td>
+                          <td className="py-2.5 px-3 text-amber-400">{formatMoney(row.outstandingBalance)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -272,8 +279,8 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
                         <tr key={row.periodKey} className="hover:bg-slate-800/30">
                           <td className="py-2.5 px-3 text-slate-200 font-sans font-medium">{row.periodKey}</td>
                           <td className="py-2.5 px-3 text-slate-400">{row.invoiceCount}</td>
-                          <td className="py-2.5 px-3 text-slate-100 font-bold">${row.grossSales.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 text-amber-400">${row.outstandingBalance.toFixed(2)}</td>
+                          <td className="py-2.5 px-3 text-slate-100 font-bold">{formatMoney(row.grossSales)}</td>
+                          <td className="py-2.5 px-3 text-amber-400">{formatMoney(row.outstandingBalance)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -296,15 +303,15 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
             <CardContent className="space-y-3 font-mono text-xs">
               <div className="flex justify-between py-2 border-b border-slate-800">
                 <span className="text-slate-400 font-sans">Gross Revenue Collected</span>
-                <span className="font-bold text-slate-100">${reports.finance.revenueTotal.toFixed(2)}</span>
+                <span className="font-bold text-slate-100">{formatMoney(reports.finance.revenueTotal)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-800">
                 <span className="text-slate-400 font-sans">Operating Expenditures (Expenses)</span>
-                <span className="font-bold text-red-400">-${reports.finance.expensesTotal.toFixed(2)}</span>
+                <span className="font-bold text-red-400">-{formatMoney(reports.finance.expensesTotal)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-800 font-bold text-sm">
                 <span className="text-emerald-400 font-sans">Net Operating Margin (P&L)</span>
-                <span className="text-emerald-400">${reports.finance.netOperatingIncome.toFixed(2)}</span>
+                <span className="text-emerald-400">{formatMoney(reports.finance.netOperatingIncome)}</span>
               </div>
             </CardContent>
           </Card>
@@ -317,15 +324,15 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
             <CardContent className="space-y-3 font-mono text-xs">
               <div className="flex justify-between py-2 border-b border-slate-800">
                 <span className="text-slate-400 font-sans">Accounts Receivable (Pending Invoices)</span>
-                <span className="font-bold text-amber-400">${reports.finance.outstandingReceivables.toFixed(2)}</span>
+                <span className="font-bold text-amber-400">{formatMoney(reports.finance.outstandingReceivables)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-800">
                 <span className="text-slate-400 font-sans">Accounts Payable (Vendor Bills Due)</span>
-                <span className="font-bold text-slate-200">${reports.finance.accountsPayable.toFixed(2)}</span>
+                <span className="font-bold text-slate-200">{formatMoney(reports.finance.accountsPayable)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-800">
                 <span className="text-slate-400 font-sans">Estimated Treasury Liquidity</span>
-                <span className="font-bold text-primary">${reports.finance.cashAndBankBalance.toFixed(2)}</span>
+                <span className="font-bold text-primary">{formatMoney(reports.finance.cashAndBankBalance)}</span>
               </div>
             </CardContent>
           </Card>
@@ -364,7 +371,7 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
               <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
                 <div className="text-xs text-slate-400 mb-1">Payroll Disbursed</div>
                 <div className="text-xl font-bold text-purple-400 font-mono">
-                  ${reports.workforce.totalPayrollDisbursed.toLocaleString()}
+                  {formatMoney(reports.workforce.totalPayrollDisbursed)}
                 </div>
               </div>
             </div>
@@ -384,7 +391,7 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
               <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 space-y-1">
                 <span className="text-xs text-slate-400">Total Holdings Value</span>
                 <div className="text-xl font-bold text-slate-100 font-mono">
-                  ${reports.inventory.totalValuation.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  {formatMoney(reports.inventory.totalValuation)}
                 </div>
                 <p className="text-[11px] text-slate-500">{reports.inventory.totalStockUnits} physical units</p>
               </div>
@@ -408,7 +415,7 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
               <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 space-y-1">
                 <span className="text-xs text-slate-400">Purchases Committed</span>
                 <div className="text-xl font-bold text-slate-100 font-mono">
-                  ${reports.inventory.totalPurchasedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  {formatMoney(reports.inventory.totalPurchasedAmount)}
                 </div>
                 <p className="text-[11px] text-slate-500">Across supplier purchase orders</p>
               </div>
@@ -429,7 +436,7 @@ export function ReportsClient({ initialReports }: ReportsClientProps) {
               <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 space-y-1">
                 <span className="text-xs text-slate-400">Capital Portfolio Budget</span>
                 <div className="text-xl font-bold text-slate-100 font-mono">
-                  ${reports.pmo.totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  {formatMoney(reports.pmo.totalBudget)}
                 </div>
                 <p className="text-[11px] text-slate-500">{reports.pmo.totalProjects} registered initiatives</p>
               </div>

@@ -74,6 +74,12 @@ export function InvoiceDetailClient({
     window.print();
   };
 
+  const formatMoney = (amount: number) => {
+    const curr = companyDetails.currency || "PKR";
+    const symbol = curr === "PKR" ? "₨ " : (curr === "USD" ? "$" : `${curr} `);
+    return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   const handleRecordPayment = (e: React.FormEvent) => {
     e.preventDefault();
     startTransition(async () => {
@@ -136,7 +142,7 @@ export function InvoiceDetailClient({
 
   // WhatsApp message generation
   const cleanPhone = (customer?.whatsapp || customer?.phone || "").replace(/[^0-9]/g, "");
-  const whatsAppMessage = `Hello ${customer?.name || "Customer"}, here is your commercial invoice ${invState.invoice_number} from ${companyDetails.name}.\n\nTotal Due: $${invState.amount_due.toFixed(2)} ${companyDetails.currency}\nDue Date: ${invState.due_date}\n\nPlease remit payment to our corporate account. Thank you for your business!`;
+  const whatsAppMessage = `Hello ${customer?.name || "Customer"}, here is your commercial invoice ${invState.invoice_number} from ${companyDetails.name}.\n\nTotal Due: ${formatMoney(invState.amount_due)}\nDue Date: ${invState.due_date}\n\nPlease remit payment to our corporate account. Thank you for your business!`;
   const whatsAppUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsAppMessage)}` : "";
 
   return (
@@ -336,13 +342,13 @@ export function InvoiceDetailClient({
                     {it.quantity}
                   </td>
                   <td className="py-3 text-right text-neutral-700 font-mono">
-                    ${it.unit_price.toFixed(2)}
+                    {formatMoney(it.unit_price)}
                   </td>
                   <td className="py-3 text-right text-neutral-600 font-mono text-xs">
                     {it.tax_pct > 0 ? `${it.tax_pct}%` : "0%"}
                   </td>
                   <td className="py-3 text-right font-bold text-neutral-900 font-mono">
-                    ${it.line_total.toFixed(2)}
+                    {formatMoney(it.line_total)}
                   </td>
                 </tr>
               ))}
@@ -368,37 +374,37 @@ export function InvoiceDetailClient({
           <div className="w-full sm:w-72 space-y-2 text-sm">
             <div className="flex justify-between py-1 text-neutral-600">
               <span>Subtotal</span>
-              <span className="font-mono font-medium">${invState.subtotal.toFixed(2)}</span>
+              <span className="font-mono font-medium">{formatMoney(invState.subtotal)}</span>
             </div>
 
             {invState.discount_total > 0 && (
               <div className="flex justify-between py-1 text-emerald-700">
                 <span>Discount</span>
-                <span className="font-mono font-medium">-${invState.discount_total.toFixed(2)}</span>
+                <span className="font-mono font-medium">-{formatMoney(invState.discount_total)}</span>
               </div>
             )}
 
             {invState.tax_total > 0 && (
               <div className="flex justify-between py-1 text-neutral-600">
                 <span>Sales Tax</span>
-                <span className="font-mono font-medium">+${invState.tax_total.toFixed(2)}</span>
+                <span className="font-mono font-medium">+{formatMoney(invState.tax_total)}</span>
               </div>
             )}
 
             <div className="flex justify-between py-2 border-t-2 border-neutral-900 font-bold text-base text-neutral-900">
               <span>Grand Total</span>
-              <span className="font-mono">${invState.grand_total.toFixed(2)} {companyDetails.currency}</span>
+              <span className="font-mono">{formatMoney(invState.grand_total)}</span>
             </div>
 
             <div className="flex justify-between py-1 text-emerald-700 font-medium text-xs">
               <span>Total Paid</span>
-              <span className="font-mono">${invState.amount_paid.toFixed(2)}</span>
+              <span className="font-mono">{formatMoney(invState.amount_paid)}</span>
             </div>
 
             <div className="flex justify-between py-2 border-t border-neutral-200 font-bold text-base text-neutral-900 bg-neutral-50 px-2 rounded">
               <span>Remaining Due</span>
               <span className={`font-mono ${invState.amount_due > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                ${invState.amount_due.toFixed(2)} {companyDetails.currency}
+                {formatMoney(invState.amount_due)}
               </span>
             </div>
           </div>
@@ -461,9 +467,9 @@ export function InvoiceDetailClient({
                         </td>
                         <td className="py-2.5 px-3 text-right font-medium">
                           {p.status === "Completed" ? (
-                            <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">+${p.amount.toFixed(2)}</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">+{formatMoney(p.amount)}</span>
                           ) : (
-                            <span className="text-muted-foreground line-through font-mono">${p.amount.toFixed(2)}</span>
+                            <span className="text-muted-foreground line-through font-mono">{formatMoney(p.amount)}</span>
                           )}
                         </td>
                         <td className="py-2.5 px-3 text-center">
@@ -511,7 +517,7 @@ export function InvoiceDetailClient({
 
             <form onSubmit={handleRecordPayment} className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-foreground">Payment Amount ($) *</label>
+                <label className="text-xs font-medium text-foreground">Payment Amount ({companyDetails.currency === "PKR" ? "₨" : companyDetails.currency}) *</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -523,7 +529,7 @@ export function InvoiceDetailClient({
                   required
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Remaining due: ${invState.amount_due.toFixed(2)}. Overpayments are prevented.
+                  Remaining due: {formatMoney(invState.amount_due)}. Overpayments are prevented.
                 </p>
               </div>
 
@@ -711,7 +717,7 @@ export function InvoiceDetailClient({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Reversing payment <strong className="text-foreground">{selectedPaymentForVoid.payment_number}</strong> (${selectedPaymentForVoid.amount.toFixed(2)}).
+              Reversing payment <strong className="text-foreground">{selectedPaymentForVoid.payment_number}</strong> ({formatMoney(selectedPaymentForVoid.amount)}).
               This transaction will be marked as Voided and the invoice balance due will be increased back.
             </p>
 

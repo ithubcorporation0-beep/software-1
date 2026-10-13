@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { verifyAdminSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth/admin-session";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
@@ -7,18 +8,6 @@ export async function proxy(request: NextRequest) {
       headers: request.headers,
     },
   });
-
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project-id.supabase.co";
-  const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-public-jwt-token";
-
-  // Check if live Supabase is configured
-  const isSupabaseConfigured =
-    supabaseUrl &&
-    !supabaseUrl.includes("placeholder") &&
-    supabaseAnonKey &&
-    !supabaseAnonKey.includes("placeholder");
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute =
@@ -37,7 +26,30 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // If live Supabase is configured, enforce strict cookie session verification
+  // 1. Check for signed administrative session cookie
+  const adminCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const adminSession = verifyAdminSessionToken(adminCookie);
+
+  if (adminSession) {
+    // Authenticated admin: redirect away from auth routes to dashboard
+    if (isAuthRoute) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    return response;
+  }
+
+  // 2. Check for live Supabase session if configured
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project-id.supabase.co";
+  const supabaseAnonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-public-jwt-token";
+
+  const isSupabaseConfigured =
+    supabaseUrl &&
+    !supabaseUrl.includes("placeholder") &&
+    supabaseAnonKey &&
+    !supabaseAnonKey.includes("placeholder");
+
   if (isSupabaseConfigured) {
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
@@ -67,7 +79,6 @@ export async function proxy(request: NextRequest) {
       const redirectUrl = new URL("/login", request.url);
       redirectUrl.searchParams.set("redirectTo", pathname);
       const redirectResponse = NextResponse.redirect(redirectUrl);
-      // Preserve any updated or refreshed cookies
       response.cookies.getAll().forEach((c) => {
         redirectResponse.cookies.set(c.name, c.value);
       });
@@ -82,6 +93,15 @@ export async function proxy(request: NextRequest) {
       });
       return redirectResponse;
     }
+
+    return response;
+  }
+
+  // 3. Fail Closed: If no active admin session and no live Supabase, redirect unauthenticated users to /login
+  if (!isAuthRoute) {
+    const redirectUrl = new URL("/login", request.url);
+    redirectUrl.searchParams.set("redirectTo", pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
   return response;

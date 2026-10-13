@@ -79,6 +79,11 @@ export function InventoryClient({
   >("products");
   const [isPending, startTransition] = React.useTransition();
 
+  const formatMoney = (amount: number) => {
+    const symbol = currency === "PKR" ? "₨ " : (currency === "USD" ? "$" : `${currency} `);
+    return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   // Banners
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
@@ -1443,23 +1448,23 @@ export function InventoryClient({
             <div className="p-3 bg-muted/30 rounded-lg text-xs space-y-1 mb-4 border border-border">
               <div className="flex justify-between text-muted-foreground">
                 <span>Total PO Amount:</span>
-                <span className="font-mono text-foreground">${payingPO.total_amount.toFixed(2)}</span>
+                <span className="font-mono text-foreground">{formatMoney(payingPO.total_amount)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Already Paid:</span>
-                <span className="font-mono text-foreground">${payingPO.paid_amount.toFixed(2)}</span>
+                <span className="font-mono text-foreground">{formatMoney(payingPO.paid_amount)}</span>
               </div>
               <div className="flex justify-between text-foreground font-semibold pt-1 border-t border-border">
                 <span>Remaining Due:</span>
                 <span className="font-mono text-primary font-bold">
-                  ${(payingPO.total_amount - payingPO.paid_amount).toFixed(2)}
+                  {formatMoney(payingPO.total_amount - payingPO.paid_amount)}
                 </span>
               </div>
             </div>
 
             <form onSubmit={handlePaySupplier} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">Disbursement Amount ($) *</label>
+                <label className="block text-xs font-medium text-foreground mb-1">Disbursement Amount ({currency === "PKR" ? "₨" : currency}) *</label>
                 <Input
                   name="amount"
                   type="number"

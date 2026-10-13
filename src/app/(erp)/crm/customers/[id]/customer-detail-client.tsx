@@ -312,7 +312,7 @@ export function CustomerDetailClient({
                     </span>
                     <Badge variant="outline" className="text-[9px]">Phase 3</Badge>
                   </div>
-                  <div className="text-lg font-bold font-mono text-muted-foreground">$0.00</div>
+                  <div className="text-lg font-bold font-mono text-muted-foreground">₨ 0.00</div>
                   <p className="text-[10px] text-muted-foreground leading-tight">
                     Finance ledger pending
                   </p>

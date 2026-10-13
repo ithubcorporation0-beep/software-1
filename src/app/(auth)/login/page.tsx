@@ -41,12 +41,12 @@ function LoginForm() {
         <input type="hidden" name="redirectTo" value={redirectTo} />
 
         <Input
-          label="Company Email"
+          label="Email or Admin Username"
           name="email"
-          type="email"
+          type="text"
           required
-          autoComplete="email"
-          placeholder="colleague@company.com"
+          autoComplete="username"
+          placeholder="admin@ithub-enterprise.com or admin"
         />
 
         <div className="space-y-1">

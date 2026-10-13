@@ -1430,7 +1430,7 @@ export async function recordPayment(
   if (invoice.status === "Paid" || invoice.amount_due <= 0.001) {
     return {
       success: false,
-      error: `Invoice ${invoice.invoice_number} is already fully paid. Balance due is $0.00.`,
+      error: `Invoice ${invoice.invoice_number} is already fully paid. Balance due is ₨ 0.00.`,
     };
   }
 
@@ -1438,7 +1438,7 @@ export async function recordPayment(
   if (payAmount > invoice.amount_due + 0.001) {
     return {
       success: false,
-      error: `Overpayment Prevented: Payment of $${payAmount.toFixed(2)} exceeds remaining invoice balance of $${invoice.amount_due.toFixed(2)}.`,
+      error: `Overpayment Prevented: Payment of ₨ ${payAmount.toFixed(2)} exceeds remaining invoice balance of ₨ ${invoice.amount_due.toFixed(2)}.`,
     };
   }
 

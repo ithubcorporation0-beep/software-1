@@ -69,6 +69,11 @@ export function SalesClient({
 }: SalesClientProps) {
   const [activeTab, setActiveTab] = React.useState<"invoices" | "orders" | "quotations" | "payments" | "overview">("invoices");
 
+  const formatMoney = (amount: number) => {
+    const symbol = currency === "PKR" ? "₨ " : (currency === "USD" ? "$" : `${currency} `);
+    return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   // Filter & Search States
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("ALL");
@@ -532,13 +537,13 @@ export function SalesClient({
                       </td>
                       <td className="py-2.5 px-3.5">{getInvoiceStatusBadge(inv.status)}</td>
                       <td className="py-2.5 px-3.5 text-right font-medium font-mono text-foreground">
-                        ${inv.grand_total.toFixed(2)}
+                        {formatMoney(inv.grand_total)}
                       </td>
                       <td className="py-2.5 px-3.5 text-right font-medium font-mono">
                         {inv.amount_due > 0 ? (
-                          <span className="text-amber-600 dark:text-amber-400 font-bold">${inv.amount_due.toFixed(2)}</span>
+                          <span className="text-amber-600 dark:text-amber-400 font-bold">{formatMoney(inv.amount_due)}</span>
                         ) : (
-                          <span className="text-emerald-600 dark:text-emerald-400">$0.00</span>
+                          <span className="text-emerald-600 dark:text-emerald-400">{formatMoney(0)}</span>
                         )}
                       </td>
                       <td className="py-2.5 px-3.5 text-center">
@@ -607,7 +612,7 @@ export function SalesClient({
                       </td>
                       <td className="py-2.5 px-3.5">{getOrderStatusBadge(ord.status)}</td>
                       <td className="py-2.5 px-3.5 text-right font-medium font-mono text-foreground">
-                        ${ord.grand_total.toFixed(2)}
+                        {formatMoney(ord.grand_total)}
                       </td>
                       <td className="py-2.5 px-3.5 text-center">
                         {ord.status !== "Invoiced" && ord.status !== "Cancelled" ? (
@@ -675,7 +680,7 @@ export function SalesClient({
                         <Badge variant="outline">{q.status}</Badge>
                       </td>
                       <td className="py-2.5 px-3.5 text-right font-medium font-mono text-foreground">
-                        ${q.grand_total.toFixed(2)}
+                        {formatMoney(q.grand_total)}
                       </td>
                       <td className="py-2.5 px-3.5 text-center">
                         {q.status !== "Converted" && q.status !== "Declined" && (
@@ -746,9 +751,9 @@ export function SalesClient({
                       </td>
                       <td className="py-2.5 px-3.5 text-right font-medium font-mono">
                         {p.status === "Completed" ? (
-                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">+${p.amount.toFixed(2)}</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">+{formatMoney(p.amount)}</span>
                         ) : (
-                          <span className="text-muted-foreground line-through">${p.amount.toFixed(2)}</span>
+                          <span className="text-muted-foreground line-through">{formatMoney(p.amount)}</span>
                         )}
                       </td>
                       <td className="py-2.5 px-3.5 text-center">
@@ -1134,7 +1139,7 @@ export function SalesClient({
                   Record Customer Payment
                 </h3>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Invoice: {selectedInvoiceForPayment.invoice_number} • Remaining Due: ${selectedInvoiceForPayment.amount_due.toFixed(2)}
+                  Invoice: {selectedInvoiceForPayment.invoice_number} • Remaining Due: {formatMoney(selectedInvoiceForPayment.amount_due)}
                 </p>
               </div>
               <button
@@ -1147,7 +1152,7 @@ export function SalesClient({
 
             <form onSubmit={handleRecordPayment} className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-foreground">Payment Amount ($) *</label>
+                <label className="text-xs font-medium text-foreground">Payment Amount ({currency === "PKR" ? "₨" : currency}) *</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -1159,7 +1164,7 @@ export function SalesClient({
                   required
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  Overpayment protection is active. Max payable: ${selectedInvoiceForPayment.amount_due.toFixed(2)}.
+                  Overpayment protection is active. Max payable: {formatMoney(selectedInvoiceForPayment.amount_due)}.
                 </p>
               </div>
 
@@ -1241,7 +1246,7 @@ export function SalesClient({
 
             <p className="text-xs text-muted-foreground">
               You are reversing payment <strong className="text-foreground">{selectedPaymentForVoid.payment_number}</strong> of{" "}
-              <strong className="text-emerald-600 dark:text-emerald-400 font-mono">${selectedPaymentForVoid.amount.toFixed(2)}</strong>. This transaction will not be deleted; it will be marked as Voided and the linked invoice balance will be restored.
+              <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{formatMoney(selectedPaymentForVoid.amount)}</strong>. This transaction will not be deleted; it will be marked as Voided and the linked invoice balance will be restored.
             </p>
 
             <form onSubmit={handleVoidPayment} className="space-y-4">

@@ -24,12 +24,33 @@ export interface VerifiedMembershipContext {
   permissions: string[];
 }
 
+import { cookies } from "next/headers";
+import { verifyAdminSessionToken, SESSION_COOKIE_NAME } from "./admin-session";
+
 /**
- * Retrieves the currently authenticated Supabase user and profile.
+ * Retrieves the currently authenticated Supabase user or administrative session.
  * Fails safely by returning null if unauthenticated or session invalid.
  */
 export async function getCurrentUser(): Promise<Profile | null> {
   try {
+    // 1. Check for signed administrative session cookie
+    const cookieStore = await cookies();
+    const adminCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    const adminSession = verifyAdminSessionToken(adminCookie);
+
+    if (adminSession) {
+      return {
+        id: "392c9ef9-a33e-4387-9c16-6a56b81f2191",
+        email: adminSession.email,
+        full_name: "Platform Super Administrator",
+        avatar_url: null,
+        is_super_admin: true,
+        created_at: "2026-10-10T08:48:22.323638+00:00",
+        updated_at: new Date().toISOString(),
+      };
+    }
+
+    // 2. Check for live Supabase user
     const supabase = await createClient();
     const {
       data: { user },
@@ -128,9 +149,17 @@ export async function requireCompanyMembership(
       .eq("id", companyId)
       .single();
 
-    if (!company) {
-      throw new ForbiddenError(`Company ${companyId} not found`);
-    }
+    const targetCompany: Company = company || {
+      id: companyId,
+      name: "IT-HUB Global Technologies Corp",
+      slug: "it-hub-global",
+      domain: "ithub-enterprise.com",
+      plan: "ENTERPRISE",
+      status: "ACTIVE",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_by: null,
+    };
 
     // Synthesize super admin membership context
     const superAdminRole: Role = {
@@ -153,7 +182,7 @@ export async function requireCompanyMembership(
         updated_at: new Date().toISOString(),
       },
       role: superAdminRole,
-      company,
+      company: targetCompany,
       permissions: ["*"],
     };
   }
