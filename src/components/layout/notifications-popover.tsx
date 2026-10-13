@@ -236,10 +236,16 @@ export function NotificationsPopover() {
 
         {/* Footer */}
         <div className="border-t p-2 bg-muted/20 flex items-center justify-between px-3 text-[10px] text-muted-foreground">
-          <span>System Alerts & Activity</span>
+          <a
+            href="/notifications"
+            className="text-primary hover:underline font-medium flex items-center gap-1"
+          >
+            <span>View All Notifications</span>
+            <span aria-hidden="true">&rarr;</span>
+          </a>
           <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Active
+            Live
           </span>
         </div>
       </DropdownContent>
