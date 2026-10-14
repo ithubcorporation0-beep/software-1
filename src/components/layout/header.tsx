@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, Search, Command, Building2, Globe } from "lucide-react";
+import { Menu, Search, Command, Building2, Globe, Clock } from "lucide-react";
 import { NotificationsPopover } from "./notifications-popover";
 import { UserMenu } from "./user-menu";
 import { GlobalSearchDialog } from "./global-search-dialog";
@@ -37,18 +37,18 @@ export function Header() {
             <Menu className="h-5 w-5" />
           </button>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-md border border-border/80 bg-muted/30 px-2.5 py-1 text-xs font-medium">
-              <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span className="font-semibold text-foreground truncate max-w-[140px] sm:max-w-[200px]">IT-HUB Corp</span>
-              <span className="text-muted-foreground/60 hidden sm:inline">/</span>
-              <span className="text-muted-foreground hidden sm:flex items-center gap-1 text-[11px]">
-                <Globe className="h-3 w-3" /> Production
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white shadow-xs">
+              <Building2 className="h-4 w-4" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-semibold text-xs sm:text-sm text-foreground tracking-tight leading-none">
+                Business Solutions Tax Consultants
+              </span>
+              <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                Workspace
               </span>
             </div>
-            <Badge variant="outline" className="hidden xl:inline-flex text-[10px] h-5 border-border/80 text-muted-foreground">
-              Tenant #01
-            </Badge>
           </div>
         </div>
 
@@ -69,8 +69,16 @@ export function Header() {
           </button>
         </div>
 
-        {/* Right Side: Notifications + User Profile Menu */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right Side: Activities Clock + Notifications + User Profile Menu */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
+          <button
+            onClick={() => window.location.href = "/notifications"}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title="Recent Activities"
+            aria-label="Recent Activities"
+          >
+            <Clock className="h-4 w-4" />
+          </button>
           <NotificationsPopover />
           <div className="h-4 w-px bg-border/80 hidden sm:block" />
           <UserMenu />

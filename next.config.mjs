@@ -2,6 +2,18 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  async rewrites() {
+    return [
+      {
+        source: "/home/modules/:path*",
+        destination: "/modules/:path*",
+      },
+      {
+        source: "/home",
+        destination: "/",
+      },
+    ];
+  },
   async headers() {
     return [
       {

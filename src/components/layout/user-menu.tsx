@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { User, Shield, Moon, Sun, LogOut, Check, ShieldAlert } from "lucide-react";
+import { User, Shield, Moon, Sun, LogOut, Check, ShieldAlert, ChevronDown } from "lucide-react";
 import {
   Dropdown,
   DropdownTrigger,
@@ -15,9 +15,9 @@ import { createClient } from "@/lib/supabase/client";
 
 export function UserMenu() {
   const router = useRouter();
-  const [isDark, setIsDark] = React.useState(true);
-  const [userName, setUserName] = React.useState<string>("ERP Lead");
-  const [userEmail, setUserEmail] = React.useState<string | null>(null);
+  const [isDark, setIsDark] = React.useState(false);
+  const [userName, setUserName] = React.useState<string>("BSTC");
+  const [userEmail, setUserEmail] = React.useState<string | null>("admin@bstc.local");
   const [isSuperAdmin, setIsSuperAdmin] = React.useState<boolean>(false);
 
   React.useEffect(() => {
@@ -84,16 +84,14 @@ export function UserMenu() {
     <Dropdown>
       <DropdownTrigger>
         <button
-          className="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-1 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-border/60 bg-background/50"
           aria-label="User profile and system settings"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-primary font-semibold text-xs border border-primary/30 uppercase">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white font-semibold text-xs border border-blue-500 shadow-xs uppercase">
             {userName.slice(0, 2)}
           </div>
-          <div className="hidden text-left md:block">
-            <div className="text-xs font-medium text-foreground">{userName}</div>
-            <div className="text-[10px] text-muted-foreground">Admin Console</div>
-          </div>
+          <span className="text-xs font-semibold text-foreground tracking-tight">{userName}</span>
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground ml-0.5" />
         </button>
       </DropdownTrigger>
       <DropdownContent align="right" className="w-56 p-1">

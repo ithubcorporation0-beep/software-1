@@ -45,6 +45,11 @@ export const navigationConfig: NavSection[] = [
         icon: LayoutDashboard,
       },
       {
+        title: "User Management",
+        href: "/modules/user-management",
+        icon: Users,
+      },
+      {
         title: "Notifications",
         href: "/notifications",
         icon: Bell,
