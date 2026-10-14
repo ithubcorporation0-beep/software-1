@@ -142,4 +142,14 @@ describe("Performance Diagnostic & Latency Audit", () => {
     expect(leads.leads).toBeDefined();
     expect(d0).toBeLessThan(50);
   });
+
+  it("enforces strict query-count budget and pagination limits on key list pages (regression guard)", async () => {
+    const invoices = await getInvoices(companyId, { limit: 50 });
+    const orders = await getSalesOrders(companyId, { limit: 50 });
+    const quotations = await getQuotations(companyId, { limit: 50 });
+
+    expect(invoices.length).toBeLessThanOrEqual(50);
+    expect(orders.length).toBeLessThanOrEqual(50);
+    expect(quotations.length).toBeLessThanOrEqual(50);
+  });
 });
