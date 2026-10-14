@@ -19,6 +19,7 @@ import {
   Mail,
   RefreshCw,
   Eye,
+  Check,
 } from "lucide-react";
 import { CompanyExtendedSettings } from "@/lib/company/server";
 import { CompanyMemberItem } from "@/lib/users/server";
@@ -147,10 +148,73 @@ export function SettingsClient({
     });
   }, [members, searchMember, statusFilter]);
 
+  const [effectivePermissionsMember, setEffectivePermissionsMember] = React.useState<CompanyMemberItem | null>(null);
+
   // --- TAB 3: Roles & Custom Permissions State ---
   const [roles, setRoles] = React.useState(initialRoles);
   const [isRoleModalOpen, setIsRoleModalOpen] = React.useState(false);
   const [roleFeedback, setRoleFeedback] = React.useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // Custom Role Builder State
+  const [roleTitle, setRoleTitle] = React.useState("");
+  const [roleCode, setRoleCode] = React.useState("");
+  const [roleDesc, setRoleDesc] = React.useState("");
+  const [selectedPerms, setSelectedPerms] = React.useState<string[]>([]);
+
+  const ROLE_ARCHETYPES = [
+    {
+      title: "Data Entry Operator",
+      code: "data_entry_operator",
+      desc: "Performs client onboarding and preliminary invoice drafts. No financial disbursement authority.",
+      perms: ["customers.view", "customers.create", "invoices.view", "invoices.create", "inventory.view"],
+    },
+    {
+      title: "Invoice Clerk",
+      code: "invoice_clerk",
+      desc: "Generates customer billing invoices, sales exports, and manages commercial receivables.",
+      perms: ["invoices.view", "invoices.create", "invoices.edit", "invoices.export", "customers.view"],
+    },
+    {
+      title: "Accountant",
+      code: "accountant",
+      desc: "Manages financial general ledger, expense reviews and approvals, and financial reports.",
+      perms: ["expenses.view", "expenses.create", "expenses.approve", "invoices.view", "invoices.export", "payroll.view", "reports.view", "reports.export"],
+    },
+    {
+      title: "HR Manager",
+      code: "hr_manager",
+      desc: "Oversees employee directory, attendance rosters, and payroll disbursement processing.",
+      perms: ["employees.view", "employees.create", "employees.edit", "attendance.view", "attendance.manage", "payroll.view", "payroll.process"],
+    },
+    {
+      title: "Sales Manager",
+      code: "sales_manager",
+      desc: "Full ownership of customer relationship management, sales pipelines, and invoicing.",
+      perms: ["customers.view", "customers.create", "customers.edit", "customers.delete", "invoices.view", "invoices.create", "invoices.edit", "invoices.export", "reports.view"],
+    },
+  ];
+
+  const applyArchetype = (arch: (typeof ROLE_ARCHETYPES)[0]) => {
+    setRoleTitle(arch.title);
+    setRoleCode(arch.code);
+    setRoleDesc(arch.desc);
+    setSelectedPerms(arch.perms);
+  };
+
+  const togglePermission = (code: string) => {
+    setSelectedPerms((prev) =>
+      prev.includes(code) ? prev.filter((p) => p !== code) : [...prev, code]
+    );
+  };
+
+  const toggleModulePermissions = (codes: string[]) => {
+    const allSelected = codes.every((c) => selectedPerms.includes(c));
+    if (allSelected) {
+      setSelectedPerms((prev) => prev.filter((c) => !codes.includes(c)));
+    } else {
+      setSelectedPerms((prev) => Array.from(new Set([...prev, ...codes])));
+    }
+  };
 
   const [roleState, roleFormAction, isCreatingRole] = useActionState<ActionState, FormData>(
     async (state, formData) => {
@@ -159,6 +223,10 @@ export function SettingsClient({
         const perms = formData.getAll("permissionCodes") as string[];
         setRoles((prev) => [...prev, { ...res.data, permissions: perms }]);
         setIsRoleModalOpen(false);
+        setRoleTitle("");
+        setRoleCode("");
+        setRoleDesc("");
+        setSelectedPerms([]);
         setRoleFeedback({ message: res.message || "Custom role created successfully", type: "success" });
       } else {
         setRoleFeedback({ message: res.error || "Failed to create role", type: "error" });
@@ -685,24 +753,36 @@ export function SettingsClient({
                         {new Date(member.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant={member.status === "ACTIVE" ? "outline" : "default"}
-                          size="sm"
-                          onClick={() => handleStatusToggle(member.membershipId, member.status)}
-                          className="text-xs h-7"
-                        >
-                          {member.status === "ACTIVE" ? (
-                            <>
-                              <UserX className="mr-1 h-3 w-3 text-amber-500" />
-                              Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="mr-1 h-3 w-3 text-emerald-500" />
-                              Reactivate
-                            </>
-                          )}
-                        </Button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEffectivePermissionsMember(member)}
+                            className="text-xs h-7 text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10"
+                            title="Inspect Effective Permissions"
+                          >
+                            <Shield className="mr-1 h-3 w-3" />
+                            Permissions
+                          </Button>
+                          <Button
+                            variant={member.status === "ACTIVE" ? "outline" : "default"}
+                            size="sm"
+                            onClick={() => handleStatusToggle(member.membershipId, member.status)}
+                            className="text-xs h-7"
+                          >
+                            {member.status === "ACTIVE" ? (
+                              <>
+                                <UserX className="mr-1 h-3 w-3 text-amber-500" />
+                                Deactivate
+                              </>
+                            ) : (
+                              <>
+                                <UserCheck className="mr-1 h-3 w-3 text-emerald-500" />
+                                Reactivate
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -772,6 +852,182 @@ export function SettingsClient({
                 </Button>
               </div>
             </form>
+          </Dialog>
+
+          {/* Effective Permissions Dialog */}
+          <Dialog
+            open={effectivePermissionsMember !== null}
+            onOpenChange={(open) => !open && setEffectivePermissionsMember(null)}
+          >
+            <DialogHeader>
+              <DialogTitle className="text-sm font-semibold flex items-center gap-2">
+                <Shield className="h-4 w-4 text-indigo-500" />
+                Effective Permissions Audit: {effectivePermissionsMember?.fullName}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Review verified operational entitlements. IT HUB ERP enforces a strict server-side default-deny policy.
+              </DialogDescription>
+            </DialogHeader>
+
+            {effectivePermissionsMember && (() => {
+              const memberRole = roles.find((r) => r.id === effectivePermissionsMember.roleId);
+              const isSuper = effectivePermissionsMember.isSuperAdmin;
+              const rolePerms = memberRole?.permissions || [];
+              const hasWildcard = isSuper || rolePerms.includes("*");
+
+              const checkHas = (code: string) => {
+                if (hasWildcard) return true;
+                if (rolePerms.includes(code)) return true;
+                const alt1 = code.replace(".", ":");
+                const alt2 = code.replace(":", ".");
+                if (rolePerms.includes(alt1) || rolePerms.includes(alt2)) return true;
+                const [res] = code.split(/[:.]/);
+                if (
+                  rolePerms.includes(`${res}:*`) ||
+                  rolePerms.includes(`${res}.*`) ||
+                  rolePerms.includes(`${res}:manage`) ||
+                  rolePerms.includes(`${res}.manage`)
+                ) {
+                  return true;
+                }
+                return false;
+              };
+
+              const MODULE_SPEC = [
+                {
+                  module: "Customers & CRM",
+                  actions: [
+                    { name: "View Customers", code: "customers.view" },
+                    { name: "Create Customer", code: "customers.create" },
+                    { name: "Edit Customer", code: "customers.edit" },
+                    { name: "Delete Customer", code: "customers.delete" },
+                  ],
+                },
+                {
+                  module: "Sales & Invoicing",
+                  actions: [
+                    { name: "View Invoices", code: "invoices.view" },
+                    { name: "Create Invoice", code: "invoices.create" },
+                    { name: "Edit Invoice", code: "invoices.edit" },
+                    { name: "Delete Invoice", code: "invoices.delete" },
+                    { name: "Export Invoices", code: "invoices.export" },
+                  ],
+                },
+                {
+                  module: "Finance & Expenses",
+                  actions: [
+                    { name: "View Expenses", code: "expenses.view" },
+                    { name: "Create Expense", code: "expenses.create" },
+                    { name: "Approve Expense", code: "expenses.approve" },
+                  ],
+                },
+                {
+                  module: "Human Resources",
+                  actions: [
+                    { name: "View Employees", code: "employees.view" },
+                    { name: "Create Employee", code: "employees.create" },
+                    { name: "Edit Employee", code: "employees.edit" },
+                    { name: "View Attendance", code: "attendance.view" },
+                    { name: "Manage Attendance", code: "attendance.manage" },
+                  ],
+                },
+                {
+                  module: "Payroll Processing",
+                  actions: [
+                    { name: "View Payroll", code: "payroll.view" },
+                    { name: "Process Payroll", code: "payroll.process" },
+                  ],
+                },
+                {
+                  module: "Inventory & Warehousing",
+                  actions: [
+                    { name: "View Inventory", code: "inventory.view" },
+                    { name: "Manage Inventory", code: "inventory.manage" },
+                  ],
+                },
+                {
+                  module: "Reports & Analytics",
+                  actions: [
+                    { name: "View Reports", code: "reports.view" },
+                    { name: "Export Reports", code: "reports.export" },
+                  ],
+                },
+                {
+                  module: "User & Role Governance",
+                  actions: [
+                    { name: "View Users", code: "users.view" },
+                    { name: "Manage Users", code: "users.manage" },
+                  ],
+                },
+                {
+                  module: "Company Settings",
+                  actions: [
+                    { name: "Manage Settings", code: "settings.manage" },
+                  ],
+                },
+              ];
+
+              return (
+                <div className="space-y-4 pt-2 text-xs max-h-[70vh] overflow-y-auto pr-1">
+                  <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-foreground">
+                        {effectivePermissionsMember.fullName} ({effectivePermissionsMember.email})
+                      </span>
+                      <Badge variant="outline" className="font-mono text-[10px]">
+                        {memberRole?.name || "Standard Member"}
+                      </Badge>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Status: <span className="font-medium text-foreground">{effectivePermissionsMember.status}</span>
+                      {isSuper && " · Global Super Admin Platform Bypass"}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {MODULE_SPEC.map((mod) => (
+                      <div key={mod.module} className="rounded-lg border p-3 space-y-2">
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                          {mod.module}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {mod.actions.map((act) => {
+                            const isAllowed = checkHas(act.code);
+                            return (
+                              <div
+                                key={act.code}
+                                className={`flex items-center justify-between rounded p-1.5 border ${
+                                  isAllowed
+                                    ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                                    : "bg-muted/10 border-border/40 text-muted-foreground opacity-60"
+                                }`}
+                              >
+                                <div>
+                                  <div className="font-medium text-[11px]">{act.name}</div>
+                                  <div className="font-mono text-[9px] opacity-75">{act.code}</div>
+                                </div>
+                                <Badge
+                                  variant={isAllowed ? "success" : "outline"}
+                                  className="text-[9px] h-4 py-0"
+                                >
+                                  {isAllowed ? "Permitted" : "Default Deny"}
+                                </Badge>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-end pt-2 border-t">
+                    <Button size="sm" variant="outline" onClick={() => setEffectivePermissionsMember(null)}>
+                      Close Inspection
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
           </Dialog>
         </Card>
       )}
@@ -873,51 +1129,124 @@ export function SettingsClient({
             </DialogHeader>
 
             <form action={roleFormAction} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+              {/* Quick Template Archetypes */}
+              <div className="space-y-1.5 border-b pb-3">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Quick Role Archetypes (PRD Standards):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {ROLE_ARCHETYPES.map((arch) => (
+                    <Button
+                      key={arch.code}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applyArchetype(arch)}
+                      className="h-6 text-[10px] px-2 text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10 border-indigo-500/20"
+                    >
+                      + {arch.title}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-foreground">Role Title *</label>
-                  <Input name="name" placeholder="e.g. Warehouse Lead" required />
+                  <Input
+                    name="name"
+                    value={roleTitle}
+                    onChange={(e) => setRoleTitle(e.target.value)}
+                    placeholder="e.g. Data Entry Operator"
+                    required
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-foreground">Role Code *</label>
-                  <Input name="code" placeholder="e.g. warehouse_lead" required />
+                  <Input
+                    name="code"
+                    value={roleCode}
+                    onChange={(e) => setRoleCode(e.target.value)}
+                    placeholder="e.g. data_entry_operator"
+                    required
+                  />
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground">Role Description</label>
-                <Input name="description" placeholder="Oversees receiving, inventory counts, and dispatch" />
+                <Input
+                  name="description"
+                  value={roleDesc}
+                  onChange={(e) => setRoleDesc(e.target.value)}
+                  placeholder="e.g. Manages customer entry and draft sales invoices without financial disbursement rights"
+                />
               </div>
 
               <div className="space-y-2 border-t pt-3">
-                <div className="text-xs font-semibold text-foreground">Grant Granular Permissions *</div>
-                <div className="space-y-3 max-h-60 overflow-y-auto border rounded-md p-3">
-                  {Array.from(groupedPermissions.entries()).map(([resource, perms]) => (
-                    <div key={resource} className="space-y-1">
-                      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        {resource}
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                        {perms.map((p) => (
-                          <label
-                            key={p.code}
-                            className="flex items-start gap-2 text-[11px] text-foreground hover:bg-muted/40 p-1 rounded cursor-pointer"
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold text-foreground">
+                    Grant Granular Permissions * ({selectedPerms.length} selected)
+                  </div>
+                  {selectedPerms.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPerms([])}
+                      className="text-[11px] text-muted-foreground hover:text-destructive underline"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-3 max-h-64 overflow-y-auto border rounded-md p-3">
+                  {Array.from(groupedPermissions.entries()).map(([resource, perms]) => {
+                    const allInModuleSelected = perms.every((p) => selectedPerms.includes(p.code));
+                    return (
+                      <div key={resource} className="space-y-1.5 border-b pb-2 last:border-b-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            {resource}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleModulePermissions(perms.map((p) => p.code))}
+                            className="text-[10px] text-indigo-400 hover:underline font-mono"
                           >
-                            <input
-                              type="checkbox"
-                              name="permissionCodes"
-                              value={p.code}
-                              className="mt-0.5 rounded border-input text-primary h-3.5 w-3.5"
-                            />
-                            <div>
-                              <span className="font-mono font-medium">{p.code}</span>
-                              <p className="text-[10px] text-muted-foreground">{p.description}</p>
-                            </div>
-                          </label>
-                        ))}
+                            {allInModuleSelected ? "Deselect Module" : "Select Module"}
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {perms.map((p) => {
+                            const isChecked = selectedPerms.includes(p.code);
+                            return (
+                              <label
+                                key={p.code}
+                                className={`flex items-start gap-2 text-[11px] p-1.5 rounded cursor-pointer border transition-colors ${
+                                  isChecked
+                                    ? "bg-indigo-500/10 border-indigo-500/30 text-foreground"
+                                    : "hover:bg-muted/40 border-transparent text-muted-foreground"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  name="permissionCodes"
+                                  value={p.code}
+                                  checked={isChecked}
+                                  onChange={() => togglePermission(p.code)}
+                                  className="mt-0.5 rounded border-input text-primary h-3.5 w-3.5"
+                                />
+                                <div>
+                                  <span className="font-mono font-medium text-foreground">{p.code}</span>
+                                  <p className="text-[10px] text-muted-foreground">{p.description}</p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
