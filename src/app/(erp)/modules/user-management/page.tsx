@@ -22,7 +22,7 @@ export default async function UserManagementPage() {
     getCompanyRoles(companyId).catch(() => []),
     getCustomers(companyId, { page: 1, pageSize: 1 }).catch(() => ({
       data: [],
-      total: 27,
+      total: 0,
       page: 1,
       pageSize: 1,
       totalPages: 1,
@@ -35,7 +35,7 @@ export default async function UserManagementPage() {
         companyId={companyId}
         initialMembers={members}
         initialRoles={roles}
-        totalCustomersCount={customersResult.total || 27}
+        totalCustomersCount={customersResult.total || 0}
         totalVendorsCount={0}
       />
     </ContentLayout>

@@ -53,9 +53,9 @@ export function AccountingClient({
   accounts = [],
   expenses = [],
   journalEntries = [],
-  totalClientsCount = 27,
+  totalClientsCount = 0,
   totalVendorsCount = 0,
-  totalCustomerPayment = 1220000,
+  totalCustomerPayment = 0,
   totalVendorPayment = 0,
 }: AccountingClientProps) {
   // Navigation active tab & dropdown state

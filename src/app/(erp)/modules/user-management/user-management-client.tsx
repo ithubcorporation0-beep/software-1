@@ -71,37 +71,15 @@ interface CorporateUserItem {
   status: "Enabled" | "Disabled";
 }
 
-const CORPORATE_USERS: CorporateUserItem[] = [
-  // Page 1
-  { id: "u-1", name: "Al-Rehman Enterprises", email: "alrehman@unaz.net", mobile: "+923001234567", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-2", name: "Apex Global Traders", email: "apex.traders@unaz.net", mobile: "+923002345678", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-3", name: "Beacon Logistics Ltd", email: "beacon@unaz.net", mobile: "+923003456789", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-4", name: "Capital Tax Advisory", email: "capital.tax@unaz.net", mobile: "+923004567890", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-5", name: "Crown Cotton Mills", email: "crown.cotton@unaz.net", mobile: "+923005678901", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-6", name: "Delta Pharma Corp", email: "delta.pharma@unaz.net", mobile: "+923006789012", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-7", name: "Eagle Freight Forwarding", email: "eagle.freight@unaz.net", mobile: "+923007890123", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-8", name: "Falcon Steel Mills", email: "falcon.steel@unaz.net", mobile: "+923008901234", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-9", name: "Frontier Flour Mills", email: "frontier.flour@unaz.net", mobile: "+923009012345", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-10", name: "Giga Solar Energy", email: "giga.solar@unaz.net", mobile: "+923001122334", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  // Page 2
-  { id: "u-11", name: "Haq Paper Products", email: "haq.paper@unaz.net", mobile: "+923002233445", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-12", name: "Horizon Commercial Group", email: "horizon@unaz.net", mobile: "+923003344556", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-13", name: "Imperial Textile Co", email: "imperial.textile@unaz.net", mobile: "+923004455667", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-14", name: "Jadoon Builders Ltd", email: "jadoon.builders@unaz.net", mobile: "+923005566778", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-15", name: "Khyber Cement Ltd", email: "khyber.cement@unaz.net", mobile: "+923006677889", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-16", name: "Kohinoor Sugar Mills", email: "kohinoor.sugar@unaz.net", mobile: "+923007788990", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-17", name: "Lucky Advisory Group", email: "lucky.advisory@unaz.net", mobile: "+923008899001", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-18", name: "Metro Plastic Industries", email: "metro.plastic@unaz.net", mobile: "+923009900112", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-19", name: "National Goods Transport", email: "national.goods@unaz.net", mobile: "+923001020304", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-20", name: "Olympus Trading Corp", email: "olympus@unaz.net", mobile: "+923002030405", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  // Page 3 (Exact match to user screenshot: 21 to 26 of 26 results)
-  { id: "u-21", name: "Indus Tobacco Company (PVT) Ltd", email: "indus.tobacco.company@unaz.net", mobile: "+923005713536", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-22", name: "Intikhab Ul Haq Traders", email: "intikhab.ul.haq.traders@unaz.net", mobile: "+923009300215", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-23", name: "Kundi Paper Mills", email: "kundi.paper.mills@unaz.net", mobile: "+923339251926", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-24", name: "Kundi Paper Board", email: "kundi.paper.board@unaz.net", mobile: "+923188353991", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-25", name: "Sardar Khan", email: "sardar.khan@unaz.net", mobile: "+923339860439", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-  { id: "u-26", name: "Sher Ahmad", email: "sultantyresmdn@gmail.com", mobile: "+923009178324", company: "Business Solutions Tax Consultants", role: "Client", status: "Enabled" },
-];
+interface CorporateUserItem {
+  id: string;
+  name: string;
+  email: string;
+  mobile: string;
+  company: string;
+  role: string;
+  status: "Enabled" | "Disabled";
+}
 
 interface UserManagementClientProps {
   companyId: string;
@@ -116,11 +94,11 @@ export function UserManagementClient({
   companyId,
   initialMembers = [],
   initialRoles = [],
-  totalCustomersCount = 27,
+  totalCustomersCount = 0,
   totalVendorsCount = 0,
   initialTab = "access",
 }: UserManagementClientProps) {
-  // Navigation tabs state (Defaults to "access" matching user's request)
+  // Navigation tabs state
   const [activeTab, setActiveTab] = React.useState<"dashboard" | "access" | "users" | "roles" | "customers">(initialTab);
 
   // Hovered month for the "New Users This Year" bar chart tooltip
@@ -145,15 +123,32 @@ export function UserManagementClient({
   const [isVendorModalOpen, setIsVendorModalOpen] = React.useState(false);
   const [isChildCompaniesOpen, setIsChildCompaniesOpen] = React.useState(false);
 
-  // Access Directory states (Defaults to page 3 matching screenshot 21 to 26 of 26 results)
-  const [currentPage, setCurrentPage] = React.useState(3);
+  const mappedInitialUsers = React.useMemo<CorporateUserItem[]>(() => {
+    return initialMembers.map((m) => ({
+      id: m.membershipId || m.userId,
+      name: m.fullName || "User",
+      email: m.email,
+      mobile: "—",
+      company: "Business Solutions Tax Consultants",
+      role: m.roleName || (m.isSuperAdmin ? "Super Admin" : "Staff"),
+      status: m.status === "ACTIVE" ? "Enabled" : "Disabled",
+    }));
+  }, [initialMembers]);
+
+  // Access Directory states
+  const [currentPage, setCurrentPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
   const [viewMode, setViewMode] = React.useState<"list" | "grid">("list");
-  const [openActionRowId, setOpenActionRowId] = React.useState<string | null>("u-23"); // Kundi Paper Mills action menu open
+  const [openActionRowId, setOpenActionRowId] = React.useState<string | null>(null);
   const [isExportOpen, setIsExportOpen] = React.useState(false);
   const [isPageSizeOpen, setIsPageSizeOpen] = React.useState(false);
   const [accessSearch, setAccessSearch] = React.useState("");
-  const [usersList, setUsersList] = React.useState<CorporateUserItem[]>(CORPORATE_USERS);
+  const [usersList, setUsersList] = React.useState<CorporateUserItem[]>(mappedInitialUsers);
+
+  React.useEffect(() => {
+    setUsersList(mappedInitialUsers);
+  }, [mappedInitialUsers]);
+
   const [selectedUserForAction, setSelectedUserForAction] = React.useState<CorporateUserItem | null>(null);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = React.useState(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = React.useState(false);
@@ -210,28 +205,27 @@ export function UserManagementClient({
   const [userSearch, setUserSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<"ALL" | "ACTIVE" | "INVITED" | "SUSPENDED">("ALL");
 
-  // KPI calculations
-  const totalUsers = Math.max(26, initialMembers.length);
-  const activeUsers = Math.max(26, initialMembers.filter((m) => m.status === "ACTIVE").length);
-  const totalRoles = Math.max(5, initialRoles.length);
+  // Real KPI calculations from live database records
+  const totalUsers = initialMembers.length;
+  const activeUsers = initialMembers.filter((m) => m.status === "ACTIVE").length;
+  const totalRoles = initialRoles.length;
   const totalCustomers = totalCustomersCount;
   const totalVendors = totalVendorsCount;
 
-  // Monthly data for "New Users This Year" bar chart (Matching Screenshot 2: April=1, May=19, June=6)
-  const monthlyData = [
-    { month: "Jan", count: 0 },
-    { month: "Feb", count: 0 },
-    { month: "Mar", count: 0 },
-    { month: "Apr", count: 1 },
-    { month: "May", count: 19 },
-    { month: "Jun", count: 6 },
-    { month: "Jul", count: 0 },
-    { month: "Aug", count: 0 },
-    { month: "Sep", count: 0 },
-    { month: "Oct", count: 0 },
-    { month: "Nov", count: 0 },
-    { month: "Dec", count: 0 },
-  ];
+  // Monthly data for "New Users This Year" bar chart derived from member creation dates
+  const monthlyData = React.useMemo(() => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const counts = new Array(12).fill(0);
+    initialMembers.forEach((m) => {
+      if (m.createdAt) {
+        const d = new Date(m.createdAt);
+        if (!isNaN(d.getTime())) {
+          counts[d.getMonth()] += 1;
+        }
+      }
+    });
+    return months.map((month, idx) => ({ month, count: counts[idx] }));
+  }, [initialMembers]);
 
   // Filtered members list
   const filteredMembers = initialMembers.filter((m) => {
@@ -679,8 +673,8 @@ export function UserManagementClient({
               <button
                 onClick={() => {
                   setAccessSearch("");
-                  setCurrentPage(3);
-                  setOpenActionRowId("u-23");
+                  setCurrentPage(1);
+                  setOpenActionRowId(null);
                 }}
                 className="p-2 h-9 w-9 rounded-xl border border-slate-200 dark:border-border bg-white dark:bg-card text-muted-foreground hover:text-foreground hover:bg-muted/50 flex items-center justify-center transition-colors shadow-2xs"
                 title="Reset & Refresh"
@@ -758,7 +752,18 @@ export function UserManagementClient({
                   {paginatedUsers.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="py-12 text-center text-slate-500">
-                        No users found matching &ldquo;{accessSearch}&rdquo;
+                        {accessSearch ? (
+                          <>No users found matching &ldquo;{accessSearch}&rdquo;</>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                              No company members or users found in database
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Click &ldquo;Create User&rdquo; above to invite and add real users to this workspace.
+                            </p>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ) : (
