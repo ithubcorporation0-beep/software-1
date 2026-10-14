@@ -3,10 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { KeyRound, CheckCircle2, AlertCircle } from "lucide-react";
+import { KeyRound, CheckCircle2, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ErpHeroShowcase } from "@/components/auth/erp-hero-showcase";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -54,68 +54,121 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
-          Set New Password
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Enter a secure replacement password for your account.
-        </p>
+    <div className="flex min-h-screen w-full flex-col lg:flex-row">
+      {/* LEFT COLUMN: Enterprise ERP Showcase Banner */}
+      <div className="hidden lg:block lg:w-[58%] xl:w-[62%] h-full min-h-screen">
+        <ErpHeroShowcase />
       </div>
 
-      {errorMessage && (
-        <div
-          role="alert"
-          className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
-        >
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {success ? (
-        <div className="space-y-4 text-center py-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 mx-auto">
-            <CheckCircle2 className="h-6 w-6" />
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Your password has been successfully updated. You may now sign in with your new credentials.
-          </p>
-          <Link href="/login">
-            <Button variant="default" size="sm" className="mt-2">
-              Proceed to Sign In
-            </Button>
+      {/* RIGHT COLUMN: Set New Password Card */}
+      <div className="flex-1 flex flex-col justify-between p-6 sm:p-10 lg:p-12 bg-slate-50/70 dark:bg-card/40 min-h-screen">
+        <div className="flex justify-start">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Back to Sign In</span>
           </Link>
         </div>
-      ) : (
-        <form onSubmit={handleReset} className="space-y-4">
-          <Input
-            label="New Password"
-            type="password"
-            required
-            autoComplete="new-password"
-            placeholder="At least 8 characters"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
 
-          <Input
-            label="Confirm Password"
-            type="password"
-            required
-            autoComplete="new-password"
-            placeholder="Repeat new password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
+        <div className="my-auto py-8 flex justify-center">
+          <div className="w-full max-w-[430px] rounded-3xl border border-slate-200/80 dark:border-border/80 bg-white dark:bg-card p-8 sm:p-10 shadow-xl shadow-slate-200/50 dark:shadow-none space-y-6">
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
+                <span>Security Update</span>
+              </div>
+              <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-foreground pt-1">
+                Set New Password
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-muted-foreground leading-relaxed">
+                Enter a secure replacement password for your account.
+              </p>
+            </div>
 
-          <Button type="submit" className="w-full" isLoading={loading}>
-            <KeyRound className="mr-2 h-4 w-4" />
-            Update Password
-          </Button>
-        </form>
-      )}
+            {errorMessage && (
+              <div
+                role="alert"
+                className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive animate-in fade-in-50"
+              >
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {success ? (
+              <div className="space-y-4 text-center py-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 mx-auto">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Your password has been successfully updated. You may now sign in with your new credentials.
+                </p>
+                <Link href="/login">
+                  <button
+                    type="button"
+                    className="w-full mt-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 text-xs tracking-wide"
+                  >
+                    Proceed to Sign In
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              <form onSubmit={handleReset} className="space-y-4">
+                <Input
+                  label="New Password *"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  placeholder="At least 8 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+
+                <Input
+                  label="Confirm Password *"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  placeholder="Repeat new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full mt-2 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-3.5 px-4 shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 text-xs uppercase tracking-wider transition-all duration-200 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="h-4 w-4" />
+                      <span>UPDATE PASSWORD</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+
+            <div className="border-t pt-4 text-center text-xs text-slate-600 dark:text-muted-foreground">
+              Return to{" "}
+              <Link href="/login" className="font-bold text-blue-600 hover:text-blue-700 hover:underline">
+                Sign In
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center text-[11px] text-slate-400 dark:text-muted-foreground/60">
+          Protected by Enterprise Multi-Tenant Security &amp; Immutable Audit Trail
+        </div>
+      </div>
     </div>
   );
 }
