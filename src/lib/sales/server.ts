@@ -1021,16 +1021,32 @@ export async function convertSalesOrderToInvoice(
 
 export async function getInvoices(
   companyId: string,
-  options?: { search?: string; status?: string },
+  options?: {
+    search?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+    page?: number;
+    pageSize?: number;
+    includeDetails?: boolean;
+  },
   viewingUser?: Profile
 ): Promise<Invoice[]> {
   await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
+  const limit = options?.limit ?? (options?.pageSize ? options.pageSize : undefined);
+  const offset = options?.offset ?? (options?.page && options?.pageSize ? (options.page - 1) * options.pageSize : undefined);
+
   try {
+    // Avoid heavy N+1 joining of all line items and payments when generating table listings
+    const selectProjection = options?.includeDetails
+      ? "*, customer:customers(*), items:invoice_items(*), payments:payments(*)"
+      : "*, customer:customers(id, name, email, company_name)";
+
     let query = supabase
       .from("invoices")
-      .select("*, customer:customers(*), items:invoice_items(*), payments:payments(*)")
+      .select(selectProjection as any)
       .eq("company_id", companyId)
       .order("created_at", { ascending: false });
 
@@ -1038,9 +1054,17 @@ export async function getInvoices(
       query = query.eq("status", options.status);
     }
 
+    if (limit !== undefined) {
+      if (offset !== undefined) {
+        query = query.range(offset, offset + limit - 1);
+      } else {
+        query = query.limit(limit);
+      }
+    }
+
     const { data, error } = await query;
     if (!error && data) {
-      let list = data as Invoice[];
+      let list = data as unknown as Invoice[];
       if (options?.search?.trim()) {
         const term = options.search.trim().toLowerCase();
         list = list.filter(
@@ -1070,6 +1094,11 @@ export async function getInvoices(
   if (options?.search?.trim()) {
     const term = options.search.trim().toLowerCase();
     list = list.filter((inv) => inv.invoice_number.toLowerCase().includes(term));
+  }
+  if (offset !== undefined && limit !== undefined) {
+    list = list.slice(offset, offset + limit);
+  } else if (limit !== undefined) {
+    list = list.slice(0, limit);
   }
   return list;
 }
@@ -1216,7 +1245,7 @@ export async function createInvoice(
 
 export async function getPayments(
   companyId: string,
-  options?: { invoiceId?: string; customerId?: string },
+  options?: { invoiceId?: string; customerId?: string; limit?: number; offset?: number },
   viewingUser?: Profile
 ): Promise<Payment[]> {
   await requirePermission(companyId, "sales:view", viewingUser);
@@ -1225,7 +1254,7 @@ export async function getPayments(
   try {
     let query = supabase
       .from("payments")
-      .select("*, invoice:invoices(*), customer:customers(*)")
+      .select("*, invoice:invoices(id, invoice_number, grand_total, amount_due), customer:customers(id, name, email)" as any)
       .eq("company_id", companyId)
       .order("created_at", { ascending: false });
 
@@ -1235,10 +1264,17 @@ export async function getPayments(
     if (options?.customerId) {
       query = query.eq("customer_id", options.customerId);
     }
+    if (options?.limit !== undefined) {
+      if (options?.offset !== undefined) {
+        query = query.range(options.offset, options.offset + options.limit - 1);
+      } else {
+        query = query.limit(options.limit);
+      }
+    }
 
     const { data, error } = await query;
     if (!error && data) {
-      return data as Payment[];
+      return data as unknown as Payment[];
     }
   } catch {
     // Fall through
@@ -1250,6 +1286,11 @@ export async function getPayments(
   }
   if (options?.customerId) {
     list = list.filter((p) => p.customer_id === options.customerId);
+  }
+  if (options?.offset !== undefined && options?.limit !== undefined) {
+    list = list.slice(options.offset, options.offset + options.limit);
+  } else if (options?.limit !== undefined) {
+    list = list.slice(0, options.limit);
   }
   return list;
 }

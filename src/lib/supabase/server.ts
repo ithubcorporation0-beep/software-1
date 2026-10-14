@@ -5,7 +5,13 @@ import { cookies } from "next/headers";
  * Creates a server-side Supabase client using App Router cookie store.
  */
 export async function createClient() {
-  const cookieStore = await cookies();
+  let cookieStore: any = null;
+  try {
+    cookieStore = await cookies();
+  } catch {
+    // Request scope not active (e.g. unit tests or background scripts)
+  }
+
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project-id.supabase.co";
   const supabaseAnonKey =
@@ -14,9 +20,10 @@ export async function createClient() {
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
-        return cookieStore.getAll();
+        return cookieStore ? cookieStore.getAll() : [];
       },
       setAll(cookiesToSet) {
+        if (!cookieStore) return;
         try {
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, options)

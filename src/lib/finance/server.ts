@@ -329,6 +329,8 @@ export async function getExpenses(
     employeeId?: string;
     from?: string;
     to?: string;
+    limit?: number;
+    offset?: number;
   }
 ): Promise<Expense[]> {
   await requirePermission(companyId, "finance.read");
@@ -348,6 +350,13 @@ export async function getExpenses(
     if (options?.to) query = query.lte("date", options.to);
     if (options?.search) {
       query = query.or(`vendor.ilike.%${options.search}%,description.ilike.%${options.search}%,expense_number.ilike.%${options.search}%`);
+    }
+    if (options?.limit !== undefined) {
+      if (options?.offset !== undefined) {
+        query = query.range(options.offset, options.offset + options.limit - 1);
+      } else {
+        query = query.limit(options.limit);
+      }
     }
 
     const { data, error } = await query;
@@ -374,7 +383,13 @@ export async function getExpenses(
     );
   }
 
-  return list.sort((a, b) => b.date.localeCompare(a.date));
+  list = list.sort((a, b) => b.date.localeCompare(a.date));
+  if (options?.offset !== undefined && options?.limit !== undefined) {
+    list = list.slice(options.offset, options.offset + options.limit);
+  } else if (options?.limit !== undefined) {
+    list = list.slice(0, options.limit);
+  }
+  return list;
 }
 
 export async function getExpenseById(companyId: string, expenseId: string): Promise<Expense | null> {

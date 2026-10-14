@@ -25,13 +25,15 @@ export interface VerifiedMembershipContext {
 }
 
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { verifyAdminSessionToken, SESSION_COOKIE_NAME } from "./admin-session";
 
 /**
  * Retrieves the currently authenticated Supabase user or administrative session.
  * Fails safely by returning null if unauthenticated or session invalid.
+ * Deduplicated per-request via React cache().
  */
-export async function getCurrentUser(): Promise<Profile | null> {
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<Profile | null> {
   try {
     // 1. Check for signed administrative session cookie
     try {
@@ -86,7 +88,7 @@ export async function getCurrentUser(): Promise<Profile | null> {
   } catch {
     return null;
   }
-}
+});
 
 /**
  * Requires an authenticated user. Throws AuthError (401) if unauthenticated.
@@ -137,8 +139,9 @@ export async function getUserMemberships(userId: string) {
  * Verifies server-side company membership.
  * Fails closed (403 Forbidden) if the user does NOT have active membership in the company.
  * Never relies on client-supplied parameters alone.
+ * Deduplicated per-request via React cache().
  */
-export async function requireCompanyMembership(
+export const requireCompanyMembership = cache(async function requireCompanyMembership(
   companyId: string,
   providedUser?: Profile
 ): Promise<VerifiedMembershipContext> {
@@ -222,7 +225,7 @@ export async function requireCompanyMembership(
     company: membership.company,
     permissions,
   };
-}
+});
 
 /**
  * Enforces granular permission verification.
