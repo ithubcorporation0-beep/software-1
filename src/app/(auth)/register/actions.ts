@@ -41,6 +41,10 @@ export async function registerAction(
     });
 
     if (adminError) {
+
+
+
+
       if (adminError.message.toLowerCase().includes("already registered") || adminError.message.toLowerCase().includes("unique")) {
         return { error: "An account with this email address already exists. Please sign in." };
       }
@@ -59,18 +63,62 @@ export async function registerAction(
         updated_at: new Date().toISOString(),
       });
 
-      // Assign active membership in default tenant company
-      const defaultCompanyId = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000001";
-      const employeeRoleId = "00000000-0000-0000-0000-000000000006";
+      if (companyName) {
+        // Provision new tenant company in PENDING status for Super Admin review
+        const slug =
+          companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") +
+          "-" +
+          Math.floor(100 + Math.random() * 900);
 
-      await adminClient.from("memberships").upsert({
-        company_id: defaultCompanyId,
-        user_id: userId,
-        role_id: employeeRoleId,
-        status: "ACTIVE",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "company_id,user_id" });
+        const { data: newCompany } = await adminClient
+          .from("companies")
+          .insert({
+            name: companyName,
+            slug,
+            plan: "ENTERPRISE",
+            status: "PENDING",
+            contact_email: email,
+            contact_name: fullName,
+            created_by: userId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+
+        const targetCompanyId =
+          newCompany?.id || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000001";
+        const adminRoleId = "00000000-0000-0000-0000-000000000002"; // Company Admin
+
+        await adminClient.from("memberships").upsert(
+          {
+            company_id: targetCompanyId,
+            user_id: userId,
+            role_id: adminRoleId,
+            status: "ACTIVE",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "company_id,user_id" }
+        );
+      } else {
+        // Assign membership in default tenant company
+        const defaultCompanyId =
+          process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000001";
+        const employeeRoleId = "00000000-0000-0000-0000-000000000006";
+
+        await adminClient.from("memberships").upsert(
+          {
+            company_id: defaultCompanyId,
+            user_id: userId,
+            role_id: employeeRoleId,
+            status: "ACTIVE",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "company_id,user_id" }
+        );
+      }
     }
 
     return { success: true };

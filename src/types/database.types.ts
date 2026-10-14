@@ -21,7 +21,12 @@ export interface Company {
   slug: string;
   domain?: string | null;
   plan: string;
-  status: "ACTIVE" | "SUSPENDED" | "PENDING";
+  status: "ACTIVE" | "SUSPENDED" | "PENDING" | "REJECTED";
+  contact_email?: string | null;
+  contact_name?: string | null;
+  rejection_reason?: string | null;
+  approved_at?: string | null;
+  approved_by?: string | null;
   created_at: string;
   updated_at: string;
   created_by?: string | null;

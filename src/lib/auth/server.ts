@@ -11,9 +11,24 @@ export class AuthError extends Error {
 }
 
 export class ForbiddenError extends AuthError {
-  constructor(message: string = "Forbidden: Insufficient privileges") {
-    super(message, 403);
+  constructor(message: string = "Forbidden: Insufficient privileges", statusCode: number = 403) {
+    super(message, statusCode);
     this.name = "ForbiddenError";
+  }
+}
+
+export class CompanyAccessError extends ForbiddenError {
+  companyStatus: "PENDING" | "SUSPENDED" | "REJECTED";
+  constructor(companyName: string, status: "PENDING" | "SUSPENDED" | "REJECTED") {
+    const msg =
+      status === "PENDING"
+        ? `Registration Pending: Organization "${companyName}" is awaiting IT HUB Super Admin review and approval before ERP access is enabled.`
+        : status === "SUSPENDED"
+        ? `Account Suspended: Organization "${companyName}" has been suspended by platform administration. Please contact support.`
+        : `Registration Rejected: Organization "${companyName}" registration was not approved.`;
+    super(msg, 403);
+    this.name = "CompanyAccessError";
+    this.companyStatus = status;
   }
 }
 
@@ -121,6 +136,21 @@ export async function isSuperAdmin(userId?: string): Promise<boolean> {
 }
 
 /**
+ * Requires the authenticated caller to have platform Super Administrator privileges.
+ * Fails closed (403 Forbidden) if not a verified platform super admin.
+ */
+export async function requireSuperAdmin(providedUser?: Profile): Promise<Profile> {
+  const user = providedUser || (await requireUser());
+  if (!user.is_super_admin) {
+    throw new ForbiddenError(
+      "Access Denied: IT HUB Platform Super Administrator privileges required.",
+      403
+    );
+  }
+  return user;
+}
+
+/**
  * Retrieves all verified active memberships for a user.
  */
 export async function getUserMemberships(userId: string) {
@@ -133,6 +163,117 @@ export async function getUserMemberships(userId: string) {
 
   if (error || !data) return [];
   return data;
+}
+
+/**
+ * Canonical permission evaluator supporting granular actions, module wildcards,
+ * and standard dot/colon alias normalizations.
+ */
+export function hasPermission(grantedPermissions: string[], requiredCode: string): boolean {
+  if (grantedPermissions.includes("*")) return true;
+  if (grantedPermissions.includes(requiredCode)) return true;
+
+  // Dot vs colon interchangeable representations (e.g. invoices.create <-> invoices:create)
+  const colonCode = requiredCode.replace(".", ":");
+  const dotCode = requiredCode.replace(":", ".");
+  if (grantedPermissions.includes(colonCode) || grantedPermissions.includes(dotCode)) return true;
+
+  // Cross-module aliases & PRD action mappings
+  const aliases: Record<string, string[]> = {
+    // Invoices & Sales
+    "invoices.view": ["sales:view", "sales.view", "invoices:view"],
+    "invoices.create": ["sales:create", "sales.create", "invoices:create"],
+    "invoices.edit": ["sales:edit", "sales.edit", "invoices:edit"],
+    "invoices.delete": ["sales:delete", "sales.delete", "invoices:delete"],
+    "invoices.export": ["sales:export", "sales.export", "invoices:export"],
+    "sales:view": ["invoices.view", "sales.view", "invoices:view"],
+    "sales:create": ["invoices.create", "sales.create", "invoices:create"],
+    "sales:edit": ["invoices.edit", "sales.edit", "invoices:edit"],
+    "sales:delete": ["invoices.delete", "sales.delete", "invoices:delete"],
+    "sales:export": ["invoices.export", "sales.export", "invoices:export"],
+
+    // Customers & CRM
+    "customers.view": ["crm:view", "crm.view", "customers:view"],
+    "customers.create": ["crm:create", "crm.create", "customers:create"],
+    "customers.edit": ["crm:edit", "crm.edit", "customers:edit"],
+    "customers.delete": ["crm:delete", "crm.delete", "customers:delete"],
+    "crm:view": ["customers.view", "crm.view", "customers:view"],
+    "crm:create": ["customers.create", "crm.create", "customers:create"],
+    "crm:edit": ["customers.edit", "crm.edit", "customers:edit"],
+    "crm:delete": ["customers.delete", "crm.delete", "customers:delete"],
+
+    // Expenses & Finance
+    "expenses.view": ["finance:view", "finance.view", "finance.read", "expenses:view"],
+    "expenses.create": ["finance:create", "finance.create", "expenses:create"],
+    "expenses.approve": ["finance:approve", "finance.approve", "expenses:approve"],
+    "finance.read": ["expenses.view", "finance:view", "finance.view"],
+    "finance.create": ["expenses.create", "finance:create", "expenses.create"],
+    "finance:view": ["expenses.view", "finance.view", "finance.read"],
+    "finance:create": ["expenses.create", "finance.create", "finance:create"],
+    "finance:approve": ["expenses.approve", "finance.approve", "finance:approve"],
+
+    // Employees & HR
+    "employees.view": ["hr:view", "hr.view", "employees:view"],
+    "employees.create": ["hr:create", "hr.create", "employees:create"],
+    "employees.edit": ["hr:edit", "hr.edit", "employees:edit"],
+    "hr:view": ["employees.view", "hr.view", "employees:view"],
+    "hr:create": ["employees.create", "hr.create", "employees:create"],
+    "hr:edit": ["employees.edit", "hr.edit", "employees:edit"],
+
+    // Attendance & Shifts
+    "attendance.view": ["hr:view", "attendance:view", "attendance.view"],
+    "attendance.manage": ["hr:edit", "attendance:manage", "attendance.manage"],
+
+    // Payroll
+    "payroll.view": ["payroll:view", "payroll.view"],
+    "payroll.process": ["payroll:create", "payroll:approve", "payroll.process"],
+    "payroll:view": ["payroll.view", "payroll:view"],
+    "payroll:create": ["payroll.process", "payroll:create"],
+    "payroll:approve": ["payroll.process", "payroll:approve"],
+
+    // Inventory & Warehousing
+    "inventory.view": ["inventory:view", "inventory.view"],
+    "inventory.manage": ["inventory:create", "inventory:edit", "inventory.manage"],
+    "inventory:view": ["inventory.view", "inventory:view"],
+    "inventory:create": ["inventory.manage", "inventory:create"],
+    "inventory:edit": ["inventory.manage", "inventory:edit"],
+
+    // Reports
+    "reports.view": ["reports:view", "reports.view"],
+    "reports.export": ["reports:export", "reports.export"],
+    "reports:view": ["reports.view", "reports:view"],
+    "reports:export": ["reports.export", "reports:export"],
+
+    // Users & Roles
+    "users.view": ["users:view", "users.view"],
+    "users.manage": ["users:invite", "users:edit", "users:delete", "users.manage"],
+    "users:view": ["users.view", "users:view"],
+    "users:invite": ["users.manage", "users:invite"],
+    "users:edit": ["users.manage", "users:edit"],
+    "users:delete": ["users.manage", "users:delete"],
+
+    // Settings
+    "settings.manage": ["settings:edit", "settings.manage"],
+    "settings:edit": ["settings.manage", "settings:edit"],
+  };
+
+  const matchedAliases = aliases[requiredCode];
+  if (matchedAliases && matchedAliases.some((alias) => grantedPermissions.includes(alias))) {
+    return true;
+  }
+
+  // Check resource wildcard (e.g., 'sales:*' or 'invoices.*')
+  const [resource] = requiredCode.split(/[:.]/);
+  if (
+    grantedPermissions.includes(`${resource}:*`) ||
+    grantedPermissions.includes(`${resource}.*`) ||
+    grantedPermissions.includes(`${resource}:manage`) ||
+    grantedPermissions.includes(`${resource}.manage`)
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -209,6 +350,15 @@ export const requireCompanyMembership = cache(async function requireCompanyMembe
     );
   }
 
+  // Strict Server Guard: Non-Super-Admins CANNOT access unapproved, suspended, or rejected companies
+  const companyStatus = (membership.company as any)?.status || "ACTIVE";
+  if (companyStatus !== "ACTIVE") {
+    throw new CompanyAccessError(
+      membership.company.name,
+      companyStatus as "PENDING" | "SUSPENDED" | "REJECTED"
+    );
+  }
+
   // Retrieve permissions for role
   const { data: rolePermissions } = await supabase
     .from("role_permissions")
@@ -242,7 +392,7 @@ export async function requirePermission(
     return context;
   }
 
-  if (!context.permissions.includes(permissionCode)) {
+  if (!hasPermission(context.permissions, permissionCode)) {
     throw new ForbiddenError(
       `Access Denied: Missing required permission [${permissionCode}] in company ${context.company.name}`
     );
