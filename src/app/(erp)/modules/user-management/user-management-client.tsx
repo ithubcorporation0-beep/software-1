@@ -74,6 +74,34 @@ export function UserManagementClient({
   const [isCreateRoleOpen, setIsCreateRoleOpen] = React.useState(false);
   const [isAddCustomerOpen, setIsAddCustomerOpen] = React.useState(false);
 
+  // Active dropdown state ("customers" | "vendors" | "access" | "contract" | null)
+  const [activeDropdown, setActiveDropdown] = React.useState<"customers" | "vendors" | "access" | "contract" | null>(null);
+  const customersRef = React.useRef<HTMLDivElement>(null);
+  const vendorsRef = React.useRef<HTMLDivElement>(null);
+  const accessRef = React.useRef<HTMLDivElement>(null);
+  const contractRef = React.useRef<HTMLDivElement>(null);
+
+  // Additional dialogs for Vendor List and Child Companies
+  const [isVendorModalOpen, setIsVendorModalOpen] = React.useState(false);
+  const [isChildCompaniesOpen, setIsChildCompaniesOpen] = React.useState(false);
+
+  // Close dropdown on click outside
+  React.useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        customersRef.current && !customersRef.current.contains(target) &&
+        vendorsRef.current && !vendorsRef.current.contains(target) &&
+        accessRef.current && !accessRef.current.contains(target) &&
+        contractRef.current && !contractRef.current.contains(target)
+      ) {
+        setActiveDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   // Form states
   const [newUserEmail, setNewUserEmail] = React.useState("");
   const [newUserName, setNewUserName] = React.useState("");
@@ -139,10 +167,13 @@ export function UserManagementClient({
           <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 text-xs sm:text-sm">
             {/* Dashboard (Active Pill) */}
             <button
-              onClick={() => setActiveTab("dashboard")}
+              onClick={() => {
+                setActiveTab("dashboard");
+                setActiveDropdown(null);
+              }}
               className={`rounded-lg px-3.5 py-1.5 font-medium transition-all ${
-                activeTab === "dashboard"
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-semibold"
+                activeTab === "dashboard" && activeDropdown === null
+                  ? "bg-[#edf5ff] text-[#2563eb] dark:bg-blue-900/50 dark:text-blue-300 font-semibold"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
@@ -150,112 +181,230 @@ export function UserManagementClient({
             </button>
 
             {/* Customers Dropdown */}
-            <Dropdown>
-              <DropdownTrigger>
-                <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                  <span>Customers</span>
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              </DropdownTrigger>
-              <DropdownContent align="left" className="w-52 p-1.5 shadow-lg border-border/80">
-                <DropdownItem onClick={() => setActiveTab("customers")}>
-                  <Link href="/crm" className="w-full">Customer List</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/sales" className="w-full">Customer Payment</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/sales" className="w-full">Due & Batch Payment</Link>
-                </DropdownItem>
-                <DropdownSeparator />
-                <DropdownItem>
-                  <Link href="/reports" className="w-full">Customer Report</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/finance" className="w-full">Customer Ledger</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/settings" className="w-full">Customer Setting</Link>
-                </DropdownItem>
-              </DropdownContent>
-            </Dropdown>
+            <div className="relative" ref={customersRef}>
+              <button
+                onClick={() => setActiveDropdown((prev) => (prev === "customers" ? null : "customers"))}
+                className={`flex items-center gap-1 rounded-lg px-3.5 py-1.5 font-medium transition-all ${
+                  activeDropdown === "customers"
+                    ? "bg-[#edf5ff] text-[#2563eb] dark:bg-blue-900/50 dark:text-blue-300 font-semibold"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <span>Customers</span>
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
 
-            {/* Vendors Dropdown */}
-            <Dropdown>
-              <DropdownTrigger>
-                <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                  <span>Vendors</span>
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              </DropdownTrigger>
-              <DropdownContent align="left" className="w-52 p-1.5 shadow-lg border-border/80">
-                <DropdownItem>
-                  <Link href="/finance" className="w-full">Vendor List</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/finance" className="w-full">Vendor Payment</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/finance" className="w-full">Due & Batch Payment</Link>
-                </DropdownItem>
-                <DropdownSeparator />
-                <DropdownItem>
-                  <Link href="/reports" className="w-full">Vendor Report</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/finance" className="w-full">Vendor Ledger</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/settings" className="w-full">Vendor Setting</Link>
-                </DropdownItem>
-              </DropdownContent>
-            </Dropdown>
+              {activeDropdown === "customers" && (
+                <div className="absolute top-full left-0 z-50 mt-1.5 min-w-[210px] rounded-2xl border border-border/70 bg-card p-1.5 shadow-xl animate-in fade-in-80 duration-150">
+                  <div className="space-y-0.5">
+                    <button
+                      onClick={() => {
+                        setActiveTab("customers");
+                        setActiveDropdown(null);
+                      }}
+                      className="w-full text-left rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Customer List
+                    </button>
+                    <Link
+                      href="/sales"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Customer Payment
+                    </Link>
+                    <Link
+                      href="/sales"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Due & Batch Payment
+                    </Link>
+                    <Link
+                      href="/reports"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Customer Report
+                    </Link>
+                    <Link
+                      href="/finance"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Customer Ledger
+                    </Link>
+                    <Link
+                      href="/settings"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Customer Setting
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
 
-            {/* Access Dropdown */}
-            <Dropdown>
-              <DropdownTrigger>
-                <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                  <span>Access</span>
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              </DropdownTrigger>
-              <DropdownContent align="left" className="w-52 p-1.5 shadow-lg border-border/80">
-                <DropdownItem onClick={() => setActiveTab("users")}>
-                  User Directory
-                </DropdownItem>
-                <DropdownItem onClick={() => setActiveTab("roles")}>
-                  Roles & Permissions
-                </DropdownItem>
-                <DropdownSeparator />
-                <DropdownItem>
-                  <Link href="/settings" className="w-full">Access Audit Logs</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/settings" className="w-full">Security Policies</Link>
-                </DropdownItem>
-              </DropdownContent>
-            </Dropdown>
+            {/* Vendors Dropdown (Exact match to Screenshot 1) */}
+            <div className="relative" ref={vendorsRef}>
+              <button
+                onClick={() => setActiveDropdown((prev) => (prev === "vendors" ? null : "vendors"))}
+                className={`flex items-center gap-1 rounded-lg px-3.5 py-1.5 font-medium transition-all ${
+                  activeDropdown === "vendors"
+                    ? "bg-[#edf5ff] text-[#2563eb] dark:bg-blue-900/50 dark:text-blue-300 font-semibold"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <span>Vendors</span>
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+
+              {activeDropdown === "vendors" && (
+                <div className="absolute top-full left-0 z-50 mt-1.5 min-w-[210px] rounded-2xl border border-border/70 bg-card p-1.5 shadow-xl animate-in fade-in-80 duration-150">
+                  <div className="space-y-0.5">
+                    <button
+                      onClick={() => {
+                        setIsVendorModalOpen(true);
+                        setActiveDropdown(null);
+                      }}
+                      className="w-full text-left rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Vendor List
+                    </button>
+                    <Link
+                      href="/finance"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Vendor Payments
+                    </Link>
+                    <Link
+                      href="/finance"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Due & Batch Payment
+                    </Link>
+                    <Link
+                      href="/reports"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Vendor Report
+                    </Link>
+                    <Link
+                      href="/finance"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Vendor Ledger
+                    </Link>
+                    <Link
+                      href="/settings"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Vendor Settings
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Access Dropdown (Exact match to Screenshot 2) */}
+            <div className="relative" ref={accessRef}>
+              <button
+                onClick={() => setActiveDropdown((prev) => (prev === "access" ? null : "access"))}
+                className={`flex items-center gap-1 rounded-lg px-3.5 py-1.5 font-medium transition-all ${
+                  activeDropdown === "access"
+                    ? "bg-[#edf5ff] text-[#2563eb] dark:bg-blue-900/50 dark:text-blue-300 font-semibold"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <span>Access</span>
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+
+              {activeDropdown === "access" && (
+                <div className="absolute top-full left-0 z-50 mt-1.5 min-w-[200px] rounded-2xl border border-border/70 bg-card p-1.5 shadow-xl animate-in fade-in-80 duration-150">
+                  <div className="space-y-0.5">
+                    <button
+                      onClick={() => {
+                        setActiveTab("users");
+                        setActiveDropdown(null);
+                        const tableEl = document.getElementById("users-directory-section");
+                        if (tableEl) tableEl.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="w-full text-left rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Users
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveTab("roles");
+                        setActiveDropdown(null);
+                      }}
+                      className="w-full text-left rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Roles
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsChildCompaniesOpen(true);
+                        setActiveDropdown(null);
+                      }}
+                      className="w-full text-left rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Child Companies
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Contract Dropdown */}
-            <Dropdown>
-              <DropdownTrigger>
-                <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                  <span>Contract</span>
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              </DropdownTrigger>
-              <DropdownContent align="left" className="w-52 p-1.5 shadow-lg border-border/80">
-                <DropdownItem>
-                  <Link href="/sales" className="w-full">Contract List</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/sales" className="w-full">Contract Templates</Link>
-                </DropdownItem>
-                <DropdownItem>
-                  <Link href="/projects" className="w-full">Renewal Tracker</Link>
-                </DropdownItem>
-              </DropdownContent>
-            </Dropdown>
+            <div className="relative" ref={contractRef}>
+              <button
+                onClick={() => setActiveDropdown((prev) => (prev === "contract" ? null : "contract"))}
+                className={`flex items-center gap-1 rounded-lg px-3.5 py-1.5 font-medium transition-all ${
+                  activeDropdown === "contract"
+                    ? "bg-[#edf5ff] text-[#2563eb] dark:bg-blue-900/50 dark:text-blue-300 font-semibold"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <span>Contract</span>
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+
+              {activeDropdown === "contract" && (
+                <div className="absolute top-full left-0 z-50 mt-1.5 min-w-[200px] rounded-2xl border border-border/70 bg-card p-1.5 shadow-xl animate-in fade-in-80 duration-150">
+                  <div className="space-y-0.5">
+                    <Link
+                      href="/sales"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Contract List
+                    </Link>
+                    <Link
+                      href="/sales"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Contract Templates
+                    </Link>
+                    <Link
+                      href="/projects"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      Expiring Contracts
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -739,6 +888,89 @@ export function UserManagementClient({
           >
             Save Customer
           </Button>
+        </DialogFooter>
+      </Dialog>
+      {/* MODAL 4: Child Companies */}
+      <Dialog open={isChildCompaniesOpen} onOpenChange={setIsChildCompaniesOpen}>
+        <DialogHeader>
+          <DialogTitle>Child Companies & Branch Entities</DialogTitle>
+          <DialogDescription>
+            Multi-entity hierarchy, regional branches, and subsidiary corporate registrations.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-3">
+          <div className="rounded-xl border border-border/70 overflow-hidden divide-y divide-border/60">
+            <div className="p-3 bg-muted/20 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-foreground">BSTC Corporate Headquarters — Islamabad</div>
+                <div className="text-[11px] text-muted-foreground">NTN: 8291048-1 • Principal Tax Advisory</div>
+              </div>
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
+                Active Head Office
+              </Badge>
+            </div>
+            <div className="p-3 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-foreground">BSTC Regional Advisory — Lahore</div>
+                <div className="text-[11px] text-muted-foreground">NTN: 8291048-2 • Regional Audit Office</div>
+              </div>
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
+                Active Branch
+              </Badge>
+            </div>
+            <div className="p-3 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-foreground">BSTC Financial Services Ltd — Karachi</div>
+                <div className="text-[11px] text-muted-foreground">NTN: 8291048-3 • Commercial Subsidiary</div>
+              </div>
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
+                Active Subsidiary
+              </Badge>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={() => setIsChildCompaniesOpen(false)}>
+            Close
+          </Button>
+          <Button
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => {
+              alert("Branch registration form ready.");
+              setIsChildCompaniesOpen(false);
+            }}
+          >
+            <Plus className="mr-1 h-3.5 w-3.5" />
+            Add Child Entity
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* MODAL 5: Vendor Directory */}
+      <Dialog open={isVendorModalOpen} onOpenChange={setIsVendorModalOpen}>
+        <DialogHeader>
+          <DialogTitle>Vendor Directory & Commercial Suppliers</DialogTitle>
+          <DialogDescription>
+            Manage vendor records, procurement contracts, and accounts payable.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-3">
+          <div className="rounded-xl border border-dashed border-border/80 p-8 text-center text-xs text-muted-foreground">
+            <ShoppingBag className="h-7 w-7 mx-auto mb-2 text-amber-500" />
+            <p className="font-semibold text-foreground">No External Vendor Records Registered</p>
+            <p className="mt-1">Add your utility suppliers, software vendors, and contractors to track bills and batch payments.</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={() => setIsVendorModalOpen(false)}>
+            Close
+          </Button>
+          <Link href="/finance">
+            <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
+              Open Finance & Expenses
+            </Button>
+          </Link>
         </DialogFooter>
       </Dialog>
     </div>
