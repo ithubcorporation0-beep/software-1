@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { User, Shield, Moon, Sun, LogOut, Check } from "lucide-react";
+import { User, Shield, Moon, Sun, LogOut, Check, ShieldAlert } from "lucide-react";
 import {
   Dropdown,
   DropdownTrigger,
@@ -16,8 +16,9 @@ import { createClient } from "@/lib/supabase/client";
 export function UserMenu() {
   const router = useRouter();
   const [isDark, setIsDark] = React.useState(true);
-  const [userEmail, setUserEmail] = React.useState<string | null>(null);
   const [userName, setUserName] = React.useState<string>("ERP Lead");
+  const [userEmail, setUserEmail] = React.useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     const savedTheme = typeof window !== "undefined" ? localStorage.getItem("theme") : null;
@@ -39,6 +40,16 @@ export function UserMenu() {
             data.user.user_metadata?.full_name ||
               (data.user.email ? data.user.email.split("@")[0] : "ERP Member")
           );
+          supabase
+            .from("profiles")
+            .select("is_super_admin")
+            .eq("id", data.user.id)
+            .single()
+            .then(({ data: profile }) => {
+              if (profile?.is_super_admin) {
+                setIsSuperAdmin(true);
+              }
+            });
         }
       });
     } catch {
@@ -112,6 +123,21 @@ export function UserMenu() {
           </div>
         </DropdownItem>
         <DropdownSeparator />
+        {isSuperAdmin && (
+          <>
+            <DropdownItem
+              onClick={() => {
+                router.push("/admin");
+              }}
+            >
+              <div className="flex items-center gap-2 text-indigo-400 font-semibold">
+                <ShieldAlert className="h-4 w-4" />
+                <span>Super Admin Console</span>
+              </div>
+            </DropdownItem>
+            <DropdownSeparator />
+          </>
+        )}
         <DropdownItem
           onClick={() => {
             router.push("/settings");
