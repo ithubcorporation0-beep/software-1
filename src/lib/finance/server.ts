@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission, requireUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
@@ -165,67 +166,79 @@ export const memoryFinanceStore: MemoryFinanceStore = {
   sequences: {},
 };
 
+const initializedCompanies = new Set<string>();
+
 export function resetMemoryFinanceStore(): void {
   memoryFinanceStore.accounts = [];
   memoryFinanceStore.expenses = [];
   memoryFinanceStore.journalEntries = [];
   memoryFinanceStore.journalEntryLines = [];
   memoryFinanceStore.sequences = {};
+  initializedCompanies.clear();
 }
 
 /**
  * Ensures standard Chart of Accounts exists for a company in memory and database.
+ * Deduplicated per-request via React cache() and process-level set to avoid redundant upserts.
  */
-export async function initializeCompanyChartOfAccounts(companyId: string): Promise<Account[]> {
-  const existing = memoryFinanceStore.accounts.filter((a) => a.company_id === companyId);
-  if (existing.length >= STANDARD_CHART_OF_ACCOUNTS.length) {
-    return existing;
-  }
+export const initializeCompanyChartOfAccounts = cache(
+  async function initializeCompanyChartOfAccounts(companyId: string): Promise<Account[]> {
+    if (initializedCompanies.has(companyId)) {
+      return memoryFinanceStore.accounts.filter((a) => a.company_id === companyId);
+    }
 
-  const seeded: Account[] = [];
-  const now = new Date().toISOString();
+    const existing = memoryFinanceStore.accounts.filter((a) => a.company_id === companyId);
+    if (existing.length >= STANDARD_CHART_OF_ACCOUNTS.length) {
+      initializedCompanies.add(companyId);
+      return existing;
+    }
 
-  for (const template of STANDARD_CHART_OF_ACCOUNTS) {
-    const found = existing.find((a) => a.code === template.code);
-    if (!found) {
-      const newAcc: Account = {
-        id: `acc-${companyId}-${template.code}`,
+    const seeded: Account[] = [];
+    const now = new Date().toISOString();
+
+    for (const template of STANDARD_CHART_OF_ACCOUNTS) {
+      const found = existing.find((a) => a.code === template.code);
+      if (!found) {
+        const newAcc: Account = {
+          id: `acc-${companyId}-${template.code}`,
+          company_id: companyId,
+          code: template.code,
+          name: template.name,
+          account_type: template.account_type,
+          description: template.description,
+          is_system: true,
+          is_active: true,
+          created_at: now,
+          updated_at: now,
+        };
+        memoryFinanceStore.accounts.push(newAcc);
+        seeded.push(newAcc);
+      } else {
+        seeded.push(found);
+      }
+    }
+
+    // Attempt database sync once per company lifecycle if connected
+    try {
+      const supabase = await createClient();
+      const rows = STANDARD_CHART_OF_ACCOUNTS.map((t) => ({
         company_id: companyId,
-        code: template.code,
-        name: template.name,
-        account_type: template.account_type,
-        description: template.description,
+        code: t.code,
+        name: t.name,
+        account_type: t.account_type,
+        description: t.description,
         is_system: true,
         is_active: true,
-        created_at: now,
-        updated_at: now,
-      };
-      memoryFinanceStore.accounts.push(newAcc);
-      seeded.push(newAcc);
-    } else {
-      seeded.push(found);
+      }));
+      await supabase.from("chart_of_accounts").upsert(rows, { onConflict: "company_id,code" });
+    } catch {
+      // Memory store handles fallback
     }
-  }
 
-  // Attempt database sync if connected
-  try {
-    const supabase = await createClient();
-    const rows = STANDARD_CHART_OF_ACCOUNTS.map((t) => ({
-      company_id: companyId,
-      code: t.code,
-      name: t.name,
-      account_type: t.account_type,
-      description: t.description,
-      is_system: true,
-      is_active: true,
-    }));
-    await supabase.from("chart_of_accounts").upsert(rows, { onConflict: "company_id,code" });
-  } catch {
-    // Memory store handles fallback
+    initializedCompanies.add(companyId);
+    return memoryFinanceStore.accounts.filter((a) => a.company_id === companyId);
   }
-
-  return memoryFinanceStore.accounts.filter((a) => a.company_id === companyId);
-}
+);
 
 // ============================================================================
 // SEQUENTIAL NUMBERING

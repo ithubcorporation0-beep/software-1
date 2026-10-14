@@ -35,9 +35,6 @@ export default async function FinancePage() {
     // Falls closed
   }
 
-  // Ensure standard chart of accounts is available
-  await initializeCompanyChartOfAccounts(companyId).catch(() => []);
-
   const [expenses, accounts, journalEntries, pl, bs, cf, ar, ap, settings] =
     await Promise.all([
       getExpenses(companyId).catch(() => []),

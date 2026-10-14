@@ -289,16 +289,26 @@ export function resetMemorySalesStore(): void {
 
 export async function getQuotations(
   companyId: string,
-  options?: { search?: string; status?: string },
+  options?: {
+    search?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+    includeDetails?: boolean;
+  },
   viewingUser?: Profile
 ): Promise<Quotation[]> {
   await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
   try {
+    const projection = options?.includeDetails
+      ? "*, customer:customers(*), items:quotation_items(*)"
+      : "*, customer:customers(id, name, email, company_name)";
+
     let query = supabase
       .from("quotations")
-      .select("*, customer:customers(*), items:quotation_items(*)")
+      .select(projection as any)
       .eq("company_id", companyId)
       .order("created_at", { ascending: false });
 
@@ -306,9 +316,17 @@ export async function getQuotations(
       query = query.eq("status", options.status);
     }
 
+    if (options?.limit !== undefined) {
+      if (options?.offset !== undefined) {
+        query = query.range(options.offset, options.offset + options.limit - 1);
+      } else {
+        query = query.limit(options.limit);
+      }
+    }
+
     const { data, error } = await query;
     if (!error && data) {
-      let list = data as Quotation[];
+      let list = data as unknown as Quotation[];
       if (options?.search?.trim()) {
         const term = options.search.trim().toLowerCase();
         list = list.filter(
@@ -337,6 +355,10 @@ export async function getQuotations(
   if (options?.search?.trim()) {
     const term = options.search.trim().toLowerCase();
     list = list.filter((q) => q.quotation_number.toLowerCase().includes(term));
+  }
+  if (options?.limit !== undefined) {
+    const offset = options.offset || 0;
+    list = list.slice(offset, offset + options.limit);
   }
   return list;
 }
@@ -713,16 +735,26 @@ export async function convertQuotationToInvoice(
 
 export async function getSalesOrders(
   companyId: string,
-  options?: { search?: string; status?: string },
+  options?: {
+    search?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+    includeDetails?: boolean;
+  },
   viewingUser?: Profile
 ): Promise<SalesOrder[]> {
   await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
   try {
+    const projection = options?.includeDetails
+      ? "*, customer:customers(*), items:sales_order_items(*)"
+      : "*, customer:customers(id, name, email, company_name)";
+
     let query = supabase
       .from("sales_orders")
-      .select("*, customer:customers(*), items:sales_order_items(*)")
+      .select(projection as any)
       .eq("company_id", companyId)
       .order("created_at", { ascending: false });
 
@@ -730,9 +762,17 @@ export async function getSalesOrders(
       query = query.eq("status", options.status);
     }
 
+    if (options?.limit !== undefined) {
+      if (options?.offset !== undefined) {
+        query = query.range(options.offset, options.offset + options.limit - 1);
+      } else {
+        query = query.limit(options.limit);
+      }
+    }
+
     const { data, error } = await query;
     if (!error && data) {
-      let list = data as SalesOrder[];
+      let list = data as unknown as SalesOrder[];
       if (options?.search?.trim()) {
         const term = options.search.trim().toLowerCase();
         list = list.filter(
@@ -761,6 +801,10 @@ export async function getSalesOrders(
   if (options?.search?.trim()) {
     const term = options.search.trim().toLowerCase();
     list = list.filter((o) => o.order_number.toLowerCase().includes(term));
+  }
+  if (options?.limit !== undefined) {
+    const offset = options.offset || 0;
+    list = list.slice(offset, offset + options.limit);
   }
   return list;
 }

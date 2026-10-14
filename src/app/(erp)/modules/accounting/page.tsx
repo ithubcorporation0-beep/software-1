@@ -21,9 +21,6 @@ export default async function AccountingPage() {
   const user = await getCurrentUser();
   const companyId = DEFAULT_COMPANY_ID;
 
-  // Ensure standard chart of accounts is available
-  await initializeCompanyChartOfAccounts(companyId).catch(() => []);
-
   // Fetch live accounts, expenses, journal entries, and clients
   const [accounts, expenses, journalEntries, customersResult] = await Promise.all([
     getAccounts(companyId).catch(() => []),

@@ -25,11 +25,11 @@ export default async function SalesPage() {
 
   const [invoices, salesOrders, quotations, payments, customersRes, settings] =
     await Promise.all([
-      getInvoices(companyId).catch(() => []),
-      getSalesOrders(companyId).catch(() => []),
-      getQuotations(companyId).catch(() => []),
-      getPayments(companyId).catch(() => []),
-      getCustomers(companyId, { pageSize: 100 }).catch(() => ({ data: [] })),
+      getInvoices(companyId, { limit: 50 }).catch(() => []),
+      getSalesOrders(companyId, { limit: 50 }).catch(() => []),
+      getQuotations(companyId, { limit: 50 }).catch(() => []),
+      getPayments(companyId, { limit: 50 }).catch(() => []),
+      getCustomers(companyId, { pageSize: 50 }).catch(() => ({ data: [] })),
       getCompanySettings(companyId).catch(() => ({ currency: "PKR" })),
     ]);
 

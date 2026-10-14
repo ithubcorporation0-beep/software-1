@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission, requireUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
@@ -46,9 +47,11 @@ export interface CompanyExtendedSettings extends CompanySettingsInput {
 /**
  * Retrieves company profile and operational settings.
  * Fails closed if the caller does not possess `settings:view` or Super Admin privileges.
+ * Deduplicated per-request via React cache().
  */
-export async function getCompanySettings(companyId: string): Promise<CompanyExtendedSettings> {
-  await requirePermission(companyId, "settings:view");
+export const getCompanySettings = cache(
+  async function getCompanySettings(companyId: string): Promise<CompanyExtendedSettings> {
+    await requirePermission(companyId, "settings:view");
 
   const supabase = await createClient();
 
@@ -102,7 +105,7 @@ export async function getCompanySettings(companyId: string): Promise<CompanyExte
     updatedAt: settings?.updated_at || company.updated_at,
     updatedBy: settings?.updated_by || null,
   };
-}
+});
 
 /**
  * Updates company profile and extended settings.
