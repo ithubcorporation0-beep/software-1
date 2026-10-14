@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +75,11 @@ export const navigationConfig: NavSection[] = [
   {
     title: "Finance & Capital",
     items: [
+      {
+        title: "Accounting",
+        href: "/modules/accounting",
+        icon: Landmark,
+      },
       {
         title: "Finance and expenses",
         href: "/finance",

@@ -9,6 +9,10 @@ const nextConfig = {
         destination: "/modules/:path*",
       },
       {
+        source: "/accounting",
+        destination: "/modules/accounting",
+      },
+      {
         source: "/home",
         destination: "/",
       },

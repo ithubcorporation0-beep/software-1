@@ -97,7 +97,7 @@ const MODULES_CONFIG: ModuleCardItem[] = [
     id: "accounting",
     title: "Accounting",
     description: "Manage accounts, journal entries and financials",
-    href: "/finance",
+    href: "/modules/accounting",
     icon: FileText,
     iconBg: "bg-indigo-50 dark:bg-indigo-950/60",
     iconColor: "text-indigo-600 dark:text-indigo-400",
