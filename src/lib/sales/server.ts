@@ -1054,6 +1054,11 @@ export async function getInvoices(
       query = query.eq("status", options.status);
     }
 
+    if (options?.search?.trim()) {
+      const term = `%${options.search.trim()}%`;
+      query = query.ilike("invoice_number", term);
+    }
+
     if (limit !== undefined) {
       if (offset !== undefined) {
         query = query.range(offset, offset + limit - 1);

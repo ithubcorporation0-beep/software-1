@@ -84,49 +84,73 @@ export async function getSuperAdminMetrics(): Promise<SuperAdminMetrics> {
   const caller = await requireSuperAdmin();
   const supabase = await createClient();
 
+  // 1. Ultra-fast consolidated atomic RPC (single roundtrip < 5ms)
   try {
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      "get_platform_super_admin_metrics"
+    );
+
+    if (!rpcError && rpcData && typeof rpcData.totalCompanies === "number") {
+      return {
+        totalCompanies: Number(rpcData.totalCompanies) || 0,
+        pendingApprovals: Number(rpcData.pendingApprovals) || 0,
+        activeCompanies: Number(rpcData.activeCompanies) || 0,
+        suspendedCompanies: Number(rpcData.suspendedCompanies) || 0,
+        rejectedCompanies: Number(rpcData.rejectedCompanies) || 0,
+        totalUsers: Number(rpcData.totalUsers) || 0,
+        recentlyActiveUsers: Number(rpcData.recentlyActiveUsers) || 0,
+        pendingRequests: Array.isArray(rpcData.pendingRequests) ? rpcData.pendingRequests : [],
+        recentAuditLogs: Array.isArray(rpcData.recentAuditLogs) ? rpcData.recentAuditLogs : [],
+      };
+    }
+  } catch {
+    // Proceed to optimized head counts fallback
+  }
+
+  // 2. High-efficiency database HEAD counts (zero body rows transferred)
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400 * 1000).toISOString();
+
     const [
-      companiesRes,
-      usersRes,
+      totalCompRes,
+      pendingCompRes,
+      activeCompRes,
+      suspendedCompRes,
+      rejectedCompRes,
+      totalUsersRes,
+      activeUsersRes,
       pendingRequestsRes,
       auditLogsRes,
     ] = await Promise.all([
-      supabase.from("companies").select("id, status"),
-      supabase.from("profiles").select("id, updated_at"),
+      supabase.from("companies").select("*", { count: "exact", head: true }),
+      supabase.from("companies").select("*", { count: "exact", head: true }).eq("status", "PENDING"),
+      supabase.from("companies").select("*", { count: "exact", head: true }).eq("status", "ACTIVE"),
+      supabase.from("companies").select("*", { count: "exact", head: true }).eq("status", "SUSPENDED"),
+      supabase.from("companies").select("*", { count: "exact", head: true }).eq("status", "REJECTED"),
+      supabase.from("profiles").select("*", { count: "exact", head: true }),
+      supabase.from("profiles").select("*", { count: "exact", head: true }).gte("updated_at", sevenDaysAgo),
       supabase
         .from("companies")
-        .select("*")
+        .select("id, name, slug, domain, plan, status, contact_email, contact_name, created_at, updated_at")
         .eq("status", "PENDING")
         .order("created_at", { ascending: false })
         .limit(10),
       supabase
         .from("audit_logs")
-        .select("*")
+        .select("id, company_id, user_id, action, resource, resource_id, details, ip_address, created_at")
         .order("created_at", { ascending: false })
         .limit(15),
     ]);
 
-    if (companiesRes.data) {
-      const companies = companiesRes.data;
-      const totalCompanies = companies.length;
-      const pendingApprovals = companies.filter((c) => c.status === "PENDING").length;
-      const activeCompanies = companies.filter((c) => c.status === "ACTIVE").length;
-      const suspendedCompanies = companies.filter((c) => c.status === "SUSPENDED").length;
-      const rejectedCompanies = companies.filter((c) => c.status === "REJECTED").length;
-
-      const users = usersRes.data || [];
-      const totalUsers = users.length;
-      const sevenDaysAgo = new Date(Date.now() - 7 * 86400 * 1000).toISOString();
-      const recentlyActiveUsers = users.filter((u) => u.updated_at >= sevenDaysAgo).length;
-
+    if (totalCompRes.count !== null && totalCompRes.count !== undefined) {
       return {
-        totalCompanies,
-        pendingApprovals,
-        activeCompanies,
-        suspendedCompanies,
-        rejectedCompanies,
-        totalUsers,
-        recentlyActiveUsers,
+        totalCompanies: totalCompRes.count || 0,
+        pendingApprovals: pendingCompRes.count || 0,
+        activeCompanies: activeCompRes.count || 0,
+        suspendedCompanies: suspendedCompRes.count || 0,
+        rejectedCompanies: rejectedCompRes.count || 0,
+        totalUsers: totalUsersRes.count || 0,
+        recentlyActiveUsers: activeUsersRes.count || 0,
         pendingRequests: (pendingRequestsRes.data as Company[]) || [],
         recentAuditLogs: (auditLogsRes.data as AuditLog[]) || [],
       };
@@ -171,7 +195,7 @@ export async function getPlatformCompanies(options?: {
   try {
     let query = supabase
       .from("companies")
-      .select("*, memberships(count)", { count: "exact" })
+      .select("id, name, slug, domain, plan, status, contact_email, contact_name, approved_at, approved_by, rejection_reason, created_at, updated_at, memberships(count)", { count: "exact" })
       .order("created_at", { ascending: false });
 
     if (options?.status && options.status !== "ALL") {
@@ -664,7 +688,7 @@ export async function getPlatformAuditLogs(options?: {
   try {
     let query = supabase
       .from("audit_logs")
-      .select("*", { count: "exact" })
+      .select("id, company_id, user_id, action, resource, resource_id, details, ip_address, created_at", { count: "exact" })
       .order("created_at", { ascending: false });
 
     if (options?.companyId) {

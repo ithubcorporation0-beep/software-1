@@ -165,16 +165,26 @@ async function safeDispatchEmail(input: DispatchNotificationInput): Promise<bool
 // NOTIFICATION QUERIES & MUTATIONS
 // ============================================================================
 
+// In-memory tenant scan throttler (15 minutes per company)
+const lastSyncTimestamps = new Map<string, number>();
+const SYNC_THROTTLE_MS = 15 * 60 * 1000;
+
 export async function getUserNotifications(
   companyId: string,
-  userId?: string
+  userId?: string,
+  options?: { limit?: number; unreadOnly?: boolean }
 ): Promise<NotificationRecord[]> {
   // Return notifications for this company that are either global or for this user
   let list = memoryNotificationStore.notifications.filter((n) => n.company_id === companyId);
   if (userId) {
     list = list.filter((n) => !n.user_id || n.user_id === userId);
   }
-  return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  if (options?.unreadOnly) {
+    list = list.filter((n) => !n.read);
+  }
+  const sorted = list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const limit = Math.max(1, Math.min(100, options?.limit || 20));
+  return sorted.slice(0, limit);
 }
 
 export async function markNotificationAsRead(
@@ -253,7 +263,16 @@ export async function updateUserNotificationPreferences(
  * Scans tenant state across modules to emit notifications for low stock,
  * overdue invoices, upcoming task deadlines, and pending requests.
  */
-export async function syncSystemNotifications(companyId: string): Promise<number> {
+export async function syncSystemNotifications(
+  companyId: string,
+  options?: { force?: boolean }
+): Promise<number> {
+  const lastSync = lastSyncTimestamps.get(companyId) || 0;
+  if (!options?.force && Date.now() - lastSync < SYNC_THROTTLE_MS) {
+    return 0; // Throttled: avoid full-table scans across inventory, sales, and tasks
+  }
+  lastSyncTimestamps.set(companyId, Date.now());
+
   let generated = 0;
 
   // 1. Scan for Low Stock

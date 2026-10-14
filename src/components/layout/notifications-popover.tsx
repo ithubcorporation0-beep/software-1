@@ -25,7 +25,7 @@ export function NotificationsPopover() {
     let mounted = true;
     import("@/app/(erp)/notifications/actions")
       .then(({ fetchNotificationsAction }) => {
-        fetchNotificationsAction(DEFAULT_COMPANY_ID)
+        fetchNotificationsAction(DEFAULT_COMPANY_ID, undefined, { limit: 10, sync: false })
           .then((res) => {
             if (!mounted) return;
             if (res.success && Array.isArray(res.data)) {

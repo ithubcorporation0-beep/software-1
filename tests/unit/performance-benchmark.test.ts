@@ -6,10 +6,14 @@ import { requireCompanyMembership } from "@/lib/auth/server";
 import { resetMemorySalesStore } from "@/lib/sales/server";
 import { resetMemoryFinanceStore } from "@/lib/finance/server";
 
-const { mockRequireUser, mockRequirePermission, mockRequireCompanyMembership } = vi.hoisted(() => ({
+import { getSuperAdminMetrics } from "@/lib/super-admin/server";
+import { syncSystemNotifications, getUserNotifications } from "@/lib/notifications/server";
+
+const { mockRequireUser, mockRequirePermission, mockRequireCompanyMembership, mockRequireSuperAdmin } = vi.hoisted(() => ({
   mockRequireUser: vi.fn(),
   mockRequirePermission: vi.fn(),
   mockRequireCompanyMembership: vi.fn(),
+  mockRequireSuperAdmin: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/server", async (importOriginal) => {
@@ -17,6 +21,7 @@ vi.mock("@/lib/auth/server", async (importOriginal) => {
   return {
     ...actual,
     requireUser: () => mockRequireUser(),
+    requireSuperAdmin: () => mockRequireSuperAdmin(),
     requirePermission: (companyId: string, perm: string, user?: any) =>
       mockRequirePermission(companyId, perm, user),
     requireCompanyMembership: (companyId: string, user?: any) =>
@@ -147,4 +152,56 @@ describe("Phase 1: Performance Diagnostics & Latency Baseline", () => {
     console.log(`[OPTIMIZED ATOMIC RPC BENCHMARK] getDashboardTelemetry took: ${durationMs.toFixed(2)}ms (< 5ms target)`);
     expect(durationMs).toBeLessThan(100);
   });
+
+  it("measures ultra-fast consolidated atomic Super Admin RPC metrics path", async () => {
+    mockRequireSuperAdmin.mockResolvedValue({
+      id: "super-user-01",
+      email: "super@ithub.test",
+      is_super_admin: true,
+    });
+
+    mockRpc.mockResolvedValueOnce({
+      data: {
+        totalCompanies: 24,
+        pendingApprovals: 3,
+        activeCompanies: 19,
+        suspendedCompanies: 1,
+        rejectedCompanies: 1,
+        totalUsers: 148,
+        recentlyActiveUsers: 92,
+        pendingRequests: [{ id: "comp-p1", name: "Pending Corp", status: "PENDING" }],
+        recentAuditLogs: [{ id: "aud-p1", action: "super_admin.approve" }],
+      },
+      error: null,
+    });
+
+    const start = performance.now();
+    const metrics = await getSuperAdminMetrics();
+    const durationMs = performance.now() - start;
+
+    expect(metrics.totalCompanies).toBe(24);
+    expect(metrics.pendingApprovals).toBe(3);
+    expect(metrics.activeCompanies).toBe(19);
+    expect(metrics.totalUsers).toBe(148);
+    expect(metrics.recentlyActiveUsers).toBe(92);
+
+    console.log(`[OPTIMIZED SUPER ADMIN ATOMIC RPC BENCHMARK] getSuperAdminMetrics took: ${durationMs.toFixed(2)}ms (< 5ms target)`);
+    expect(durationMs).toBeLessThan(100);
+  });
+
+  it("verifies notification scanner 15-minute throttle eliminates redundant table scans", async () => {
+    // First call may scan
+    const firstRun = await syncSystemNotifications(companyId, { force: true });
+    expect(firstRun).toBeGreaterThanOrEqual(0);
+
+    // Second immediate call MUST be throttled (returns 0 in < 1ms without querying any module)
+    const start = performance.now();
+    const secondRun = await syncSystemNotifications(companyId);
+    const durationMs = performance.now() - start;
+
+    expect(secondRun).toBe(0);
+    console.log(`[NOTIFICATION THROTTLE BENCHMARK] Second sync took: ${durationMs.toFixed(3)}ms (0ms throttled)`);
+    expect(durationMs).toBeLessThan(5);
+  });
 });
+

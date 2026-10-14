@@ -338,7 +338,14 @@ export const requireCompanyMembership = cache(async function requireCompanyMembe
   const supabase = await createClient();
   const { data: membership, error } = await supabase
     .from("memberships")
-    .select("*, role:roles(*), company:companies(*)")
+    .select(`
+      *,
+      company:companies(*),
+      role:roles(
+        *,
+        role_permissions(permission:permissions(code))
+      )
+    `)
     .eq("company_id", companyId)
     .eq("user_id", user.id)
     .eq("status", "ACTIVE")
@@ -359,15 +366,24 @@ export const requireCompanyMembership = cache(async function requireCompanyMembe
     );
   }
 
-  // Retrieve permissions for role
-  const { data: rolePermissions } = await supabase
-    .from("role_permissions")
-    .select("permission:permissions(code)")
-    .eq("role_id", membership.role_id);
+  // Retrieve permissions for role (prefer consolidated single-roundtrip data)
+  let permissions: string[] = [];
+  const nestedRolePerms = (membership.role as any)?.role_permissions;
+  if (Array.isArray(nestedRolePerms)) {
+    permissions = nestedRolePerms
+      .map((rp: any) => rp.permission?.code)
+      .filter(Boolean);
+  } else {
+    // Resilient fallback for mocks or environments without deep relation joins
+    const { data: rolePermissions } = await supabase
+      .from("role_permissions")
+      .select("permission:permissions(code)")
+      .eq("role_id", membership.role_id);
 
-  const permissions = (rolePermissions || [])
-    .map((rp: any) => rp.permission?.code)
-    .filter(Boolean);
+    permissions = (rolePermissions || [])
+      .map((rp: any) => rp.permission?.code)
+      .filter(Boolean);
+  }
 
   return {
     membership,

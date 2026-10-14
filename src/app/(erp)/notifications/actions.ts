@@ -18,11 +18,16 @@ export interface ActionState<T = any> {
 
 export async function fetchNotificationsAction(
   companyId: string,
-  userId?: string
+  userId?: string,
+  options?: { limit?: number; sync?: boolean }
 ): Promise<ActionState> {
   try {
-    await syncSystemNotifications(companyId);
-    const notifications = await getUserNotifications(companyId, userId);
+    if (options?.sync) {
+      await syncSystemNotifications(companyId);
+    }
+    const notifications = await getUserNotifications(companyId, userId, {
+      limit: options?.limit || 15,
+    });
     return {
       success: true,
       data: notifications,
