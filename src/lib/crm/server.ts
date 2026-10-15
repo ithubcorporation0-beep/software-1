@@ -126,7 +126,7 @@ export async function getCustomers(
   await requirePermission(companyId, "crm:view", viewingUser);
 
   const page = Math.max(1, options?.page || 1);
-  const pageSize = Math.max(1, Math.min(100, options?.pageSize || 10));
+  const pageSize = Math.max(1, Math.min(50, options?.pageSize || 10));
   const supabase = await createClient();
 
   try {
@@ -778,6 +778,9 @@ export async function getLeads(
     if (options?.assignedTo && options.assignedTo !== "ALL") {
       query = query.eq("assigned_to", options.assignedTo);
     }
+
+    const limit = Math.min((options as any)?.limit ?? 50, 50);
+    query = query.limit(limit);
 
     const { data, error } = await query;
     if (!error && data) {

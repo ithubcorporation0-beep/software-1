@@ -6,6 +6,7 @@ import {
   isSuperAdmin,
   AuthError,
   ForbiddenError,
+  invalidateRoleCache,
 } from "@/lib/auth/server";
 import { Profile, Company, Role, Membership } from "@/types/database.types";
 
@@ -81,6 +82,7 @@ describe("Server-Side Authorization & Tenant Isolation (Fail-Closed)", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    invalidateRoleCache();
   });
 
   describe("1. Unauthenticated Access Protection", () => {

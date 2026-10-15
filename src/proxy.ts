@@ -2,7 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyAdminSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth/admin-session";
 
+function isTokenExpired(exp?: number): boolean {
+  if (!exp) return true;
+  // Expired if current time + 10s buffer exceeds exp
+  return Math.floor(Date.now() / 1000) >= exp - 10;
+}
+
 export async function proxy(request: NextRequest) {
+  const startMs = performance.now();
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -26,7 +33,7 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // 1. Check for signed administrative session cookie
+  // 1. Check for signed administrative session cookie (0ms local HMAC check)
   const adminCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const adminSession = verifyAdminSessionToken(adminCookie);
 
@@ -35,6 +42,8 @@ export async function proxy(request: NextRequest) {
     if (isAuthRoute) {
       return NextResponse.redirect(new URL("/", request.url));
     }
+    const totalMs = Math.round((performance.now() - startMs) * 100) / 100;
+    response.headers.set("Server-Timing", `proxy;dur=${totalMs};desc="Proxy Admin"`);
     return response;
   }
 
@@ -70,12 +79,29 @@ export async function proxy(request: NextRequest) {
       },
     });
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    let isAuthenticated = false;
+
+    // Fast-path: Local JWT claims verification without remote network round trip
+    try {
+      if (typeof (supabase.auth as any).getClaims === "function") {
+        const { data: claimsData } = await (supabase.auth as any).getClaims();
+        if (claimsData?.claims && !isTokenExpired(claimsData.claims.exp)) {
+          isAuthenticated = true;
+        }
+      }
+    } catch {
+      // Fall through to standard getUser() if local claims verification is unavailable
+    }
+
+    if (!isAuthenticated) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      isAuthenticated = Boolean(user);
+    }
 
     // Protected Route: unauthenticated user -> redirect to /login
-    if (!user && !isAuthRoute) {
+    if (!isAuthenticated && !isAuthRoute) {
       const redirectUrl = new URL("/login", request.url);
       redirectUrl.searchParams.set("redirectTo", pathname);
       const redirectResponse = NextResponse.redirect(redirectUrl);
@@ -86,7 +112,7 @@ export async function proxy(request: NextRequest) {
     }
 
     // Auth Route: already authenticated user -> redirect to /
-    if (user && isAuthRoute) {
+    if (isAuthenticated && isAuthRoute) {
       const redirectResponse = NextResponse.redirect(new URL("/", request.url));
       response.cookies.getAll().forEach((c) => {
         redirectResponse.cookies.set(c.name, c.value);
@@ -94,6 +120,8 @@ export async function proxy(request: NextRequest) {
       return redirectResponse;
     }
 
+    const totalMs = Math.round((performance.now() - startMs) * 100) / 100;
+    response.headers.set("Server-Timing", `proxy;dur=${totalMs};desc="Proxy Auth"`);
     return response;
   }
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission, requireUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
@@ -131,9 +132,18 @@ export async function dispatchNotification(
 
   memoryNotificationStore.notifications.unshift(record);
 
-  // Email Notification Check
-  // Only attempt email dispatch when provider credentials are confirmed via environment variables
-  await safeDispatchEmail(input);
+  // Email Notification Check - dispatched AFTER the response
+  try {
+    if (typeof after === "function") {
+      after(async () => {
+        await safeDispatchEmail(input);
+      });
+    } else {
+      safeDispatchEmail(input).catch(() => {});
+    }
+  } catch {
+    safeDispatchEmail(input).catch(() => {});
+  }
 
   return record;
 }

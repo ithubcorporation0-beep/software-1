@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { AuditLog, Json } from "@/types/database.types";
 import { requirePermission } from "@/lib/auth/server";
+import { after } from "next/server";
 
 export interface LogAuditParams {
   companyId?: string | null;
@@ -58,10 +59,9 @@ export function sanitizeAuditPayload(data: any): Json {
 }
 
 /**
- * Records an immutable audit log record.
- * Fails safely without throwing so primary business actions are not blocked.
+ * Internal persistence executor for audit logs with error logging.
  */
-export async function recordAuditLog(params: LogAuditParams): Promise<void> {
+async function persistAuditRecord(params: LogAuditParams): Promise<void> {
   try {
     const supabase = await createClient();
     const safeDetails = sanitizeAuditPayload(params.details || {});
@@ -78,9 +78,31 @@ export async function recordAuditLog(params: LogAuditParams): Promise<void> {
       created_at: new Date().toISOString(),
     });
   } catch (err) {
-    // Fail-open for audit logging write failure to preserve transaction continuity
     console.error("[AUDIT LOG ERROR] Failed to persist audit record:", err);
   }
+}
+
+/**
+ * Records an immutable audit log record asynchronously AFTER the response
+ * using Next.js after() or non-blocking execution so user actions are never delayed.
+ * Ensures records are never silently dropped (logs failures).
+ */
+export async function recordAuditLog(params: LogAuditParams): Promise<void> {
+  try {
+    if (typeof after === "function") {
+      after(async () => {
+        await persistAuditRecord(params);
+      });
+      return;
+    }
+  } catch {
+    // Fall through if after() was invoked outside of a Next.js request lifecycle
+  }
+
+  // Fallback safe fire-and-forget queue
+  persistAuditRecord(params).catch((err) => {
+    console.error("[AUDIT LOG ERROR] Background persistence failure:", err);
+  });
 }
 
 /**
@@ -99,15 +121,17 @@ export async function getCompanyAuditLogs(
   await requirePermission(companyId, "audit:view");
 
   const supabase = await createClient();
+  const limit = Math.min(options?.limit ?? 50, 50);
+
   let query = supabase
     .from("audit_logs")
     .select("*")
     .eq("company_id", companyId)
     .order("created_at", { ascending: false })
-    .limit(options?.limit || 50);
+    .limit(limit);
 
   if (options?.offset) {
-    query = query.range(options.offset, options.offset + (options.limit || 50) - 1);
+    query = query.range(options.offset, options.offset + limit - 1);
   }
   if (options?.action) {
     query = query.ilike("action", `%${options.action}%`);

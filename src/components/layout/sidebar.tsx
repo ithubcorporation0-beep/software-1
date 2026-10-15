@@ -194,6 +194,7 @@ export function Sidebar({ className }: { className?: string }) {
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={true}
                     title={collapsed ? item.title : undefined}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(

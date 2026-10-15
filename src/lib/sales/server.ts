@@ -316,13 +316,9 @@ export async function getQuotations(
       query = query.eq("status", options.status);
     }
 
-    if (options?.limit !== undefined) {
-      if (options?.offset !== undefined) {
-        query = query.range(options.offset, options.offset + options.limit - 1);
-      } else {
-        query = query.limit(options.limit);
-      }
-    }
+    const limit = Math.min(options?.limit ?? 50, 50);
+    const offset = options?.offset ?? 0;
+    query = query.range(offset, offset + limit - 1);
 
     const { data, error } = await query;
     if (!error && data) {
@@ -356,10 +352,9 @@ export async function getQuotations(
     const term = options.search.trim().toLowerCase();
     list = list.filter((q) => q.quotation_number.toLowerCase().includes(term));
   }
-  if (options?.limit !== undefined) {
-    const offset = options.offset || 0;
-    list = list.slice(offset, offset + options.limit);
-  }
+  const limit = Math.min(options?.limit ?? 50, 50);
+  const offset = options?.offset || 0;
+  list = list.slice(offset, offset + limit);
   return list;
 }
 
@@ -762,13 +757,9 @@ export async function getSalesOrders(
       query = query.eq("status", options.status);
     }
 
-    if (options?.limit !== undefined) {
-      if (options?.offset !== undefined) {
-        query = query.range(options.offset, options.offset + options.limit - 1);
-      } else {
-        query = query.limit(options.limit);
-      }
-    }
+    const limit = Math.min(options?.limit ?? 50, 50);
+    const offset = options?.offset ?? 0;
+    query = query.range(offset, offset + limit - 1);
 
     const { data, error } = await query;
     if (!error && data) {
@@ -802,10 +793,9 @@ export async function getSalesOrders(
     const term = options.search.trim().toLowerCase();
     list = list.filter((o) => o.order_number.toLowerCase().includes(term));
   }
-  if (options?.limit !== undefined) {
-    const offset = options.offset || 0;
-    list = list.slice(offset, offset + options.limit);
-  }
+  const limit = Math.min(options?.limit ?? 50, 50);
+  const offset = options?.offset || 0;
+  list = list.slice(offset, offset + limit);
   return list;
 }
 
@@ -1103,13 +1093,9 @@ export async function getInvoices(
       query = query.ilike("invoice_number", term);
     }
 
-    if (limit !== undefined) {
-      if (offset !== undefined) {
-        query = query.range(offset, offset + limit - 1);
-      } else {
-        query = query.limit(limit);
-      }
-    }
+    const limit = Math.min(options?.limit ?? options?.pageSize ?? 50, 50);
+    const offset = options?.offset ?? (options?.page && options?.pageSize ? (options.page - 1) * options.pageSize : 0);
+    query = query.range(offset, offset + limit - 1);
 
     const { data, error } = await query;
     if (!error && data) {
@@ -1144,11 +1130,9 @@ export async function getInvoices(
     const term = options.search.trim().toLowerCase();
     list = list.filter((inv) => inv.invoice_number.toLowerCase().includes(term));
   }
-  if (offset !== undefined && limit !== undefined) {
-    list = list.slice(offset, offset + limit);
-  } else if (limit !== undefined) {
-    list = list.slice(0, limit);
-  }
+  const finalLimit = Math.min(options?.limit ?? options?.pageSize ?? 50, 50);
+  const finalOffset = offset || 0;
+  list = list.slice(finalOffset, finalOffset + finalLimit);
   return list;
 }
 
@@ -1313,13 +1297,9 @@ export async function getPayments(
     if (options?.customerId) {
       query = query.eq("customer_id", options.customerId);
     }
-    if (options?.limit !== undefined) {
-      if (options?.offset !== undefined) {
-        query = query.range(options.offset, options.offset + options.limit - 1);
-      } else {
-        query = query.limit(options.limit);
-      }
-    }
+    const limit = Math.min(options?.limit ?? 50, 50);
+    const offset = options?.offset ?? 0;
+    query = query.range(offset, offset + limit - 1);
 
     const { data, error } = await query;
     if (!error && data) {
@@ -1336,11 +1316,9 @@ export async function getPayments(
   if (options?.customerId) {
     list = list.filter((p) => p.customer_id === options.customerId);
   }
-  if (options?.offset !== undefined && options?.limit !== undefined) {
-    list = list.slice(options.offset, options.offset + options.limit);
-  } else if (options?.limit !== undefined) {
-    list = list.slice(0, options.limit);
-  }
+  const limit = Math.min(options?.limit ?? 50, 50);
+  const offset = options?.offset || 0;
+  list = list.slice(offset, offset + limit);
   return list;
 }
 

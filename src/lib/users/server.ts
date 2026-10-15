@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { requirePermission, requireUser, requireCompanyMembership } from "@/lib/auth/server";
+import { requirePermission, requireUser, requireCompanyMembership, invalidateRoleCache } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
 import { Role, Permission } from "@/types/database.types";
 
@@ -338,6 +338,9 @@ export async function updateMemberRole(
     return { success: false, error: updateError.message };
   }
 
+  // Invalidate cached role permissions
+  invalidateRoleCache(companyId, newRoleId);
+
   // 5. Audit Log
   await recordAuditLog({
     companyId,
@@ -479,7 +482,7 @@ export async function getCompanyRoles(companyId: string): Promise<Array<Role & {
     }
   }
 
-  return roles.map((role) => ({
+  return roles.map((role: any) => ({
     ...role,
     permissions: permissionsByRoleId[role.id] || [],
   }));
@@ -576,7 +579,7 @@ export async function createCustomRole(
   }
 
   // 4. Insert role_permissions mappings
-  const mappings = permissions.map((p) => ({
+  const mappings = (permissions as any[]).map((p: any) => ({
     role_id: newRole.id,
     permission_id: p.id,
     created_at: new Date().toISOString(),
@@ -603,9 +606,12 @@ export async function createCustomRole(
       name,
       code,
       assignedPermissionsCount: permissions.length,
-      assignedPermissions: permissions.map((p) => p.code),
+      assignedPermissions: (permissions as any[]).map((p: any) => p.code),
     },
   });
+
+  // Invalidate cached role permissions for this company
+  invalidateRoleCache(companyId);
 
   return { success: true, data: newRole };
 }
@@ -665,6 +671,9 @@ export async function deleteCustomRole(
   if (deleteError) {
     return { success: false, error: deleteError.message };
   }
+
+  // Invalidate cached role permissions
+  invalidateRoleCache(companyId, roleId);
 
   // 4. Record Audit Log
   await recordAuditLog({

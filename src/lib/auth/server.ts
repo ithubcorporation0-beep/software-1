@@ -42,6 +42,36 @@ export interface VerifiedMembershipContext {
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { verifyAdminSessionToken, SESSION_COOKIE_NAME } from "./admin-session";
+import { trackAuth, trackPermissions, trackTenant } from "@/lib/perf/timing";
+
+interface CachedRolePermissions {
+  permissions: string[];
+  role: Role;
+  expiresAt: number;
+}
+
+// In-memory tenant role and permissions cache with 5-minute TTL
+// Key format: `${companyId}:${roleId}` ensuring strict multi-tenant boundary isolation
+const rolePermissionsCache = new Map<string, CachedRolePermissions>();
+const ROLE_CACHE_TTL_MS = 5 * 60 * 1000;
+
+/**
+ * Invalidates the in-memory role & permission cache.
+ * Must be invoked whenever roles, permission assignments, or memberships change.
+ */
+export function invalidateRoleCache(companyId?: string, roleId?: string): void {
+  if (companyId && roleId) {
+    rolePermissionsCache.delete(`${companyId}:${roleId}`);
+  } else if (companyId) {
+    for (const key of rolePermissionsCache.keys()) {
+      if (key.startsWith(`${companyId}:`)) {
+        rolePermissionsCache.delete(key);
+      }
+    }
+  } else {
+    rolePermissionsCache.clear();
+  }
+}
 
 /**
  * Retrieves the currently authenticated Supabase user or administrative session.
@@ -49,6 +79,7 @@ import { verifyAdminSessionToken, SESSION_COOKIE_NAME } from "./admin-session";
  * Deduplicated per-request via React cache().
  */
 export const getCurrentUser = cache(async function getCurrentUser(): Promise<Profile | null> {
+  return await trackAuth(async () => {
   try {
     // 1. Check for signed administrative session cookie
     try {
@@ -103,6 +134,7 @@ export const getCurrentUser = cache(async function getCurrentUser(): Promise<Pro
   } catch {
     return null;
   }
+  });
 });
 
 /**
@@ -286,6 +318,7 @@ export const requireCompanyMembership = cache(async function requireCompanyMembe
   companyId: string,
   providedUser?: Profile
 ): Promise<VerifiedMembershipContext> {
+  return await trackTenant(async () => {
   const user = providedUser || (await requireUser());
 
   // Check if global platform super admin
@@ -366,23 +399,36 @@ export const requireCompanyMembership = cache(async function requireCompanyMembe
     );
   }
 
-  // Retrieve permissions for role (prefer consolidated single-roundtrip data)
+  // Retrieve permissions for role (prefer in-memory role & permission cache)
+  const cacheKey = `${companyId}:${membership.role_id}`;
+  const cachedRole = rolePermissionsCache.get(cacheKey);
   let permissions: string[] = [];
-  const nestedRolePerms = (membership.role as any)?.role_permissions;
-  if (Array.isArray(nestedRolePerms)) {
-    permissions = nestedRolePerms
-      .map((rp: any) => rp.permission?.code)
-      .filter(Boolean);
-  } else {
-    // Resilient fallback for mocks or environments without deep relation joins
-    const { data: rolePermissions } = await supabase
-      .from("role_permissions")
-      .select("permission:permissions(code)")
-      .eq("role_id", membership.role_id);
 
-    permissions = (rolePermissions || [])
-      .map((rp: any) => rp.permission?.code)
-      .filter(Boolean);
+  if (cachedRole && cachedRole.expiresAt > Date.now()) {
+    permissions = cachedRole.permissions;
+  } else {
+    const nestedRolePerms = (membership.role as any)?.role_permissions;
+    if (Array.isArray(nestedRolePerms)) {
+      permissions = nestedRolePerms
+        .map((rp: any) => rp.permission?.code)
+        .filter(Boolean);
+    } else {
+      // Resilient fallback for mocks or environments without deep relation joins
+      const { data: rolePermissions } = await supabase
+        .from("role_permissions")
+        .select("permission:permissions(code)")
+        .eq("role_id", membership.role_id);
+
+      permissions = (rolePermissions || [])
+        .map((rp: any) => rp.permission?.code)
+        .filter(Boolean);
+    }
+
+    rolePermissionsCache.set(cacheKey, {
+      permissions,
+      role: membership.role,
+      expiresAt: Date.now() + ROLE_CACHE_TTL_MS,
+    });
   }
 
   return {
@@ -391,7 +437,14 @@ export const requireCompanyMembership = cache(async function requireCompanyMembe
     company: membership.company,
     permissions,
   };
+  });
 });
+
+/**
+ * Canonical alias for requireCompanyMembership.
+ * Deduplicated per-request via React cache() with multi-tenant role cache.
+ */
+export const getSessionContext = requireCompanyMembership;
 
 /**
  * Enforces granular permission verification.
@@ -402,17 +455,19 @@ export async function requirePermission(
   permissionCode: string,
   providedUser?: Profile
 ): Promise<VerifiedMembershipContext> {
-  const context = await requireCompanyMembership(companyId, providedUser);
+  return await trackPermissions(async () => {
+    const context = await requireCompanyMembership(companyId, providedUser);
 
-  if (context.permissions.includes("*") || context.role.code === "super_admin") {
+    if (context.permissions.includes("*") || context.role.code === "super_admin") {
+      return context;
+    }
+
+    if (!hasPermission(context.permissions, permissionCode)) {
+      throw new ForbiddenError(
+        `Access Denied: Missing required permission [${permissionCode}] in company ${context.company.name}`
+      );
+    }
+
     return context;
-  }
-
-  if (!hasPermission(context.permissions, permissionCode)) {
-    throw new ForbiddenError(
-      `Access Denied: Missing required permission [${permissionCode}] in company ${context.company.name}`
-    );
-  }
-
-  return context;
+  });
 }

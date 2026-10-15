@@ -344,9 +344,10 @@ export async function getExpenses(
     to?: string;
     limit?: number;
     offset?: number;
-  }
+  },
+  viewingUser?: Profile
 ): Promise<Expense[]> {
-  await requirePermission(companyId, "finance.read");
+  await requirePermission(companyId, "finance.read", viewingUser);
 
   try {
     const supabase = await createClient();
@@ -364,13 +365,9 @@ export async function getExpenses(
     if (options?.search) {
       query = query.or(`vendor.ilike.%${options.search}%,description.ilike.%${options.search}%,expense_number.ilike.%${options.search}%`);
     }
-    if (options?.limit !== undefined) {
-      if (options?.offset !== undefined) {
-        query = query.range(options.offset, options.offset + options.limit - 1);
-      } else {
-        query = query.limit(options.limit);
-      }
-    }
+    const limit = Math.min(options?.limit ?? 50, 50);
+    const offset = options?.offset ?? 0;
+    query = query.range(offset, offset + limit - 1);
 
     const { data, error } = await query;
     if (!error && data && data.length > 0) {
@@ -946,9 +943,12 @@ export async function getJournalEntries(
     from?: string;
     to?: string;
     sourceType?: string;
-  }
+    limit?: number;
+    offset?: number;
+  },
+  viewingUser?: Profile
 ): Promise<JournalEntry[]> {
-  await requirePermission(companyId, "finance.read");
+  await requirePermission(companyId, "finance.read", viewingUser);
 
   try {
     const supabase = await createClient();
@@ -983,7 +983,47 @@ export async function getJournalEntries(
   if (options?.to) list = list.filter((je) => je.entry_date <= options.to!);
   if (options?.sourceType) list = list.filter((je) => je.source_type === options.sourceType);
 
-  return list.sort((a, b) => b.entry_date.localeCompare(a.entry_date));
+  list = list.sort((a, b) => b.entry_date.localeCompare(a.entry_date));
+  if (options?.limit !== undefined || (!options?.from && !options?.to)) {
+    const limit = Math.min(options?.limit ?? 50, 50);
+    const offset = options?.offset ?? 0;
+    list = list.slice(offset, offset + limit);
+  }
+  return list;
+}
+
+export async function getJournalEntryById(
+  companyId: string,
+  entryId: string,
+  viewingUser?: Profile
+): Promise<JournalEntry | null> {
+  await requirePermission(companyId, "finance.read", viewingUser);
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("journal_entries")
+      .select("*, lines:journal_entry_lines(*)")
+      .eq("company_id", companyId)
+      .eq("id", entryId)
+      .single();
+
+    if (!error && data) {
+      return data as JournalEntry;
+    }
+  } catch {
+    // Memory fallback
+  }
+
+  const je = memoryFinanceStore.journalEntries.find(
+    (e) => e.company_id === companyId && e.id === entryId
+  );
+  if (!je) return null;
+
+  return {
+    ...je,
+    lines: memoryFinanceStore.journalEntryLines.filter((l) => l.journal_entry_id === je.id),
+  };
 }
 
 /**
@@ -1103,8 +1143,7 @@ export async function reverseJournalEntry(
   await requirePermission(companyId, "finance.write", actorUser);
   const user = actorUser || (await requireUser());
 
-  const entries = await getJournalEntries(companyId);
-  const original = entries.find((e) => e.id === entryId);
+  const original = await getJournalEntryById(companyId, entryId, user);
 
   if (!original) {
     throw new Error(`Journal entry [${entryId}] not found.`);
