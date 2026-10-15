@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, requireCompanyMembership } from "@/lib/auth/server";
+import { getCurrentUser, requireCompanyMembership, getUserMemberships } from "@/lib/auth/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/auth/rate-limiter";
 
 export interface SearchResultItem {
   id: string;
@@ -21,9 +22,31 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Rate limiting: 60 searches per minute per user
+    const rateCheck = checkRateLimit(`search:${user.id}`, {
+      maxRequests: 60,
+      windowMs: 60 * 1000,
+    });
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: "Too many search requests. Please slow down." },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const query = (searchParams.get("q") || "").trim().toLowerCase();
-    const companyId = searchParams.get("companyId") || DEFAULT_COMPANY_ID;
+    
+    const requestedCompanyId = searchParams.get("companyId");
+    let companyId: string;
+    if (requestedCompanyId) {
+      companyId = requestedCompanyId;
+    } else if (user.is_super_admin) {
+      companyId = DEFAULT_COMPANY_ID;
+    } else {
+      const memberships = await getUserMemberships(user.id);
+      companyId = memberships[0]?.company_id || DEFAULT_COMPANY_ID;
+    }
 
     // Enforce tenant scoping and authorization (fails closed if user not member)
     const context = await requireCompanyMembership(companyId, user);

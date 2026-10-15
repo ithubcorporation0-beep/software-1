@@ -4,6 +4,7 @@ import { requirePermission, requireUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
 import { memoryHRStore } from "@/lib/hr/server";
 import { memoryFinanceStore, getNextFinanceNumber } from "@/lib/finance/server";
+import { sanitizeCSVCell } from "@/lib/utils/csv-sanitizer";
 import type {
   PayrollRun,
   PayrollItem,
@@ -566,7 +567,23 @@ export async function getPayrollRunById(
     (i) => i.company_id === companyId && i.payroll_run_id === runId
   );
 
-  return { run, items };
+  const canViewSensitive =
+    user.is_super_admin ||
+    context.permissions.includes("*") ||
+    context.permissions.includes("payroll.admin") ||
+    context.permissions.includes("employees:view_sensitive") ||
+    context.permissions.includes("hr.sensitive");
+
+  const sanitizedItems = items.map((i) => {
+    if (canViewSensitive) return i;
+    return {
+      ...i,
+      bank_account_number: i.bank_account_number ? "••••••••" + i.bank_account_number.slice(-4) : null,
+      bank_account_title: i.bank_account_title ? "Confidential Account" : null,
+    };
+  });
+
+  return { run, items: sanitizedItems };
 }
 
 /**
@@ -1269,15 +1286,6 @@ export async function exportPayrollRunToCSV(
     "Status",
   ];
 
-  const escapeCSV = (field: unknown): string => {
-    if (field === null || field === undefined) return "";
-    const str = String(field);
-    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    return str;
-  };
-
   const rows = items.map((i) => [
     run.run_number,
     i.employee_code,
@@ -1300,7 +1308,7 @@ export async function exportPayrollRunToCSV(
   ]);
 
   return [
-    headers.map(escapeCSV).join(","),
-    ...rows.map((row) => row.map(escapeCSV).join(",")),
+    headers.map(sanitizeCSVCell).join(","),
+    ...rows.map((row) => row.map(sanitizeCSVCell).join(",")),
   ].join("\r\n");
 }

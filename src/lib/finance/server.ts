@@ -6,6 +6,7 @@ import { recordAuditLog } from "@/lib/audit/server";
 import { roundMoney } from "@/lib/sales/server";
 import { getCachedCompanyData, revalidateCompanyTag } from "@/lib/cache/tagged-cache";
 import { updateCompanySummaryIncremental } from "@/lib/summaries/company-summaries";
+import { sanitizeCSVCell } from "@/lib/utils/csv-sanitizer";
 import type {
   Expense,
   ExpenseCategory,
@@ -74,12 +75,15 @@ export function validateReceiptMetadata(file: {
   name: string;
   size?: number | null;
   mimeType?: string | null;
+  url?: string | null;
 }): { valid: boolean; error?: string } {
-  if (file.size && file.size > MAX_RECEIPT_SIZE_BYTES) {
-    return {
-      valid: false,
-      error: `Receipt file exceeds the 10MB limit (provided: ${(file.size / (1024 * 1024)).toFixed(1)}MB).`,
-    };
+  if (file.size !== undefined && file.size !== null) {
+    if (file.size <= 0 || file.size > MAX_RECEIPT_SIZE_BYTES) {
+      return {
+        valid: false,
+        error: `Receipt file size exceeds the 10MB limit (must be between 1 byte and 10MB). Provided: ${(file.size / (1024 * 1024)).toFixed(1)}MB.`,
+      };
+    }
   }
 
   if (file.mimeType) {
@@ -90,6 +94,20 @@ export function validateReceiptMetadata(file: {
       return {
         valid: false,
         error: `Receipt file type [${file.mimeType}] is not permitted. Allowed formats: PDF, PNG, JPEG, WebP.`,
+      };
+    }
+  }
+
+  if (file.url) {
+    const lower = file.url.trim().toLowerCase();
+    if (
+      lower.startsWith("javascript:") ||
+      lower.startsWith("data:") ||
+      lower.startsWith("vbscript:")
+    ) {
+      return {
+        valid: false,
+        error: "Invalid receipt URL: dangerous URI schemes are prohibited.",
       };
     }
   }
@@ -1917,27 +1935,28 @@ export function exportFinancialReportToCSV(
   const lines: string[] = [];
 
   // Header Metadata
-  lines.push(`"Report","${reportType.toUpperCase().replace("_", " ")}"`);
+  const cleanReportTitle = reportType.toUpperCase().replace("_", " ");
+  lines.push(`"Report","${cleanReportTitle.replace(/"/g, '""')}"`);
   lines.push(`"Company","${meta.companyName.replace(/"/g, '""')}"`);
-  lines.push(`"Currency","${meta.currency}"`);
-  lines.push(`"Generated At","${exportedAt}"`);
+  lines.push(`"Currency","${meta.currency.replace(/"/g, '""')}"`);
+  lines.push(`"Generated At","${exportedAt.replace(/"/g, '""')}"`);
   lines.push(`"Disclaimer","Uncertified preliminary draft. Subject to client CPA / Accountant review before statutory filing."`);
   lines.push("");
 
   if (reportType === "profit_loss") {
     const pl = data as ProfitLossReport;
-    lines.push(`"Period From","${pl.period.from}","Period To","${pl.period.to}"`);
+    lines.push(`"Period From",${sanitizeCSVCell(pl.period.from)},"Period To",${sanitizeCSVCell(pl.period.to)}`);
     lines.push("");
     lines.push('"SECTION","ACCOUNT / CATEGORY","AMOUNT (' + meta.currency + ')","PERCENT"');
     lines.push('"REVENUE"');
     for (const r of pl.revenue.items) {
-      lines.push(`,"[${r.code}] ${r.name.replace(/"/g, '""')}",${r.amount.toFixed(2)},""`);
+      lines.push(`,${sanitizeCSVCell(`[${r.code}] ${r.name}`)},${r.amount.toFixed(2)},""`);
     }
     lines.push(`,"TOTAL REVENUE",${pl.revenue.total.toFixed(2)},"100.00%"`);
     lines.push("");
     lines.push('"OPERATING EXPENSES"');
     for (const e of pl.expenses.items) {
-      lines.push(`,"${e.category.replace(/"/g, '""')}",${e.amount.toFixed(2)},"${e.percentage.toFixed(2)}%"`);
+      lines.push(`,${sanitizeCSVCell(e.category)},${e.amount.toFixed(2)},"${e.percentage.toFixed(2)}%"`);
     }
     lines.push(`,"TOTAL EXPENSES",${pl.expenses.total.toFixed(2)},""`);
     lines.push("");

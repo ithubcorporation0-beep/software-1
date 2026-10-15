@@ -1,12 +1,12 @@
 import * as React from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ContentLayout } from "@/components/layout/content-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { InvoiceDetailClient } from "./invoice-detail-client";
 import { getInvoiceById, getPayments } from "@/lib/sales/server";
 import { getCustomerById } from "@/lib/crm/server";
 import { getCompanySettings } from "@/lib/company/server";
-import { requireCompanyMembership } from "@/lib/auth/server";
+import { requireCompanyMembership, getCurrentUser, getUserMemberships } from "@/lib/auth/server";
 
 const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -16,15 +16,23 @@ interface InvoicePageProps {
 
 export default async function InvoiceDetailPage({ params }: InvoicePageProps) {
   const { id } = await params;
-  const companyId = DEFAULT_COMPANY_ID;
-
-  try {
-    await requireCompanyMembership(companyId);
-  } catch {
-    // Falls closed
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
   }
 
-  const invoice = await getInvoiceById(companyId, id);
+  let companyId = DEFAULT_COMPANY_ID;
+  if (!user.is_super_admin) {
+    const memberships = await getUserMemberships(user.id);
+    if (!memberships.length) {
+      notFound();
+    }
+    companyId = memberships[0].company_id;
+  }
+
+  await requireCompanyMembership(companyId, user);
+
+  const invoice = await getInvoiceById(companyId, id, user);
   if (!invoice) {
     notFound();
   }

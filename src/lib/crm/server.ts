@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { requirePermission, requireUser } from "@/lib/auth/server";
+import { requirePermission, requireUser, getCurrentUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
 import { getCachedCompanyData, revalidateCompanyTag } from "@/lib/cache/tagged-cache";
 import { updateCompanySummaryIncremental } from "@/lib/summaries/company-summaries";
@@ -125,7 +125,10 @@ export async function getCustomers(
   options?: CustomerListOptions,
   viewingUser?: Profile
 ): Promise<PaginatedResult<Customer>> {
-  await requirePermission(companyId, "crm:view", viewingUser);
+  const context = await requirePermission(companyId, "crm:view", viewingUser);
+  const isCustomerPortal = context?.role?.code === "customer";
+  const callerUser = isCustomerPortal ? (viewingUser || (await getCurrentUser())) : null;
+  const callerEmail = callerUser?.email?.trim().toLowerCase();
 
   const page = Math.max(1, options?.page || 1);
   const pageSize = Math.max(1, Math.min(50, options?.pageSize || 10));
@@ -136,6 +139,13 @@ export async function getCustomers(
       .from("customers")
       .select("*", { count: "exact" })
       .eq("company_id", companyId);
+
+    if (isCustomerPortal) {
+      if (!callerEmail) {
+        return { data: [], total: 0, page: 1, pageSize, totalPages: 1 };
+      }
+      query = query.eq("email", callerEmail);
+    }
 
     if (options?.status && options.status !== "ALL") {
       query = query.eq("status", options.status);
@@ -173,6 +183,10 @@ export async function getCustomers(
 
   // Fallback to memory tenant store
   let filtered = memoryTenantStore.customers.filter((c) => c.company_id === companyId);
+  if (isCustomerPortal) {
+    if (!callerEmail) return { data: [], total: 0, page: 1, pageSize, totalPages: 1 };
+    filtered = filtered.filter((c) => (c.email || "").toLowerCase() === callerEmail);
+  }
   if (options?.status && options.status !== "ALL") {
     filtered = filtered.filter((c) => c.status === options.status);
   }
@@ -269,7 +283,7 @@ export async function getCustomerById(
     projectsCount: number;
   };
 } | null> {
-  await requirePermission(companyId, "crm:view", viewingUser);
+  const context = await requirePermission(companyId, "crm:view", viewingUser);
 
   const supabase = await createClient();
 
@@ -316,6 +330,14 @@ export async function getCustomerById(
     );
     if (!memCust) return null;
     customer = memCust;
+  }
+
+  if (context?.role?.code === "customer") {
+    const callerUser = viewingUser || (await getCurrentUser());
+    const callerEmail = callerUser?.email?.trim().toLowerCase();
+    if (!callerEmail || (customer.email || "").toLowerCase() !== callerEmail) {
+      return null;
+    }
   }
 
   if (notes.length === 0) {

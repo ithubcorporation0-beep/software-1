@@ -30,6 +30,41 @@ const REDACTED_KEYS = new Set([
 ]);
 
 /**
+ * Anomaly and security event detection tracker.
+ * Tracks failed login streaks and privilege escalations in memory.
+ */
+interface SecurityAnomalyTracker {
+  recentFailedLogins: Map<string, number[]>; // identifier -> timestamps
+}
+
+const securityTracker: SecurityAnomalyTracker = {
+  recentFailedLogins: new Map(),
+};
+
+export function checkSecurityAnomalies(identifier: string): {
+  isSuspicious: boolean;
+  failedAttempts: number;
+} {
+  const now = Date.now();
+  const windowMs = 5 * 60 * 1000; // 5-minute sliding window
+  let timestamps = securityTracker.recentFailedLogins.get(identifier) || [];
+  timestamps = timestamps.filter((t) => now - t < windowMs);
+  timestamps.push(now);
+  securityTracker.recentFailedLogins.set(identifier, timestamps);
+
+  const count = timestamps.length;
+  const isSuspicious = count >= 5;
+
+  if (isSuspicious) {
+    console.warn(
+      `[SECURITY ALERT] Suspicious repeated failed login attempts detected for identity "${identifier}": ${count} failures in last 5 minutes.`
+    );
+  }
+
+  return { isSuspicious, failedAttempts: count };
+}
+
+/**
  * Recursively redacts sensitive keys from audit details.
  * Guarantees passwords, tokens, and secrets are never committed to audit trails.
  */

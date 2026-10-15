@@ -2,28 +2,50 @@ import { cookies } from "next/headers";
 import crypto from "crypto";
 
 const DEFAULT_ADMIN_EMAIL = "admin@ithub-enterprise.com";
-const DEFAULT_ADMIN_PASSWORDS = ["Admin@123", "admin123"];
 const SESSION_COOKIE_NAME = "erp_admin_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 function getSecretKey(): string {
-  return (
-    process.env.ADMIN_SESSION_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "it-hub-erp-secure-secret-key-2026-pkr-admin"
-  );
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "Security Exception: ADMIN_SESSION_SECRET must be configured in production environments."
+      );
+    }
+    return "dev-only-local-secret-do-not-use-in-production-random-hash-key";
+  }
+  return secret;
 }
 
 /**
  * Validates whether the given password matches the configured administrative password.
+ * Evaluated in constant time using crypto.timingSafeEqual to prevent side-channel timing attacks.
+ * Never allows hardcoded or default backdoor passwords.
  */
 export function isValidAdminPassword(password: string): boolean {
   if (!password) return false;
   const configuredPassword = process.env.ADMIN_PASSWORD?.trim();
-  if (configuredPassword) {
-    if (password === configuredPassword) return true;
+  if (!configuredPassword) {
+    return false;
   }
-  return DEFAULT_ADMIN_PASSWORDS.includes(password);
+
+  const passBuffer = Buffer.from(password, "utf8");
+  const configBuffer = Buffer.from(configuredPassword, "utf8");
+
+  if (passBuffer.length !== configBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(passBuffer, configBuffer);
+}
+
+export function verifyAdminCredentials(email: string, password: string): boolean {
+  const adminEmail = process.env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
+  if (email.toLowerCase().trim() !== adminEmail.toLowerCase().trim()) {
+    return false;
+  }
+  return isValidAdminPassword(password);
 }
 
 /**
@@ -46,20 +68,30 @@ export function createAdminSessionToken(email: string = DEFAULT_ADMIN_EMAIL): st
 
 /**
  * Verifies the integrity and expiration of an administrative session token.
+ * Uses constant-time comparison to prevent timing forgery.
  */
 export function verifyAdminSessionToken(token?: string): { email: string; role: string } | null {
   if (!token || !token.includes(".")) return null;
   const [base64Payload, signature] = token.split(".");
   if (!base64Payload || !signature) return null;
 
-  const expectedSignature = crypto
-    .createHmac("sha256", getSecretKey())
-    .update(base64Payload)
-    .digest("base64url");
-
-  if (signature !== expectedSignature) return null;
-
   try {
+    const expectedSignature = crypto
+      .createHmac("sha256", getSecretKey())
+      .update(base64Payload)
+      .digest("base64url");
+
+    const sigBuffer = Buffer.from(signature, "utf8");
+    const expBuffer = Buffer.from(expectedSignature, "utf8");
+
+    if (sigBuffer.length !== expBuffer.length) {
+      return null;
+    }
+
+    if (!crypto.timingSafeEqual(sigBuffer, expBuffer)) {
+      return null;
+    }
+
     const jsonStr = Buffer.from(base64Payload, "base64url").toString("utf8");
     const payload = JSON.parse(jsonStr);
     if (!payload.exp || Date.now() > payload.exp) {

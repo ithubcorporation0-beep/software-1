@@ -140,6 +140,13 @@ export async function inviteCompanyUser(
     return { success: false, error: "Privilege Escalation Blocked: Only Super Admins can assign the Super Admin role" };
   }
 
+  // Prevent non-admins from assigning Admin roles
+  const callerRoleCode = callerContext.role.code;
+  const isCallerAdmin = callerRoleCode === "admin" || caller.is_super_admin;
+  if (targetRole.code === "admin" && !isCallerAdmin) {
+    return { success: false, error: "Privilege Escalation Blocked: Only Company Administrators can invite new Admins" };
+  }
+
   // Ensure role is either a global system role or belongs to this company
   if (targetRole.company_id && targetRole.company_id !== companyId) {
     return { success: false, error: "Cross-tenant violation: Cannot assign role belonging to another organization" };
@@ -269,7 +276,7 @@ export async function updateMemberRole(
   newRoleId: string
 ): Promise<{ success: boolean; error?: string }> {
   const caller = await requireUser();
-  await requirePermission(companyId, "users:edit", caller);
+  const callerContext = await requirePermission(companyId, "users:edit", caller);
 
   const supabase = await createClient();
 
@@ -296,12 +303,7 @@ export async function updateMemberRole(
     return { success: false, error: "Target role not found" };
   }
 
-  // Privilege escalation protection
-  if (targetRole.code === "super_admin" && !caller.is_super_admin) {
-    return { success: false, error: "Privilege Escalation Blocked: Only Super Admins can assign Super Admin role" };
-  }
-
-  // 3. Last Admin Protection
+  // 3. Last Admin Demotion Protection (evaluated first so last-admin safeguards cannot be bypassed)
   const currentRoleCode = (targetMembership.role as any)?.code;
   const isDemotingAdmin = (currentRoleCode === "admin" || currentRoleCode === "super_admin") &&
     (targetRole.code !== "admin" && targetRole.code !== "super_admin");
@@ -324,6 +326,24 @@ export async function updateMemberRole(
         error: "Governance Protection: Cannot demote the last active Administrator for this organization",
       };
     }
+  }
+
+  // 4. Prevent self-role modification
+  if (targetMembership.user_id === caller.id && !caller.is_super_admin) {
+    return { success: false, error: "Privilege Escalation Blocked: You cannot modify your own role" };
+  }
+
+  // 5. Prevent non-admins from assigning Admin or Super Admin role
+  const callerRoleCode = callerContext?.role?.code;
+  const isCallerAdmin = callerRoleCode === "admin" || caller.is_super_admin;
+
+  if ((targetRole.code === "admin" || targetRole.code === "super_admin") && !isCallerAdmin) {
+    return { success: false, error: "Privilege Escalation Blocked: Only Administrators can grant Admin privileges" };
+  }
+
+  // 6. Privilege escalation protection against super_admin
+  if (targetRole.code === "super_admin" && !caller.is_super_admin) {
+    return { success: false, error: "Privilege Escalation Blocked: Only Super Admins can assign Super Admin role" };
   }
 
   // 4. Update membership

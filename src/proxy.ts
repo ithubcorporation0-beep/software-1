@@ -23,11 +23,16 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/reset-password");
 
+  const isPublicApi =
+    pathname === "/api/auth/login" ||
+    pathname === "/api/auth/logout" ||
+    pathname === "/api/health";
+
   const isPublicRoute =
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/favicon.ico") ||
-    pathname.includes(".");
+    isPublicApi ||
+    pathname === "/favicon.ico" ||
+    (pathname.includes(".") && !pathname.startsWith("/api"));
 
   if (isPublicRoute) {
     return response;

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission, requireUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
+import { sanitizeCSVCell } from "@/lib/utils/csv-sanitizer";
 import type {
   Department,
   HREmployee,
@@ -57,6 +58,8 @@ export function canViewSensitiveHR(
   if (context.permissions?.includes("*")) return true;
   if (context.permissions?.includes("hr.sensitive")) return true;
   if (context.permissions?.includes("hr.admin")) return true;
+  if (context.permissions?.includes("employees:view_sensitive")) return true;
+  if (context.permissions?.includes("employees.view_sensitive")) return true;
   // An employee can view their own salary and personal details
   if (context.employeeUserId && context.user.id === context.employeeUserId) return true;
   return false;
@@ -1014,6 +1017,21 @@ export async function reviewLeaveRequest(
     throw new Error("Leave rejection requires a valid reason of at least 3 characters.");
   }
 
+  // Separation of duties: An approver cannot approve their own leave request
+  const applicantEmployee = memoryHRStore.employees.find(
+    (e) => e.company_id === companyId && e.id === existing.employee_id
+  );
+  if (
+    decision.status === "Approved" &&
+    applicantEmployee &&
+    applicantEmployee.user_id === user.id &&
+    !user.is_super_admin
+  ) {
+    throw new Error(
+      `Separation of duties violation: Approver [${user.email}] cannot approve their own leave request. Approval must be conducted by an independent authorized reviewer.`
+    );
+  }
+
   const now = new Date().toISOString();
   const updated: HRLeave = {
     ...existing,
@@ -1119,7 +1137,19 @@ export function exportAttendanceToCSV(
 
   for (const a of attendance) {
     lines.push(
-      `"${a.employee?.employee_id || ""}","${(a.employee?.full_name || "Employee").replace(/"/g, '""')}","${a.date}","${a.check_in || ""}","${a.check_out || ""}",${a.total_hours.toFixed(2)},"${a.status}","${a.is_manual_correction ? "Manual" : "Standard"}","${(a.notes || "").replace(/"/g, '""')}"`
+      [
+        a.employee?.employee_id || "",
+        a.employee?.full_name || "Employee",
+        a.date,
+        a.check_in || "",
+        a.check_out || "",
+        a.total_hours.toFixed(2),
+        a.status,
+        a.is_manual_correction ? "Manual" : "Standard",
+        a.notes || "",
+      ]
+        .map(sanitizeCSVCell)
+        .join(",")
     );
   }
 

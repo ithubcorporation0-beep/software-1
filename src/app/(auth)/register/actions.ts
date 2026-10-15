@@ -2,6 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { validatePasswordStrength } from "@/lib/validation/password";
+import { checkRateLimit } from "@/lib/auth/rate-limiter";
+import { recordAuditLog } from "@/lib/audit/server";
 
 export type RegisterState = {
   error?: string | null;
@@ -22,17 +25,41 @@ export async function registerAction(
     return { error: "Full Name, Work Email, and Password are required." };
   }
 
-  if (password.length < 6) {
-    return { error: "Password must be at least 6 characters long." };
+  // 1. Enforce strict enterprise password policy
+  const passwordValidation = validatePasswordStrength(password);
+  if (!passwordValidation.valid) {
+    return { error: passwordValidation.errors[0] };
   }
 
-  // 1. Try provisioning via service-role admin client (auto-confirm email + assign tenant membership)
+  // 2. Multi-tenant isolation: Require company name or invitation
+  if (!companyName && !inviteCode) {
+    return {
+      error: "An Organization Name or Invitation Code is required. Uninvited registration is prohibited.",
+    };
+  }
+
+  // 3. Rate limiting (max 5 registration attempts per 15 mins per IP/email)
+  const normalizedEmail = email.toLowerCase();
+  const rateLimitKey = `register:${normalizedEmail}`;
+  const rateCheck = checkRateLimit(rateLimitKey, {
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000,
+  });
+
+  if (!rateCheck.allowed) {
+    const waitMinutes = Math.ceil((rateCheck.resetTimeMs - Date.now()) / 60000);
+    return {
+      error: `Too many registration attempts. Please wait ${waitMinutes} minute(s) before trying again.`,
+    };
+  }
+
+  // 4. Try provisioning via service-role admin client
   try {
     const adminClient = createAdminClient();
     const { data: adminUser, error: adminError } = await adminClient.auth.admin.createUser({
-      email,
+      email: normalizedEmail,
       password,
-      email_confirm: true,
+      email_confirm: false, // Enforce email confirmation requirement
       user_metadata: {
         full_name: fullName,
         requested_company: companyName,
@@ -41,11 +68,10 @@ export async function registerAction(
     });
 
     if (adminError) {
-
-
-
-
-      if (adminError.message.toLowerCase().includes("already registered") || adminError.message.toLowerCase().includes("unique")) {
+      if (
+        adminError.message.toLowerCase().includes("already registered") ||
+        adminError.message.toLowerCase().includes("unique")
+      ) {
         return { error: "An account with this email address already exists. Please sign in." };
       }
       return { error: adminError.message };
@@ -56,7 +82,7 @@ export async function registerAction(
       // Ensure profile record is inserted
       await adminClient.from("profiles").upsert({
         id: userId,
-        email,
+        email: normalizedEmail,
         full_name: fullName,
         is_super_admin: false,
         created_at: new Date().toISOString(),
@@ -77,7 +103,7 @@ export async function registerAction(
             slug,
             plan: "ENTERPRISE",
             status: "PENDING",
-            contact_email: email,
+            contact_email: normalizedEmail,
             contact_name: fullName,
             created_by: userId,
             created_at: new Date().toISOString(),
@@ -86,48 +112,39 @@ export async function registerAction(
           .select("id")
           .single();
 
-        const targetCompanyId =
-          newCompany?.id || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000001";
-        const adminRoleId = "00000000-0000-0000-0000-000000000002"; // Company Admin
+        if (newCompany?.id) {
+          const adminRoleId = "00000000-0000-0000-0000-000000000002"; // Company Admin
 
-        await adminClient.from("memberships").upsert(
-          {
-            company_id: targetCompanyId,
-            user_id: userId,
-            role_id: adminRoleId,
-            status: "ACTIVE",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "company_id,user_id" }
-        );
-      } else {
-        // Assign membership in default tenant company
-        const defaultCompanyId =
-          process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "00000000-0000-0000-0000-000000000001";
-        const employeeRoleId = "00000000-0000-0000-0000-000000000006";
-
-        await adminClient.from("memberships").upsert(
-          {
-            company_id: defaultCompanyId,
-            user_id: userId,
-            role_id: employeeRoleId,
-            status: "ACTIVE",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "company_id,user_id" }
-        );
+          await adminClient.from("memberships").upsert(
+            {
+              company_id: newCompany.id,
+              user_id: userId,
+              role_id: adminRoleId,
+              status: "ACTIVE",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "company_id,user_id" }
+          );
+        }
       }
+
+      await recordAuditLog({
+        userId,
+        action: "auth.register",
+        resource: "users",
+        resourceId: userId,
+        details: { email: normalizedEmail, company: companyName || "invited" },
+      });
     }
 
     return { success: true };
   } catch {
-    // 2. Fallback to standard Supabase client signUp
+    // Fallback to standard Supabase client signUp
     try {
       const supabase = await createClient();
       const { error } = await supabase.auth.signUp({
-        email,
+        email: normalizedEmail,
         password,
         options: {
           data: {
@@ -143,8 +160,10 @@ export async function registerAction(
       }
 
       return { success: true };
-    } catch (err: any) {
-      return { error: err.message || "An unexpected error occurred during registration." };
+    } catch (fallbackErr: any) {
+      return {
+        error: fallbackErr.message || "An unexpected error occurred during account creation.",
+      };
     }
   }
 }

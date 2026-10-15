@@ -6,6 +6,7 @@ import { getPayrollRuns } from "@/lib/payroll/server";
 import { getProducts, getStockMovements, getPurchaseOrders } from "@/lib/inventory/server";
 import { getProjects, getTasks } from "@/lib/projects/server";
 import type { Profile } from "@/types/database.types";
+import { sanitizeCSVCell } from "@/lib/utils/csv-sanitizer";
 
 // ============================================================================
 // REPORT DATA STRUCTURES
@@ -251,14 +252,14 @@ export function exportReportToCSV(
       lines.push("Month / Period,Invoice Count,Gross Sales,Payments Received,Outstanding Balance");
       for (const row of data.salesSummary.byMonth) {
         lines.push(
-          `"${row.periodKey}",${row.invoiceCount},${row.grossSales.toFixed(2)},${row.paymentsReceived.toFixed(2)},${row.outstandingBalance.toFixed(2)}`
+          `${sanitizeCSVCell(row.periodKey)},${row.invoiceCount},${row.grossSales.toFixed(2)},${row.paymentsReceived.toFixed(2)},${row.outstandingBalance.toFixed(2)}`
         );
       }
       lines.push("");
       lines.push("Top Customers,Invoice Count,Gross Sales,Outstanding Balance");
       for (const row of data.salesSummary.byCustomer) {
         lines.push(
-          `"${row.periodKey}",${row.invoiceCount},${row.grossSales.toFixed(2)},${row.outstandingBalance.toFixed(2)}`
+          `${sanitizeCSVCell(row.periodKey)},${row.invoiceCount},${row.grossSales.toFixed(2)},${row.outstandingBalance.toFixed(2)}`
         );
       }
       break;

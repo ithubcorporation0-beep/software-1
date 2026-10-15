@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { requirePermission, requireUser } from "@/lib/auth/server";
+import { requirePermission, requireUser, getCurrentUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
 import { getCompanySettings } from "@/lib/company/server";
 import { getCustomerById } from "@/lib/crm/server";
@@ -300,7 +300,10 @@ export async function getQuotations(
   },
   viewingUser?: Profile
 ): Promise<Quotation[]> {
-  await requirePermission(companyId, "sales:view", viewingUser);
+  const context = await requirePermission(companyId, "sales:view", viewingUser);
+  const isCustomer = context?.role?.code === "customer";
+  const callerUser = isCustomer ? (viewingUser || (await getCurrentUser())) : null;
+  const callerEmail = callerUser?.email?.trim().toLowerCase();
   const supabase = await createClient();
 
   try {
@@ -325,6 +328,9 @@ export async function getQuotations(
     const { data, error } = await query;
     if (!error && data) {
       let list = data as unknown as Quotation[];
+      if (isCustomer) {
+        list = list.filter((q) => (q.customer?.email || "").toLowerCase() === callerEmail);
+      }
       if (options?.search?.trim()) {
         const term = options.search.trim().toLowerCase();
         list = list.filter(
@@ -347,6 +353,9 @@ export async function getQuotations(
       items: memorySalesStore.quotationItems.filter((i) => i.quotation_id === q.id),
     }));
 
+  if (isCustomer) {
+    list = list.filter((q) => (q.customer?.email || "").toLowerCase() === callerEmail);
+  }
   if (options?.status && options.status !== "ALL") {
     list = list.filter((q) => q.status === options.status);
   }
@@ -365,8 +374,13 @@ export async function getQuotationById(
   quotationId: string,
   viewingUser?: Profile
 ): Promise<Quotation | null> {
-  await requirePermission(companyId, "sales:view", viewingUser);
+  const context = await requirePermission(companyId, "sales:view", viewingUser);
+  const isCustomer = context?.role?.code === "customer";
+  const callerUser = isCustomer ? (viewingUser || (await getCurrentUser())) : null;
+  const callerEmail = callerUser?.email?.trim().toLowerCase();
   const supabase = await createClient();
+
+  let resolvedQuotation: Quotation | null = null;
 
   try {
     const { data, error } = await supabase
@@ -377,21 +391,32 @@ export async function getQuotationById(
       .single();
 
     if (!error && data) {
-      return data as Quotation;
+      resolvedQuotation = data as Quotation;
     }
   } catch {
     // Fall through
   }
 
-  const q = memorySalesStore.quotations.find(
-    (item) => item.company_id === companyId && item.id === quotationId
-  );
-  if (!q) return null;
+  if (!resolvedQuotation) {
+    const q = memorySalesStore.quotations.find(
+      (item) => item.company_id === companyId && item.id === quotationId
+    );
+    if (q) {
+      resolvedQuotation = {
+        ...q,
+        items: memorySalesStore.quotationItems.filter((i) => i.quotation_id === q.id),
+      };
+    }
+  }
 
-  return {
-    ...q,
-    items: memorySalesStore.quotationItems.filter((i) => i.quotation_id === q.id),
-  };
+  if (resolvedQuotation && isCustomer) {
+    const custEmail = (resolvedQuotation.customer as any)?.email?.toLowerCase();
+    if (!callerEmail || custEmail !== callerEmail) {
+      return null;
+    }
+  }
+
+  return resolvedQuotation;
 }
 
 export async function createQuotation(
@@ -741,7 +766,10 @@ export async function getSalesOrders(
   },
   viewingUser?: Profile
 ): Promise<SalesOrder[]> {
-  await requirePermission(companyId, "sales:view", viewingUser);
+  const context = await requirePermission(companyId, "sales:view", viewingUser);
+  const isCustomer = context?.role?.code === "customer";
+  const callerUser = isCustomer ? (viewingUser || (await getCurrentUser())) : null;
+  const callerEmail = callerUser?.email?.trim().toLowerCase();
   const supabase = await createClient();
 
   try {
@@ -766,6 +794,9 @@ export async function getSalesOrders(
     const { data, error } = await query;
     if (!error && data) {
       let list = data as unknown as SalesOrder[];
+      if (isCustomer) {
+        list = list.filter((o) => (o.customer?.email || "").toLowerCase() === callerEmail);
+      }
       if (options?.search?.trim()) {
         const term = options.search.trim().toLowerCase();
         list = list.filter(
@@ -788,6 +819,9 @@ export async function getSalesOrders(
       items: memorySalesStore.salesOrderItems.filter((i) => i.sales_order_id === o.id),
     }));
 
+  if (isCustomer) {
+    list = list.filter((o) => (o.customer?.email || "").toLowerCase() === callerEmail);
+  }
   if (options?.status && options.status !== "ALL") {
     list = list.filter((o) => o.status === options.status);
   }
@@ -806,8 +840,13 @@ export async function getSalesOrderById(
   orderId: string,
   viewingUser?: Profile
 ): Promise<SalesOrder | null> {
-  await requirePermission(companyId, "sales:view", viewingUser);
+  const context = await requirePermission(companyId, "sales:view", viewingUser);
+  const isCustomer = context?.role?.code === "customer";
+  const callerUser = isCustomer ? (viewingUser || (await getCurrentUser())) : null;
+  const callerEmail = callerUser?.email?.trim().toLowerCase();
   const supabase = await createClient();
+
+  let resolvedOrder: SalesOrder | null = null;
 
   try {
     const { data, error } = await supabase
@@ -818,21 +857,32 @@ export async function getSalesOrderById(
       .single();
 
     if (!error && data) {
-      return data as SalesOrder;
+      resolvedOrder = data as SalesOrder;
     }
   } catch {
     // Fall through
   }
 
-  const o = memorySalesStore.salesOrders.find(
-    (item) => item.company_id === companyId && item.id === orderId
-  );
-  if (!o) return null;
+  if (!resolvedOrder) {
+    const o = memorySalesStore.salesOrders.find(
+      (item) => item.company_id === companyId && item.id === orderId
+    );
+    if (o) {
+      resolvedOrder = {
+        ...o,
+        items: memorySalesStore.salesOrderItems.filter((i) => i.sales_order_id === o.id),
+      };
+    }
+  }
 
-  return {
-    ...o,
-    items: memorySalesStore.salesOrderItems.filter((i) => i.sales_order_id === o.id),
-  };
+  if (resolvedOrder && isCustomer) {
+    const custEmail = (resolvedOrder.customer as any)?.email?.toLowerCase();
+    if (!callerEmail || custEmail !== callerEmail) {
+      return null;
+    }
+  }
+
+  return resolvedOrder;
 }
 
 export async function createSalesOrder(
@@ -1069,7 +1119,10 @@ export async function getInvoices(
   },
   viewingUser?: Profile
 ): Promise<Invoice[]> {
-  await requirePermission(companyId, "sales:view", viewingUser);
+  const context = await requirePermission(companyId, "sales:view", viewingUser);
+  const isCustomer = context?.role?.code === "customer";
+  const callerUser = isCustomer ? (viewingUser || (await getCurrentUser())) : null;
+  const callerEmail = callerUser?.email?.trim().toLowerCase();
   const supabase = await createClient();
 
   const finalLimit = Math.min(options?.limit ?? options?.pageSize ?? 50, 50);
@@ -1106,6 +1159,9 @@ export async function getInvoices(
     const { data, error } = await query;
     if (!error && data) {
       let list = data as unknown as Invoice[];
+      if (isCustomer) {
+        list = list.filter((inv) => (inv.customer?.email || "").toLowerCase() === callerEmail);
+      }
       if (options?.search?.trim()) {
         const term = options.search.trim().toLowerCase();
         list = list.filter(
@@ -1129,6 +1185,9 @@ export async function getInvoices(
       payments: memorySalesStore.payments.filter((p) => p.invoice_id === inv.id),
     }));
 
+  if (isCustomer) {
+    list = list.filter((inv) => (inv.customer?.email || "").toLowerCase() === callerEmail);
+  }
   if (options?.status && options.status !== "ALL") {
     list = list.filter((inv) => inv.status === options.status);
   }
@@ -1150,8 +1209,13 @@ export async function getInvoiceById(
   invoiceId: string,
   viewingUser?: Profile
 ): Promise<Invoice | null> {
-  await requirePermission(companyId, "sales:view", viewingUser);
+  const context = await requirePermission(companyId, "sales:view", viewingUser);
+  const isCustomer = context?.role?.code === "customer";
+  const callerUser = isCustomer ? (viewingUser || (await getCurrentUser())) : null;
+  const callerEmail = callerUser?.email?.trim().toLowerCase();
   const supabase = await createClient();
+
+  let resolvedInvoice: Invoice | null = null;
 
   try {
     const { data, error } = await supabase
@@ -1162,22 +1226,33 @@ export async function getInvoiceById(
       .single();
 
     if (!error && data) {
-      return data as Invoice;
+      resolvedInvoice = data as Invoice;
     }
   } catch {
     // Fall through
   }
 
-  const inv = memorySalesStore.invoices.find(
-    (item) => item.company_id === companyId && item.id === invoiceId
-  );
-  if (!inv) return null;
+  if (!resolvedInvoice) {
+    const inv = memorySalesStore.invoices.find(
+      (item) => item.company_id === companyId && item.id === invoiceId
+    );
+    if (inv) {
+      resolvedInvoice = {
+        ...inv,
+        items: memorySalesStore.invoiceItems.filter((i) => i.invoice_id === inv.id),
+        payments: memorySalesStore.payments.filter((p) => p.invoice_id === inv.id),
+      };
+    }
+  }
 
-  return {
-    ...inv,
-    items: memorySalesStore.invoiceItems.filter((i) => i.invoice_id === inv.id),
-    payments: memorySalesStore.payments.filter((p) => p.invoice_id === inv.id),
-  };
+  if (resolvedInvoice && isCustomer) {
+    const custEmail = (resolvedInvoice.customer as any)?.email?.toLowerCase();
+    if (!callerEmail || custEmail !== callerEmail) {
+      return null;
+    }
+  }
+
+  return resolvedInvoice;
 }
 
 export async function createInvoice(
