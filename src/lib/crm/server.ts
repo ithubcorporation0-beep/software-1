@@ -2,6 +2,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission, requireUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
+import { getCachedCompanyData, revalidateCompanyTag } from "@/lib/cache/tagged-cache";
+import { updateCompanySummaryIncremental } from "@/lib/summaries/company-summaries";
 import {
   Customer,
   CustomerNote,
@@ -199,6 +201,54 @@ export async function getCustomers(
     pageSize,
     totalPages: Math.ceil(total / pageSize) || 1,
   };
+}
+
+/**
+ * Retrieves cached, lightweight customer options for dropdowns and pickers (e.g., invoice creator).
+ * Cached with tag 'company-{companyId}-customers-picker' to avoid full scans on invoice forms.
+ */
+export async function getCustomerPickerOptions(
+  companyId: string
+): Promise<Array<{ id: string; name: string; companyName: string; email: string }>> {
+  await requirePermission(companyId, "crm:view");
+
+  return await getCachedCompanyData(
+    companyId,
+    "customers-picker",
+    async () => {
+      const supabase = await createClient();
+      try {
+        const { data, error } = await supabase
+          .from("customers")
+          .select("id, name, company_name, email")
+          .eq("company_id", companyId)
+          .eq("status", "Active")
+          .order("name", { ascending: true })
+          .limit(100);
+
+        if (!error && data && data.length > 0) {
+          return data.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            companyName: c.company_name || "",
+            email: c.email || "",
+          }));
+        }
+      } catch {
+        // Fall back to memory store
+      }
+
+      return memoryTenantStore.customers
+        .filter((c) => c.company_id === companyId && c.status === "Active")
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          companyName: c.company_name || "",
+          email: c.email || "",
+        }));
+    },
+    1800 // 30-minute TTL
+  );
 }
 
 /**
@@ -435,6 +485,9 @@ export async function createCustomer(
     },
   });
 
+  revalidateCompanyTag(companyId, "customers-picker");
+  updateCompanySummaryIncremental(companyId, { customersDelta: 1 }).catch(() => {});
+
   return { success: true, data: newCustomer };
 }
 
@@ -545,6 +598,8 @@ export async function updateCustomer(
       updatedFields: Object.keys(valid),
     },
   });
+
+  revalidateCompanyTag(companyId, "customers-picker");
 
   return { success: true, data: updatedCustomer };
 }

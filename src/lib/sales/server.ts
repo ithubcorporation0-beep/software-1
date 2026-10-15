@@ -4,6 +4,8 @@ import { requirePermission, requireUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
 import { getCompanySettings } from "@/lib/company/server";
 import { getCustomerById } from "@/lib/crm/server";
+import { revalidateCompanyTag } from "@/lib/cache/tagged-cache";
+import { updateCompanySummaryIncremental } from "@/lib/summaries/company-summaries";
 import type {
   Quotation,
   QuotationItem,
@@ -1269,6 +1271,17 @@ export async function createInvoice(
     details: { invoiceNumber, grandTotal: totals.grandTotal },
   });
 
+  try {
+    await updateCompanySummaryIncremental(companyId, {
+      revenueDelta: totals.grandTotal,
+      outstandingDelta: totals.grandTotal,
+    });
+    await revalidateCompanyTag(companyId, "dashboard");
+    await revalidateCompanyTag(companyId, "summary");
+  } catch {
+    // Non-blocking cache/summary update
+  }
+
   return { success: true, data: { ...newInvoice, items: lineItems } };
 }
 
@@ -1448,6 +1461,17 @@ export async function recordPayment(
     },
   });
 
+  try {
+    await updateCompanySummaryIncremental(companyId, {
+      outstandingDelta: -payAmount,
+      paidInvoicesDelta: newStatus === "Paid" ? 1 : 0,
+    });
+    await revalidateCompanyTag(companyId, "dashboard");
+    await revalidateCompanyTag(companyId, "summary");
+  } catch {
+    // Non-blocking cache/summary update
+  }
+
   return { success: true, data: newPayment };
 }
 
@@ -1579,6 +1603,17 @@ export async function voidPayment(
       restoredInvoiceStatus: newStatus,
     },
   });
+
+  try {
+    await updateCompanySummaryIncremental(companyId, {
+      outstandingDelta: payment.amount,
+      paidInvoicesDelta: invoice.status === "Paid" ? -1 : 0,
+    });
+    await revalidateCompanyTag(companyId, "dashboard");
+    await revalidateCompanyTag(companyId, "summary");
+  } catch {
+    // Non-blocking cache/summary update
+  }
 
   return { success: true };
 }

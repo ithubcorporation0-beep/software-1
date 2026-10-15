@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission, requireUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
 import { roundMoney } from "@/lib/sales/server";
+import { getCachedCompanyData, revalidateCompanyTag } from "@/lib/cache/tagged-cache";
+import { updateCompanySummaryIncremental } from "@/lib/summaries/company-summaries";
 import type {
   Expense,
   ExpenseCategory,
@@ -504,6 +506,16 @@ export async function createExpense(
     },
   });
 
+  try {
+    await updateCompanySummaryIncremental(companyId, {
+      expensesDelta: newExpense.amount,
+    });
+    await revalidateCompanyTag(companyId, "dashboard");
+    await revalidateCompanyTag(companyId, "summary");
+  } catch {
+    // Non-blocking cache/summary update
+  }
+
   return newExpense;
 }
 
@@ -860,24 +872,26 @@ export async function getAccounts(companyId: string): Promise<Account[]> {
   await requirePermission(companyId, "finance.read");
   await initializeCompanyChartOfAccounts(companyId);
 
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("chart_of_accounts")
-      .select("*")
-      .eq("company_id", companyId)
-      .order("code", { ascending: true });
+  return getCachedCompanyData(companyId, "chart-of-accounts", async () => {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("chart_of_accounts")
+        .select("*")
+        .eq("company_id", companyId)
+        .order("code", { ascending: true });
 
-    if (!error && data && data.length > 0) {
-      return data as Account[];
+      if (!error && data && data.length > 0) {
+        return data as Account[];
+      }
+    } catch {
+      // Memory fallback
     }
-  } catch {
-    // Memory fallback
-  }
 
-  return memoryFinanceStore.accounts
-    .filter((a) => a.company_id === companyId)
-    .sort((a, b) => a.code.localeCompare(b.code));
+    return memoryFinanceStore.accounts
+      .filter((a) => a.company_id === companyId)
+      .sort((a, b) => a.code.localeCompare(b.code));
+  });
 }
 
 export async function createAccount(
@@ -932,6 +946,12 @@ export async function createAccount(
     resourceId: newAccount.id,
     details: { code, name, type: input.account_type },
   });
+
+  try {
+    await revalidateCompanyTag(companyId, "chart-of-accounts");
+  } catch {
+    // Non-blocking cache revalidation
+  }
 
   return newAccount;
 }

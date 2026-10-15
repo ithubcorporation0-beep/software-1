@@ -4,6 +4,7 @@ import { requirePermission, requireUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
 import { memoryFinanceStore, getNextFinanceNumber } from "@/lib/finance/server";
 import { roundMoney } from "@/lib/sales/server";
+import { getCachedCompanyData, revalidateCompanyTag } from "@/lib/cache/tagged-cache";
 import type {
   Warehouse,
   InventorySupplier,
@@ -327,6 +328,32 @@ export async function getProducts(
   return list;
 }
 
+/**
+ * Retrieves cached, lightweight product options for pickers and quotation/invoice line selectors.
+ * Cached with tag 'company-{companyId}-products-picker' to avoid full scans on invoice forms.
+ */
+export async function getProductPickerOptions(
+  companyId: string
+): Promise<Array<{ id: string; name: string; sku: string; sellingPrice: number; quantity: number }>> {
+  await requirePermission(companyId, "inventory.read");
+
+  return await getCachedCompanyData(
+    companyId,
+    "products-picker",
+    async () => {
+      const products = await getProducts(companyId);
+      return products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        sku: p.sku,
+        sellingPrice: p.selling_price,
+        quantity: p.current_stock,
+      }));
+    },
+    1800 // 30-minute TTL
+  );
+}
+
 export async function getProductById(
   companyId: string,
   productId: string
@@ -415,6 +442,8 @@ export async function createProduct(
     },
   });
 
+  revalidateCompanyTag(companyId, "products-picker");
+
   return newProduct;
 }
 
@@ -473,6 +502,8 @@ export async function updateProduct(
     resourceId: productId,
     details: { changes: validated },
   });
+
+  revalidateCompanyTag(companyId, "products-picker");
 
   return updated;
 }

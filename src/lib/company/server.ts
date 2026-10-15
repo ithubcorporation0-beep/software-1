@@ -3,6 +3,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission, requireUser } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
+import { getCachedCompanyData, revalidateCompanyTag } from "@/lib/cache/tagged-cache";
 
 export const companySettingsSchema = z.object({
   name: z.string().trim().min(2, "Company name must be at least 2 characters").max(100),
@@ -47,65 +48,73 @@ export interface CompanyExtendedSettings extends CompanySettingsInput {
 /**
  * Retrieves company profile and operational settings.
  * Fails closed if the caller does not possess `settings:view` or Super Admin privileges.
- * Deduplicated per-request via React cache().
+ * Cached per company using Next.js tagged cache and deduplicated per-request via React cache().
  */
 export const getCompanySettings = cache(
   async function getCompanySettings(companyId: string): Promise<CompanyExtendedSettings> {
     await requirePermission(companyId, "settings:view");
 
-  const supabase = await createClient();
+    return await getCachedCompanyData(
+      companyId,
+      "settings",
+      async () => {
+        const supabase = await createClient();
 
-  const { data: company, error: companyError } = await supabase
-    .from("companies")
-    .select("*")
-    .eq("id", companyId)
-    .single();
+        const { data: company, error: companyError } = await supabase
+          .from("companies")
+          .select("*")
+          .eq("id", companyId)
+          .single();
 
-  if (companyError || !company) {
-    throw new Error(`Company ${companyId} not found`);
+        if (companyError || !company) {
+          throw new Error(`Company ${companyId} not found`);
+        }
+
+        const { data: settings } = await supabase
+          .from("company_settings")
+          .select("*")
+          .eq("company_id", companyId)
+          .maybeSingle();
+
+        const features = (settings?.features && typeof settings.features === "object" && !Array.isArray(settings.features))
+          ? (settings.features as Record<string, any>)
+          : {};
+
+        return {
+          companyId: company.id,
+          name: company.name,
+          slug: company.slug,
+          plan: company.plan,
+          status: company.status,
+          currency: settings?.currency || "PKR",
+          timezone: settings?.timezone || "UTC",
+          fiscalYearStart: settings?.fiscal_year_start || "01-01",
+          theme: settings?.theme || "obsidian",
+          logo: features.logo || "",
+          address: features.address || "",
+          phone: features.phone || "",
+          email: features.email || "",
+          website: features.website || "",
+          taxInformation: features.taxInformation || "",
+          language: features.language || "en",
+          dateFormat: features.dateFormat || "YYYY-MM-DD",
+          invoicePrefix: features.invoicePrefix || "INV-",
+          startingInvoiceNumber: features.startingInvoiceNumber ?? 1001,
+          defaultTaxSetting: features.defaultTaxSetting ?? 0,
+          paymentTerms: features.paymentTerms || "Net 30",
+          notificationPreferences: {
+            emailAlerts: features.notificationPreferences?.emailAlerts ?? true,
+            securityAlerts: features.notificationPreferences?.securityAlerts ?? true,
+            systemDigest: features.notificationPreferences?.systemDigest ?? false,
+          },
+          updatedAt: settings?.updated_at || company.updated_at || new Date().toISOString(),
+          updatedBy: settings?.updated_by || null,
+        };
+      },
+      3600 // 1 hour TTL
+    );
   }
-
-  const { data: settings } = await supabase
-    .from("company_settings")
-    .select("*")
-    .eq("company_id", companyId)
-    .maybeSingle();
-
-  const features = (settings?.features && typeof settings.features === "object" && !Array.isArray(settings.features))
-    ? (settings.features as Record<string, any>)
-    : {};
-
-  return {
-    companyId: company.id,
-    name: company.name,
-    slug: company.slug,
-    plan: company.plan,
-    status: company.status,
-    currency: settings?.currency || "PKR",
-    timezone: settings?.timezone || "UTC",
-    fiscalYearStart: settings?.fiscal_year_start || "01-01",
-    theme: settings?.theme || "obsidian",
-    logo: features.logo || "",
-    address: features.address || "",
-    phone: features.phone || "",
-    email: features.email || "",
-    website: features.website || "",
-    taxInformation: features.taxInformation || "",
-    language: features.language || "en",
-    dateFormat: features.dateFormat || "YYYY-MM-DD",
-    invoicePrefix: features.invoicePrefix || "INV-",
-    startingInvoiceNumber: features.startingInvoiceNumber ?? 1001,
-    defaultTaxSetting: features.defaultTaxSetting ?? 0,
-    paymentTerms: features.paymentTerms || "Net 30",
-    notificationPreferences: {
-      emailAlerts: features.notificationPreferences?.emailAlerts ?? true,
-      securityAlerts: features.notificationPreferences?.securityAlerts ?? true,
-      systemDigest: features.notificationPreferences?.systemDigest ?? false,
-    },
-    updatedAt: settings?.updated_at || company.updated_at,
-    updatedBy: settings?.updated_by || null,
-  };
-});
+);
 
 /**
  * Updates company profile and extended settings.
@@ -207,6 +216,8 @@ export async function updateCompanySettings(
       updatedFields: Object.keys(valid),
     },
   });
+
+  revalidateCompanyTag(companyId, "settings");
 
   const updated = await getCompanySettings(companyId);
   return { success: true, data: updated };

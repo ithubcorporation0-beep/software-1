@@ -19,6 +19,7 @@ async function DashboardTelemetryStreamer({ companyId }: { companyId: string }) 
   const {
     metrics,
     company = { name: "Business Solutions Tax Consultants", plan: "ENTERPRISE" },
+    lastUpdatedAt,
   } = dashboardData || {};
 
   return (
@@ -26,6 +27,7 @@ async function DashboardTelemetryStreamer({ companyId }: { companyId: string }) 
       metrics={metrics}
       companyName={company.name || "Business Solutions Tax Consultants"}
       userDisplayName="BSTC"
+      lastUpdatedAt={lastUpdatedAt}
     />
   );
 }

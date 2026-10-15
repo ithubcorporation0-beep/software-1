@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireCompanyMembership } from "@/lib/auth/server";
 import { AuditLog } from "@/types/database.types";
+import { getCachedCompanyData, revalidateCompanyTag } from "@/lib/cache/tagged-cache";
+import { getCompanySummary } from "@/lib/summaries/company-summaries";
 
 export interface DashboardMetric {
   key: string;
@@ -36,6 +38,7 @@ export interface DashboardData {
   recentAudits: AuditLog[];
   recentInvoices: any[];
   recentTasks: any[];
+  lastUpdatedAt?: string;
   subsystems?: {
     name: string;
     status: "Verified" | "Live" | "Pending";
@@ -46,35 +49,42 @@ export interface DashboardData {
 
 /**
  * Loads authentic dashboard operational telemetry for a verified tenant.
- * Queries actual database records for live modules concurrently for maximum performance.
+ * Cached per company using Next.js tagged cache and pre-calculated summaries.
  * NEVER fabricates sample or dummy numbers.
  */
 export async function getDashboardTelemetry(companyId: string): Promise<DashboardData> {
   const { company } = await requireCompanyMembership(companyId);
-  const supabase = await createClient();
 
-  // 1. Ultra-fast atomic database RPC (sub-10ms single roundtrip execution)
-  try {
-    const { data: rpcData, error: rpcError } = await supabase.rpc(
-      "get_company_dashboard_telemetry",
-      { p_company_id: companyId }
-    );
+  return await getCachedCompanyData<DashboardData>(
+    companyId,
+    "dashboard",
+    async () => {
+      const supabase = await createClient();
+      const summary = await getCompanySummary(companyId).catch(() => null);
 
-    if (!rpcError && rpcData && rpcData.metrics) {
-      const m = rpcData.metrics;
-      const rev = Number(m.revenueTotal) || 0;
-      const exp = Number(m.expensesTotal) || 0;
-      const margin = rev - exp;
-      const ar = Number(m.outstandingTotal) || 0;
+      // 1. Ultra-fast atomic database RPC (sub-10ms single roundtrip execution)
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc(
+          "get_company_dashboard_telemetry",
+          { p_company_id: companyId }
+        );
 
-      return {
-        company: {
-          id: company.id,
-          name: company.name,
-          slug: company.slug,
-          plan: company.plan,
-        },
-        metrics: {
+        if (!rpcError && rpcData && rpcData.metrics) {
+          const m = rpcData.metrics;
+          const rev = Number(m.revenueTotal) || 0;
+          const exp = Number(m.expensesTotal) || 0;
+          const margin = rev - exp;
+          const ar = Number(m.outstandingTotal) || 0;
+
+          return {
+            company: {
+              id: company.id,
+              name: company.name,
+              slug: company.slug,
+              plan: company.plan,
+            },
+            lastUpdatedAt: summary?.lastUpdatedAt || new Date().toISOString(),
+            metrics: {
           revenue: {
             key: "revenue",
             label: "Gross Revenue Collected",
@@ -440,5 +450,9 @@ export async function getDashboardTelemetry(companyId: string): Promise<Dashboar
     recentAudits,
     recentInvoices: invList.slice(0, 5),
     recentTasks: tskList.slice(0, 5),
+    lastUpdatedAt: summary?.lastUpdatedAt || new Date().toISOString(),
   };
+    },
+    300 // 5-minute TTL
+  );
 }

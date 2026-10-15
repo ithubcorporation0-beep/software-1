@@ -140,12 +140,14 @@ interface ExploreModulesDashboardProps {
   metrics?: any;
   companyName?: string;
   userDisplayName?: string;
+  lastUpdatedAt?: string;
 }
 
 export function ExploreModulesDashboard({
   metrics,
   companyName = "Business Solutions Tax Consultants",
   userDisplayName = "BSTC",
+  lastUpdatedAt,
 }: ExploreModulesDashboardProps) {
   // Calendar state initialized to October 2026 matching the screenshot
   const [currentDate, setCurrentDate] = React.useState(new Date(2026, 9, 14));
@@ -200,8 +202,16 @@ export function ExploreModulesDashboard({
           </div>
         </div>
 
-        {/* Date Pill (Top Right) */}
-        <div className="flex items-center gap-2 self-start md:self-auto">
+        {/* Date & Ledger Freshness Pill */}
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+          {lastUpdatedAt && (
+            <div className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200/90 dark:border-emerald-900/80 bg-emerald-50/70 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 shadow-xs">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>
+                Ledger synced • {new Date(lastUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+          )}
           <div className="inline-flex items-center gap-2 rounded-xl border border-blue-200/90 dark:border-blue-900/80 bg-blue-50/70 dark:bg-blue-950/40 px-3.5 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 shadow-xs">
             <CalendarIcon className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
             <span>Wednesday, 14 October 2026</span>

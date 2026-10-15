@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission, requireUser, requireCompanyMembership, invalidateRoleCache } from "@/lib/auth/server";
 import { recordAuditLog } from "@/lib/audit/server";
 import { Role, Permission } from "@/types/database.types";
+import { getCachedCompanyData, revalidateCompanyTag } from "@/lib/cache/tagged-cache";
 
 export interface CompanyMemberItem {
   membershipId: string;
@@ -452,40 +453,47 @@ export async function toggleMemberStatus(
 export async function getCompanyRoles(companyId: string): Promise<Array<Role & { permissions: string[] }>> {
   await requirePermission(companyId, "roles:view");
 
-  const supabase = await createClient();
+  return await getCachedCompanyData(
+    companyId,
+    "roles",
+    async () => {
+      const supabase = await createClient();
 
-  // Fetch system roles and roles belonging to this company
-  const { data: roles, error: rolesError } = await supabase
-    .from("roles")
-    .select("*")
-    .or(`company_id.is.null,company_id.eq.${companyId}`)
-    .order("is_system", { ascending: false })
-    .order("name", { ascending: true });
+      // Fetch system roles and roles belonging to this company
+      const { data: roles, error: rolesError } = await supabase
+        .from("roles")
+        .select("*")
+        .or(`company_id.is.null,company_id.eq.${companyId}`)
+        .order("is_system", { ascending: false })
+        .order("name", { ascending: true });
 
-  if (rolesError || !roles) {
-    return [];
-  }
+      if (rolesError || !roles) {
+        return [];
+      }
 
-  // Fetch all role_permissions mapped
-  const { data: rolePermissions } = await supabase
-    .from("role_permissions")
-    .select("role_id, permission:permissions(code)");
+      // Fetch all role_permissions mapped
+      const { data: rolePermissions } = await supabase
+        .from("role_permissions")
+        .select("role_id, permission:permissions(code)");
 
-  const permissionsByRoleId: Record<string, string[]> = {};
-  for (const rp of rolePermissions || []) {
-    if (!permissionsByRoleId[rp.role_id]) {
-      permissionsByRoleId[rp.role_id] = [];
-    }
-    const code = (rp.permission as any)?.code;
-    if (code) {
-      permissionsByRoleId[rp.role_id].push(code);
-    }
-  }
+      const permissionsByRoleId: Record<string, string[]> = {};
+      for (const rp of rolePermissions || []) {
+        if (!permissionsByRoleId[rp.role_id]) {
+          permissionsByRoleId[rp.role_id] = [];
+        }
+        const code = (rp.permission as any)?.code;
+        if (code) {
+          permissionsByRoleId[rp.role_id].push(code);
+        }
+      }
 
-  return roles.map((role: any) => ({
-    ...role,
-    permissions: permissionsByRoleId[role.id] || [],
-  }));
+      return roles.map((role: any) => ({
+        ...role,
+        permissions: permissionsByRoleId[role.id] || [],
+      }));
+    },
+    3600 // 1 hour TTL
+  );
 }
 
 /**
@@ -612,6 +620,7 @@ export async function createCustomRole(
 
   // Invalidate cached role permissions for this company
   invalidateRoleCache(companyId);
+  revalidateCompanyTag(companyId, "roles");
 
   return { success: true, data: newRole };
 }
@@ -674,6 +683,7 @@ export async function deleteCustomRole(
 
   // Invalidate cached role permissions
   invalidateRoleCache(companyId, roleId);
+  revalidateCompanyTag(companyId, "roles");
 
   // 4. Record Audit Log
   await recordAuditLog({

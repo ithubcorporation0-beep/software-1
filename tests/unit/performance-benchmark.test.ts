@@ -8,6 +8,8 @@ import { resetMemoryFinanceStore } from "@/lib/finance/server";
 
 import { getSuperAdminMetrics } from "@/lib/super-admin/server";
 import { syncSystemNotifications, getUserNotifications } from "@/lib/notifications/server";
+import { clearAllTestCaches } from "@/lib/cache/tagged-cache";
+import { resetCompanySummaries } from "@/lib/summaries/company-summaries";
 
 const { mockRequireUser, mockRequirePermission, mockRequireCompanyMembership, mockRequireSuperAdmin } = vi.hoisted(() => ({
   mockRequireUser: vi.fn(),
@@ -54,6 +56,8 @@ describe("Phase 1: Performance Diagnostics & Latency Baseline", () => {
   };
 
   beforeEach(() => {
+    clearAllTestCaches();
+    resetCompanySummaries();
     resetMemorySalesStore();
     resetMemoryFinanceStore();
     mockRpc.mockResolvedValue({ data: null, error: { message: "rpc fallback" } });
