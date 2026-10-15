@@ -54,10 +54,32 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
     }
   }, []);
 
+  const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
-    fetchResults(val);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (val.trim().length === 0) {
+      fetchResults("");
+      return;
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      fetchResults(val);
+    }, 200);
   };
 
   const handleSelect = (item: SearchResultItem) => {

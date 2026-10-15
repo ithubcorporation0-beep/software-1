@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Menu, Search, Command, Building2, Globe, Clock } from "lucide-react";
 import { NotificationsPopover } from "./notifications-popover";
 import { UserMenu } from "./user-menu";
@@ -71,14 +72,15 @@ export function Header() {
 
         {/* Right Side: Activities Clock + Notifications + User Profile Menu */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
-          <button
-            onClick={() => window.location.href = "/notifications"}
+          <Link
+            href="/notifications"
+            prefetch={true}
             className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             title="Recent Activities"
             aria-label="Recent Activities"
           >
             <Clock className="h-4 w-4" />
-          </button>
+          </Link>
           <NotificationsPopover />
           <div className="h-4 w-px bg-border/80 hidden sm:block" />
           <UserMenu />

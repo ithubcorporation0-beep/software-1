@@ -55,35 +55,50 @@ export function NotificationsPopover() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const markAsRead = (id: string) => {
+    const previous = notifications;
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
     import("@/app/(erp)/notifications/actions")
       .then(({ markNotificationReadAction }) => {
-        markNotificationReadAction(DEFAULT_COMPANY_ID, id).catch(() => {});
+        markNotificationReadAction(DEFAULT_COMPANY_ID, id).catch(() => {
+          setNotifications(previous);
+        });
       })
-      .catch(() => {});
+      .catch(() => {
+        setNotifications(previous);
+      });
   };
 
   const toggleReadStatus = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const previous = notifications;
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n))
     );
     import("@/app/(erp)/notifications/actions")
       .then(({ markNotificationReadAction }) => {
-        markNotificationReadAction(DEFAULT_COMPANY_ID, id).catch(() => {});
+        markNotificationReadAction(DEFAULT_COMPANY_ID, id).catch(() => {
+          setNotifications(previous);
+        });
       })
-      .catch(() => {});
+      .catch(() => {
+        setNotifications(previous);
+      });
   };
 
   const markAllAsRead = () => {
+    const previous = notifications;
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     import("@/app/(erp)/notifications/actions")
       .then(({ markAllNotificationsReadAction }) => {
-        markAllNotificationsReadAction(DEFAULT_COMPANY_ID).catch(() => {});
+        markAllNotificationsReadAction(DEFAULT_COMPANY_ID).catch(() => {
+          setNotifications(previous);
+        });
       })
-      .catch(() => {});
+      .catch(() => {
+        setNotifications(previous);
+      });
   };
 
   const clearRead = () => {
