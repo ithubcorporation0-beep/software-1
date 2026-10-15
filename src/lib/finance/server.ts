@@ -346,10 +346,13 @@ export async function getExpenses(
     to?: string;
     limit?: number;
     offset?: number;
+    cursor?: string;
   },
   viewingUser?: Profile
 ): Promise<Expense[]> {
   await requirePermission(companyId, "finance.read", viewingUser);
+
+  const limit = Math.min(options?.limit ?? 50, 50);
 
   try {
     const supabase = await createClient();
@@ -367,9 +370,13 @@ export async function getExpenses(
     if (options?.search) {
       query = query.or(`vendor.ilike.%${options.search}%,description.ilike.%${options.search}%,expense_number.ilike.%${options.search}%`);
     }
-    const limit = Math.min(options?.limit ?? 50, 50);
-    const offset = options?.offset ?? 0;
-    query = query.range(offset, offset + limit - 1);
+
+    if (options?.cursor) {
+      query = query.lt("date", options.cursor).limit(limit);
+    } else {
+      const offset = options?.offset ?? 0;
+      query = query.range(offset, offset + limit - 1);
+    }
 
     const { data, error } = await query;
     if (!error && data && data.length > 0) {
@@ -396,6 +403,10 @@ export async function getExpenses(
   }
 
   list = list.sort((a, b) => b.date.localeCompare(a.date));
+  if (options?.cursor) {
+    list = list.filter((e) => e.date < options.cursor!);
+    return list.slice(0, limit);
+  }
   if (options?.offset !== undefined && options?.limit !== undefined) {
     list = list.slice(options.offset, options.offset + options.limit);
   } else if (options?.limit !== undefined) {

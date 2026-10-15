@@ -1062,6 +1062,7 @@ export async function getInvoices(
     status?: string;
     limit?: number;
     offset?: number;
+    cursor?: string;
     page?: number;
     pageSize?: number;
     includeDetails?: boolean;
@@ -1071,8 +1072,7 @@ export async function getInvoices(
   await requirePermission(companyId, "sales:view", viewingUser);
   const supabase = await createClient();
 
-  const limit = options?.limit ?? (options?.pageSize ? options.pageSize : undefined);
-  const offset = options?.offset ?? (options?.page && options?.pageSize ? (options.page - 1) * options.pageSize : undefined);
+  const finalLimit = Math.min(options?.limit ?? options?.pageSize ?? 50, 50);
 
   try {
     // Avoid heavy N+1 joining of all line items and payments when generating table listings
@@ -1095,9 +1095,13 @@ export async function getInvoices(
       query = query.ilike("invoice_number", term);
     }
 
-    const limit = Math.min(options?.limit ?? options?.pageSize ?? 50, 50);
-    const offset = options?.offset ?? (options?.page && options?.pageSize ? (options.page - 1) * options.pageSize : 0);
-    query = query.range(offset, offset + limit - 1);
+    // High-performance Keyset Cursor pagination (O(1) index seek)
+    if (options?.cursor) {
+      query = query.lt("created_at", options.cursor).limit(finalLimit);
+    } else {
+      const offset = options?.offset ?? (options?.page && options?.pageSize ? (options.page - 1) * options.pageSize : 0);
+      query = query.range(offset, offset + finalLimit - 1);
+    }
 
     const { data, error } = await query;
     if (!error && data) {
@@ -1132,9 +1136,12 @@ export async function getInvoices(
     const term = options.search.trim().toLowerCase();
     list = list.filter((inv) => inv.invoice_number.toLowerCase().includes(term));
   }
-  const finalLimit = Math.min(options?.limit ?? options?.pageSize ?? 50, 50);
-  const finalOffset = offset || 0;
-  list = list.slice(finalOffset, finalOffset + finalLimit);
+  if (options?.cursor) {
+    list = list.filter((inv) => inv.created_at < options.cursor!);
+    return list.slice(0, finalLimit);
+  }
+  const offset = options?.offset ?? (options?.page && options?.pageSize ? (options.page - 1) * options.pageSize : 0);
+  list = list.slice(offset, offset + finalLimit);
   return list;
 }
 

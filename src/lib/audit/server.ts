@@ -114,6 +114,7 @@ export async function getCompanyAuditLogs(
   options?: {
     limit?: number;
     offset?: number;
+    cursor?: string;
     action?: string;
     resource?: string;
   }
@@ -127,11 +128,14 @@ export async function getCompanyAuditLogs(
     .from("audit_logs")
     .select("*")
     .eq("company_id", companyId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .order("created_at", { ascending: false });
 
-  if (options?.offset) {
+  if (options?.cursor) {
+    query = query.lt("created_at", options.cursor).limit(limit);
+  } else if (options?.offset) {
     query = query.range(options.offset, options.offset + limit - 1);
+  } else {
+    query = query.limit(limit);
   }
   if (options?.action) {
     query = query.ilike("action", `%${options.action}%`);

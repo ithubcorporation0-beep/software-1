@@ -15,11 +15,21 @@ function wrapWithTimingProxy<T extends object>(builder: T, queryName: string): T
             (res: any) => {
               const dur = performance.now() - start;
               recordQuery(queryName, dur);
+              if (dur >= 100) {
+                console.warn(
+                  `[DATABASE SLOW QUERY ALERT] ${queryName} executed in ${dur.toFixed(2)}ms (Threshold: 100ms)`
+                );
+              }
               return onFulfilled ? onFulfilled(res) : res;
             },
             (err: any) => {
               const dur = performance.now() - start;
               recordQuery(`${queryName}:err`, dur);
+              if (dur >= 100) {
+                console.warn(
+                  `[DATABASE SLOW QUERY ALERT] ${queryName}:err executed in ${dur.toFixed(2)}ms (Threshold: 100ms)`
+                );
+              }
               return onRejected ? onRejected(err) : Promise.reject(err);
             }
           );
