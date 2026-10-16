@@ -86,7 +86,7 @@ export async function proxy(request: NextRequest) {
 
     let isAuthenticated = false;
 
-    // Fast-path: Local JWT claims verification without remote network round trip
+    // Fast-path 1: Local JWT token extraction and claims verification without remote network/database round trip
     try {
       if (typeof (supabase.auth as any).getClaims === "function") {
         const { data: claimsData } = await (supabase.auth as any).getClaims();
@@ -95,14 +95,59 @@ export async function proxy(request: NextRequest) {
         }
       }
     } catch {
-      // Fall through to standard getUser() if local claims verification is unavailable
+      // Fall through to cookie-level JWT check
+    }
+
+    // Fast-path 2: Direct cookie inspection for unexpired Supabase JWT
+    if (!isAuthenticated) {
+      try {
+        const allCookies = request.cookies.getAll();
+        for (const cookie of allCookies) {
+          if (cookie.name.includes("auth-token") || cookie.name.includes("access-token")) {
+            const rawVal = cookie.value;
+            let tokenStr: string | null = null;
+            if (rawVal.split(".").length === 3) {
+              tokenStr = rawVal;
+            } else {
+              try {
+                const parsed = JSON.parse(rawVal);
+                if (typeof parsed === "string" && parsed.split(".").length === 3) tokenStr = parsed;
+                else if (Array.isArray(parsed) && typeof parsed[0] === "string" && parsed[0].split(".").length === 3) tokenStr = parsed[0];
+                else if (parsed && typeof parsed.access_token === "string") tokenStr = parsed.access_token;
+              } catch {
+                try {
+                  const decoded = decodeURIComponent(rawVal);
+                  const parsed = JSON.parse(decoded);
+                  if (Array.isArray(parsed) && typeof parsed[0] === "string" && parsed[0].split(".").length === 3) tokenStr = parsed[0];
+                  else if (parsed && typeof parsed.access_token === "string") tokenStr = parsed.access_token;
+                } catch {}
+              }
+            }
+
+            if (tokenStr && tokenStr.split(".").length === 3) {
+              const payloadJson = Buffer.from(tokenStr.split(".")[1], "base64url").toString("utf8");
+              const payload = JSON.parse(payloadJson);
+              if (payload?.exp && !isTokenExpired(payload.exp)) {
+                isAuthenticated = true;
+                break;
+              }
+            }
+          }
+        }
+      } catch {
+        // Fall through safely
+      }
     }
 
     if (!isAuthenticated) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      isAuthenticated = Boolean(user);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        isAuthenticated = Boolean(user);
+      } catch {
+        isAuthenticated = false;
+      }
     }
 
     // Protected Route: unauthenticated user -> redirect to /login

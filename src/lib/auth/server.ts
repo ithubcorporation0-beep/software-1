@@ -43,6 +43,7 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import { verifyAdminSessionToken, SESSION_COOKIE_NAME } from "./admin-session";
 import { trackAuth, trackPermissions, trackTenant } from "@/lib/perf/timing";
+import { revalidateCompanyTag } from "@/lib/cache/tagged-cache";
 
 interface CachedRolePermissions {
   permissions: string[];
@@ -62,11 +63,22 @@ const ROLE_CACHE_TTL_MS = 5 * 60 * 1000;
 export function invalidateRoleCache(companyId?: string, roleId?: string): void {
   if (companyId && roleId) {
     rolePermissionsCache.delete(`${companyId}:${roleId}`);
+    try {
+      revalidateCompanyTag(companyId, "roles");
+      revalidateCompanyTag(companyId, `role-${roleId}`);
+    } catch {
+      // Ignore in non-Next environments
+    }
   } else if (companyId) {
     for (const key of rolePermissionsCache.keys()) {
       if (key.startsWith(`${companyId}:`)) {
         rolePermissionsCache.delete(key);
       }
+    }
+    try {
+      revalidateCompanyTag(companyId, "roles");
+    } catch {
+      // Ignore in non-Next environments
     }
   } else {
     rolePermissionsCache.clear();
