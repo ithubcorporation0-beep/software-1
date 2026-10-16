@@ -74,6 +74,9 @@ export function SettingsClient({
     { success: false }
   );
 
+  // --- TAB 3: Roles & Custom Permissions State ---
+  const [roles, setRoles] = React.useState(initialRoles);
+
   // --- TAB 2: User Administration State ---
   const [members, setMembers] = React.useState<CompanyMemberItem[]>(initialMembers);
   const [searchMember, setSearchMember] = React.useState("");
@@ -82,14 +85,28 @@ export function SettingsClient({
   const [inviteError, setInviteError] = React.useState<string | null>(null);
   const [userAdminFeedback, setUserAdminFeedback] = React.useState<{ message: string; type: "success" | "error" } | null>(null);
 
+  const [inviteEmail, setInviteEmail] = React.useState("");
+  const [inviteFullName, setInviteFullName] = React.useState("");
+  const [inviteRoleId, setInviteRoleId] = React.useState(
+    roles.find((r) => r.code === "employee")?.id || roles[0]?.id || ""
+  );
+
   const [inviteState, inviteFormAction, isInviting] = useActionState<ActionState, FormData>(
     async (state, formData) => {
+      formData.set("email", inviteEmail.trim());
+      formData.set("fullName", inviteFullName.trim());
+      formData.set("roleId", inviteRoleId);
+
       const res = await inviteUserAction(companySettings.companyId, state, formData);
       if (res.success && res.data) {
         setMembers((prev) => [res.data, ...prev]);
         setIsInviteOpen(false);
+        setInviteEmail("");
+        setInviteFullName("");
+        setInviteError(null);
         setUserAdminFeedback({ message: res.message || "User invited successfully", type: "success" });
       } else {
+        // Keep user typed fields (inviteEmail, inviteFullName) completely preserved!
         setInviteError(res.error || "Failed to invite user");
       }
       return res;
@@ -151,7 +168,6 @@ export function SettingsClient({
   const [effectivePermissionsMember, setEffectivePermissionsMember] = React.useState<CompanyMemberItem | null>(null);
 
   // --- TAB 3: Roles & Custom Permissions State ---
-  const [roles, setRoles] = React.useState(initialRoles);
   const [isRoleModalOpen, setIsRoleModalOpen] = React.useState(false);
   const [roleFeedback, setRoleFeedback] = React.useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -813,6 +829,11 @@ export function SettingsClient({
                 <Input
                   name="email"
                   type="email"
+                  value={inviteEmail}
+                  onChange={(e) => {
+                    setInviteEmail(e.target.value);
+                    if (inviteError) setInviteError(null);
+                  }}
                   placeholder="colleague@enterprise.com"
                   required
                 />
@@ -822,6 +843,11 @@ export function SettingsClient({
                 <label className="text-xs font-medium text-foreground">Full Name *</label>
                 <Input
                   name="fullName"
+                  value={inviteFullName}
+                  onChange={(e) => {
+                    setInviteFullName(e.target.value);
+                    if (inviteError) setInviteError(null);
+                  }}
                   placeholder="e.g. John Doe"
                   required
                 />
@@ -831,7 +857,8 @@ export function SettingsClient({
                 <label className="text-xs font-medium text-foreground">Role Assignment *</label>
                 <select
                   name="roleId"
-                  defaultValue={roles.find((r) => r.code === "employee")?.id || roles[0]?.id}
+                  value={inviteRoleId}
+                  onChange={(e) => setInviteRoleId(e.target.value)}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   required
                 >

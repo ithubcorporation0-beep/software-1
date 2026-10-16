@@ -13,19 +13,27 @@ import { sanitizeRedirectPath } from "@/lib/auth/redirect";
 
 export type LoginState = {
   error?: string | null;
+  values?: {
+    email?: string;
+  };
 };
 
 export async function loginAction(
   prevState: LoginState,
   formData: FormData
 ): Promise<LoginState> {
-  const email = (formData.get("email") as string)?.trim();
-  const password = formData.get("password") as string;
+  const email = (formData.get("email") as string)?.trim() || "";
+  const password = (formData.get("password") as string) || "";
   const rawRedirect = formData.get("redirectTo") as string;
   const safeRedirectTo = sanitizeRedirectPath(rawRedirect);
 
+  const submittedValues = { email };
+
   if (!email || !password) {
-    return { error: "Please enter both your email/username and password." };
+    return {
+      error: "Please enter both your email/username and password.",
+      values: submittedValues,
+    };
   }
 
   const normalizedEmail = email.toLowerCase();
@@ -39,6 +47,7 @@ export async function loginAction(
     const waitMinutes = Math.ceil((rateCheck.resetTimeMs - Date.now()) / 60000);
     return {
       error: `Too many failed login attempts. Account temporarily locked for security. Please try again in ${waitMinutes} minute(s).`,
+      values: submittedValues,
     };
   }
 
@@ -75,9 +84,13 @@ export async function loginAction(
       if (error.message.toLowerCase().includes("fetch failed")) {
         return {
           error: "Unable to reach the authentication service. Please check your internet connection or sign in as Admin with email: admin@ithub-enterprise.com and password: Admin@123.",
+          values: submittedValues,
         };
       }
-      return { error: error.message };
+      return {
+        error: error.message,
+        values: submittedValues,
+      };
     }
 
     resetRateLimit(rateLimitKey);
@@ -99,6 +112,7 @@ export async function loginAction(
       error: isNetworkError
         ? "Unable to reach the authentication service. Please check your internet connection or try again shortly."
         : errMsg || "An unexpected error occurred during login.",
+      values: submittedValues,
     };
   }
 

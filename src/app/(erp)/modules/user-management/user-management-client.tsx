@@ -59,6 +59,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { PasswordField } from "@/components/auth/password-field";
+import { analyzePassword } from "@/lib/auth/password-policy";
 import { CompanyMemberItem } from "@/lib/users/server";
 
 interface CorporateUserItem {
@@ -157,6 +159,9 @@ export function UserManagementClient({
   const [editUserEmail, setEditUserEmail] = React.useState("");
   const [editUserMobile, setEditUserMobile] = React.useState("");
   const [newPasswordValue, setNewPasswordValue] = React.useState("");
+  const [newPasswordConfirm, setNewPasswordConfirm] = React.useState("");
+  const [newPasswordError, setNewPasswordError] = React.useState<string | null>(null);
+  const [newPasswordConfirmError, setNewPasswordConfirmError] = React.useState<string | null>(null);
 
   const actionMenuRef = React.useRef<HTMLDivElement>(null);
   const exportRef = React.useRef<HTMLDivElement>(null);
@@ -1565,14 +1570,25 @@ export function UserManagementClient({
       </Dialog>
 
       {/* MODAL 6: Change Password */}
-      <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
+      <Dialog
+        open={isChangePasswordOpen}
+        onOpenChange={(open) => {
+          setIsChangePasswordOpen(open);
+          if (open) {
+            setNewPasswordValue("");
+            setNewPasswordConfirm("");
+            setNewPasswordError(null);
+            setNewPasswordConfirmError(null);
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Change Password</DialogTitle>
           <DialogDescription>
-            Update login credentials for {selectedUserForAction?.name || "the user"}.
+            Update login credentials for {selectedUserForAction?.name || "the user"} in accordance with organizational security rules.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 py-3">
+        <div className="space-y-4 py-3">
           <div className="space-y-1">
             <label className="text-xs font-semibold text-foreground">User Email</label>
             <Input
@@ -1581,25 +1597,55 @@ export function UserManagementClient({
               className="h-8 text-xs bg-muted/40"
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-foreground">New Secure Password</label>
-            <Input
-              type="password"
-              placeholder="••••••••••••"
-              value={newPasswordValue}
-              onChange={(e) => setNewPasswordValue(e.target.value)}
-              className="h-8 text-xs"
-            />
-          </div>
+
+          <PasswordField
+            id="adminNewPassword"
+            name="newPassword"
+            label="New Secure Password *"
+            value={newPasswordValue}
+            onChange={(val) => {
+              setNewPasswordValue(val);
+              if (newPasswordError) setNewPasswordError(null);
+            }}
+            error={newPasswordError}
+            showConfirm={true}
+            confirmId="adminConfirmNewPassword"
+            confirmName="confirmNewPassword"
+            confirmValue={newPasswordConfirm}
+            onConfirmChange={(val) => {
+              setNewPasswordConfirm(val);
+              if (newPasswordConfirmError) setNewPasswordConfirmError(null);
+            }}
+            confirmError={newPasswordConfirmError}
+            confirmLabel="Confirm New Password *"
+            placeholder="At least 10 characters with mixed cases & symbols"
+          />
         </div>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => setIsChangePasswordOpen(false)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsChangePasswordOpen(false)}
+          >
             Cancel
           </Button>
           <Button
             size="sm"
             className="bg-amber-600 hover:bg-amber-700 text-white"
             onClick={() => {
+              const analysis = analyzePassword(newPasswordValue);
+              if (!analysis.valid) {
+                setNewPasswordError(analysis.errors[0]);
+                return;
+              }
+              if (!newPasswordConfirm) {
+                setNewPasswordConfirmError("Please confirm the new password.");
+                return;
+              }
+              if (newPasswordValue !== newPasswordConfirm) {
+                setNewPasswordConfirmError("Passwords do not match.");
+                return;
+              }
               alert(`Password successfully updated for ${selectedUserForAction?.name}.`);
               setIsChangePasswordOpen(false);
             }}

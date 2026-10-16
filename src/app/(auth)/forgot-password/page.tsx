@@ -3,15 +3,50 @@
 import * as React from "react";
 import Link from "next/link";
 import { Mail, CheckCircle2, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { forgotPasswordAction } from "./actions";
+import { forgotPasswordAction, ForgotPasswordState } from "./actions";
 import { ErpHeroShowcase } from "@/components/auth/erp-hero-showcase";
+import { cn } from "@/lib/utils";
 
 export default function ForgotPasswordPage() {
-  const [state, formAction, isPending] = React.useActionState(forgotPasswordAction, {
-    error: null,
-    success: false,
-  });
+  const [email, setEmail] = React.useState("");
+  const [fieldError, setFieldError] = React.useState<string | null>(null);
+  const [serverError, setServerError] = React.useState<string | null>(null);
+  const [isPending, startTransition] = React.useTransition();
+  const [success, setSuccess] = React.useState(false);
+
+  const emailRef = React.useRef<HTMLInputElement>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setServerError(null);
+
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setFieldError("Please enter your registered work email address.");
+      emailRef.current?.focus();
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setFieldError("Please enter a valid work email address (e.g. colleague@company.com).");
+      emailRef.current?.focus();
+      return;
+    }
+
+    setFieldError(null);
+
+    const formData = new FormData();
+    formData.set("email", trimmed);
+
+    startTransition(async () => {
+      const res: ForgotPasswordState = await forgotPasswordAction({}, formData);
+      if (res.error) {
+        setServerError(res.error);
+        emailRef.current?.focus();
+      } else if (res.success) {
+        setSuccess(true);
+      }
+    });
+  };
 
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row">
@@ -47,43 +82,76 @@ export default function ForgotPasswordPage() {
               </p>
             </div>
 
-            {state?.error && (
+            {serverError && (
               <div
                 role="alert"
+                aria-live="assertive"
                 className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive animate-in fade-in-50"
               >
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{state.error}</span>
+                <span>{serverError}</span>
               </div>
             )}
 
-            {state?.success ? (
+            {success ? (
               <div className="space-y-4 text-center py-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 mx-auto">
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  If an account exists for the specified email, a secure password reset link has been dispatched to your inbox.
+                  If an account exists for {email}, a secure password reset link has been dispatched to your inbox.
                 </p>
                 <Link href="/login">
                   <button
                     type="button"
-                    className="w-full mt-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 text-xs tracking-wide"
+                    className="w-full mt-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 text-xs tracking-wide cursor-pointer"
                   >
                     Return to Sign In
                   </button>
                 </Link>
               </div>
             ) : (
-              <form action={formAction} className="space-y-4">
-                <Input
-                  label="Registered Email *"
-                  name="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  placeholder="colleague@company.com"
-                />
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="email"
+                    className="block text-xs font-bold text-slate-700 dark:text-slate-300"
+                  >
+                    Registered Work Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    ref={emailRef}
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (fieldError) setFieldError(null);
+                    }}
+                    required
+                    autoComplete="email"
+                    placeholder="colleague@company.com"
+                    aria-invalid={!!fieldError}
+                    aria-describedby={fieldError ? "email-error" : undefined}
+                    className={cn(
+                      "w-full rounded-xl border bg-white dark:bg-background px-3.5 py-2.5 text-sm text-slate-900 dark:text-foreground placeholder:text-slate-400 transition-all shadow-2xs focus:outline-none focus:ring-2",
+                      fieldError
+                        ? "border-destructive ring-destructive/20 focus:border-destructive"
+                        : "border-slate-200 dark:border-border focus:ring-blue-500/20 focus:border-blue-600"
+                    )}
+                  />
+                  {fieldError && (
+                    <p
+                      id="email-error"
+                      role="alert"
+                      className="text-xs font-medium text-destructive flex items-center gap-1.5 pt-0.5"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      <span>{fieldError}</span>
+                    </p>
+                  )}
+                </div>
 
                 <button
                   type="submit"
@@ -93,7 +161,7 @@ export default function ForgotPasswordPage() {
                   {isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Sending link...</span>
+                      <span>Sending reset link...</span>
                     </>
                   ) : (
                     <>

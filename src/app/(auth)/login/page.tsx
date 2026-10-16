@@ -22,13 +22,36 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get("redirectTo") || "/";
 
-  const [state, formAction, isPending] = React.useActionState(loginAction, {
-    error: null,
-  });
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [serverError, setServerError] = React.useState<string | null>(null);
+  const [isPending, startTransition] = React.useTransition();
 
   const [showPassword, setShowPassword] = React.useState(false);
   const [langMenuOpen, setLangMenuOpen] = React.useState(false);
   const [selectedLang, setSelectedLang] = React.useState("English");
+
+  const passwordInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setServerError(null);
+
+    const formData = new FormData(e.currentTarget);
+    formData.set("email", email.trim());
+    formData.set("password", password);
+    formData.set("redirectTo", redirectTo);
+
+    startTransition(async () => {
+      const res = await loginAction({}, formData);
+      if (res?.error) {
+        setServerError(res.error);
+        // Clear only password for security; keep typed email!
+        setPassword("");
+        passwordInputRef.current?.focus();
+      }
+    });
+  };
 
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row">
@@ -96,18 +119,19 @@ function LoginForm() {
             </div>
 
             {/* Error Notification */}
-            {state?.error && (
+            {serverError && (
               <div
                 role="alert"
+                aria-live="assertive"
                 className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive animate-in fade-in-50"
               >
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{state.error}</span>
+                <span>{serverError}</span>
               </div>
             )}
 
             {/* Form */}
-            <form action={formAction} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
               <input type="hidden" name="redirectTo" value={redirectTo} />
 
               {/* Email Input */}
@@ -120,6 +144,8 @@ function LoginForm() {
                   <input
                     name="email"
                     type="text"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                     autoComplete="username"
                     placeholder="email@example.com"
@@ -144,8 +170,11 @@ function LoginForm() {
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                   <input
+                    ref={passwordInputRef}
                     name="password"
                     type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
                     placeholder="Password"

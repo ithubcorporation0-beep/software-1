@@ -2,39 +2,77 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { validatePasswordStrength } from "@/lib/validation/password";
+import { validatePasswordStrength } from "@/lib/auth/password-policy";
 import { checkRateLimit } from "@/lib/auth/rate-limiter";
 import { recordAuditLog } from "@/lib/audit/server";
 
 export type RegisterState = {
   error?: string | null;
+  fieldErrors?: Record<string, string>;
   success?: boolean;
+  values?: {
+    fullName?: string;
+    email?: string;
+    companyName?: string;
+    inviteCode?: string;
+  };
 };
 
 export async function registerAction(
   prevState: RegisterState,
   formData: FormData
 ): Promise<RegisterState> {
-  const fullName = (formData.get("fullName") as string)?.trim();
-  const email = (formData.get("email") as string)?.trim();
-  const password = formData.get("password") as string;
-  const companyName = (formData.get("companyName") as string)?.trim();
-  const inviteCode = (formData.get("inviteCode") as string)?.trim();
+  const fullName = (formData.get("fullName") as string)?.trim() || "";
+  const email = (formData.get("email") as string)?.trim() || "";
+  const password = (formData.get("password") as string) || "";
+  const companyName = (formData.get("companyName") as string)?.trim() || "";
+  const inviteCode = (formData.get("inviteCode") as string)?.trim() || "";
 
-  if (!email || !password || !fullName) {
-    return { error: "Full Name, Work Email, and Password are required." };
+  const submittedValues = {
+    fullName,
+    email,
+    companyName,
+    inviteCode,
+  };
+
+  const fieldErrors: Record<string, string> = {};
+
+  if (!fullName) {
+    fieldErrors.fullName = "Please enter your full name.";
+  }
+  if (!email) {
+    fieldErrors.email = "Please enter your work email address.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fieldErrors.email = "Please enter a valid email address (e.g. colleague@company.com).";
+  }
+  if (!password) {
+    fieldErrors.password = "Password is required.";
   }
 
-  // 1. Enforce strict enterprise password policy
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      error: Object.values(fieldErrors)[0],
+      fieldErrors,
+      values: submittedValues,
+    };
+  }
+
+  // 1. Enforce strict enterprise password policy (single source of truth)
   const passwordValidation = validatePasswordStrength(password);
   if (!passwordValidation.valid) {
-    return { error: passwordValidation.errors[0] };
+    return {
+      error: passwordValidation.errors[0],
+      fieldErrors: { password: passwordValidation.errors[0] },
+      values: submittedValues,
+    };
   }
 
   // 2. Multi-tenant isolation: Require company name or invitation
   if (!companyName && !inviteCode) {
     return {
       error: "An Organization Name or Invitation Code is required. Uninvited registration is prohibited.",
+      fieldErrors: { companyName: "Organization Name or Invitation Code is required." },
+      values: submittedValues,
     };
   }
 
@@ -50,6 +88,7 @@ export async function registerAction(
     const waitMinutes = Math.ceil((rateCheck.resetTimeMs - Date.now()) / 60000);
     return {
       error: `Too many registration attempts. Please wait ${waitMinutes} minute(s) before trying again.`,
+      values: submittedValues,
     };
   }
 
@@ -70,16 +109,25 @@ export async function registerAction(
     if (adminError) {
       if (
         adminError.message.toLowerCase().includes("already registered") ||
-        adminError.message.toLowerCase().includes("unique")
+        adminError.message.toLowerCase().includes("unique") ||
+        adminError.message.toLowerCase().includes("already exists")
       ) {
-        return { error: "An account with this email address already exists. Please sign in." };
+        return {
+          error: "An account with this email address already exists. Please sign in instead.",
+          fieldErrors: { email: "This email address is already in use." },
+          values: submittedValues,
+        };
       }
       if (adminError.message.toLowerCase().includes("fetch failed")) {
         return {
           error: "Unable to reach the registration service. Please verify your internet connection or try again shortly.",
+          values: submittedValues,
         };
       }
-      return { error: adminError.message };
+      return {
+        error: adminError.message,
+        values: submittedValues,
+      };
     }
 
     const userId = adminUser?.user?.id;
@@ -161,7 +209,10 @@ export async function registerAction(
       });
 
       if (error) {
-        return { error: error.message };
+        return {
+          error: error.message,
+          values: submittedValues,
+        };
       }
 
       return { success: true };
@@ -172,6 +223,7 @@ export async function registerAction(
         error: isNetworkError
           ? "Unable to reach the registration service. Please check your internet connection and try again."
           : errMsg || "An unexpected error occurred during account creation.",
+        values: submittedValues,
       };
     }
   }

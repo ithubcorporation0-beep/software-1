@@ -2,32 +2,45 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { KeyRound, CheckCircle2, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Input } from "@/components/ui/input";
+import { PasswordField } from "@/components/auth/password-field";
+import { analyzePassword } from "@/lib/auth/password-policy";
 import { ErpHeroShowcase } from "@/components/auth/erp-hero-showcase";
 
 export default function ResetPasswordPage() {
-  const router = useRouter();
-
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState(false);
+
+  const passwordRef = React.useRef<HTMLInputElement>(null);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (password.length < 8) {
-      setErrorMessage("Password must be at least 8 characters in length.");
-      return;
+    const errors: Record<string, string> = {};
+
+    // 1. Password policy verification
+    const analysis = analyzePassword(password);
+    if (!analysis.valid) {
+      errors.password = analysis.errors[0];
     }
 
-    if (password !== confirmPassword) {
-      setErrorMessage("Passwords do not match.");
+    // 2. Confirm password match
+    if (!confirmPassword) {
+      errors.confirmPassword = "Please confirm your new password.";
+    } else if (password !== confirmPassword) {
+      errors.confirmPassword = "Passwords do not match.";
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      passwordRef.current?.focus();
       return;
     }
 
@@ -41,6 +54,10 @@ export default function ResetPasswordPage() {
 
       if (error) {
         setErrorMessage(error.message);
+        // Clear password fields on server-side failure for security
+        setPassword("");
+        setConfirmPassword("");
+        passwordRef.current?.focus();
         setLoading(false);
         return;
       }
@@ -48,7 +65,10 @@ export default function ResetPasswordPage() {
       setSuccess(true);
       setLoading(false);
     } catch (err: any) {
-      setErrorMessage(err.message || "An unexpected error occurred.");
+      setErrorMessage(err.message || "An unexpected error occurred while resetting your password.");
+      setPassword("");
+      setConfirmPassword("");
+      passwordRef.current?.focus();
       setLoading(false);
     }
   };
@@ -73,7 +93,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="my-auto py-8 flex justify-center">
-          <div className="w-full max-w-[430px] rounded-3xl border border-slate-200/80 dark:border-border/80 bg-white dark:bg-card p-8 sm:p-10 shadow-xl shadow-slate-200/50 dark:shadow-none space-y-6">
+          <div className="w-full max-w-[460px] rounded-3xl border border-slate-200/80 dark:border-border/80 bg-white dark:bg-card p-8 sm:p-10 shadow-xl shadow-slate-200/50 dark:shadow-none space-y-6">
             <div className="space-y-1.5">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
                 <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
@@ -83,13 +103,14 @@ export default function ResetPasswordPage() {
                 Set New Password
               </h2>
               <p className="text-xs text-slate-500 dark:text-muted-foreground leading-relaxed">
-                Enter a secure replacement password for your account.
+                Enter a secure replacement password meeting organizational compliance standards.
               </p>
             </div>
 
             {errorMessage && (
               <div
                 role="alert"
+                aria-live="assertive"
                 className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive animate-in fade-in-50"
               >
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -108,32 +129,48 @@ export default function ResetPasswordPage() {
                 <Link href="/login">
                   <button
                     type="button"
-                    className="w-full mt-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 text-xs tracking-wide"
+                    className="w-full mt-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 text-xs tracking-wide cursor-pointer"
                   >
                     Proceed to Sign In
                   </button>
                 </Link>
               </div>
             ) : (
-              <form onSubmit={handleReset} className="space-y-4">
-                <Input
-                  label="New Password *"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  placeholder="At least 8 characters"
+              <form onSubmit={handleReset} noValidate className="space-y-4">
+                <PasswordField
+                  ref={passwordRef}
+                  id="resetPassword"
+                  name="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-
-                <Input
-                  label="Confirm Password *"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  placeholder="Repeat new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(val) => {
+                    setPassword(val);
+                    if (fieldErrors.password) {
+                      setFieldErrors((prev) => {
+                        const next = { ...prev };
+                        delete next.password;
+                        return next;
+                      });
+                    }
+                  }}
+                  error={fieldErrors.password}
+                  label="New Password *"
+                  showConfirm={true}
+                  confirmId="confirmResetPassword"
+                  confirmName="confirmPassword"
+                  confirmValue={confirmPassword}
+                  onConfirmChange={(val) => {
+                    setConfirmPassword(val);
+                    if (fieldErrors.confirmPassword) {
+                      setFieldErrors((prev) => {
+                        const next = { ...prev };
+                        delete next.confirmPassword;
+                        return next;
+                      });
+                    }
+                  }}
+                  confirmError={fieldErrors.confirmPassword}
+                  confirmLabel="Confirm New Password *"
+                  placeholder="At least 10 characters with mixed cases & symbols"
                 />
 
                 <button
@@ -144,7 +181,7 @@ export default function ResetPasswordPage() {
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Updating...</span>
+                      <span>Updating Password...</span>
                     </>
                   ) : (
                     <>
