@@ -33,7 +33,7 @@ export function UserMenu() {
     // Check if client session exists
     try {
       const supabase = createClient();
-      supabase.auth.getUser().then(({ data }) => {
+      supabase.auth.getUser().then(({ data }: any) => {
         if (data?.user) {
           setUserEmail(data.user.email || null);
           setUserName(
@@ -45,7 +45,7 @@ export function UserMenu() {
             .select("is_super_admin")
             .eq("id", data.user.id)
             .single()
-            .then(({ data: profile }) => {
+            .then(({ data: profile }: any) => {
               if (profile?.is_super_admin) {
                 setIsSuperAdmin(true);
               }

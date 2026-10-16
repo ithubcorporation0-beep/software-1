@@ -7,6 +7,12 @@ export const metadata: Metadata = {
     "Next-generation Enterprise Resource Planning platform for inventory, logistics, CRM, finance, and human capital.",
   keywords: ["ERP", "Enterprise", "Inventory", "Logistics", "SaaS", "Next.js"],
   authors: [{ name: "IT-HUB Engineering" }],
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
