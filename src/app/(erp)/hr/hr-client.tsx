@@ -256,37 +256,74 @@ export function HRClient({
   };
 
   const handleCheckIn = (employeeId: string) => {
+    const previous = [...attendance];
+    const nowIso = new Date().toISOString();
+    const tempId = `temp-att-${Date.now()}`;
+    const optimisticRecord: any = {
+      id: tempId,
+      company_id: companyId,
+      employee_id: employeeId,
+      date: nowIso.split("T")[0],
+      check_in: nowIso,
+      check_out: null,
+      status: "Present",
+      work_hours: 0,
+    };
+    const existingIdx = attendance.findIndex(
+      (a) => a.employee_id === employeeId && a.date === optimisticRecord.date
+    );
+    if (existingIdx !== -1) {
+      const updated = [...attendance];
+      updated[existingIdx] = { ...updated[existingIdx], check_in: nowIso, status: "Present" };
+      setAttendance(updated);
+    } else {
+      setAttendance([optimisticRecord, ...attendance]);
+    }
+    setNotification({ text: "Checked in successfully.", type: "success" });
+
     startTransition(async () => {
-      const res = await checkInAction(companyId, employeeId);
-      if (res.success && res.data) {
-        const existingIdx = attendance.findIndex((a) => a.id === res.data.id);
-        if (existingIdx !== -1) {
-          const updated = [...attendance];
-          updated[existingIdx] = res.data;
-          setAttendance(updated);
+      try {
+        const res = await checkInAction(companyId, employeeId);
+        if (res.success && res.data) {
+          setAttendance((current) =>
+            current.map((a) => (a.id === tempId || a.id === res.data.id ? res.data : a))
+          );
         } else {
-          setAttendance([res.data, ...attendance]);
+          setAttendance(previous);
+          setNotification({ text: res.message || "Check-in failed.", type: "error" });
         }
-        setNotification({ text: res.message || "Checked in successfully.", type: "success" });
-      } else {
-        setNotification({ text: res.message || "Check-in failed.", type: "error" });
+      } catch {
+        setAttendance(previous);
+        setNotification({ text: "Network error during check-in.", type: "error" });
       }
     });
   };
 
   const handleCheckOut = (employeeId: string) => {
+    const previous = [...attendance];
+    const nowIso = new Date().toISOString();
+    const existingIdx = attendance.findIndex((a) => a.employee_id === employeeId);
+    if (existingIdx !== -1) {
+      const updated = [...attendance];
+      updated[existingIdx] = { ...updated[existingIdx], check_out: nowIso };
+      setAttendance(updated);
+    }
+    setNotification({ text: "Checked out successfully.", type: "success" });
+
     startTransition(async () => {
-      const res = await checkOutAction(companyId, employeeId);
-      if (res.success && res.data) {
-        const existingIdx = attendance.findIndex((a) => a.id === res.data.id);
-        if (existingIdx !== -1) {
-          const updated = [...attendance];
-          updated[existingIdx] = res.data;
-          setAttendance(updated);
+      try {
+        const res = await checkOutAction(companyId, employeeId);
+        if (res.success && res.data) {
+          setAttendance((current) =>
+            current.map((a) => (a.id === res.data.id ? res.data : a))
+          );
+        } else {
+          setAttendance(previous);
+          setNotification({ text: res.message || "Check-out failed.", type: "error" });
         }
-        setNotification({ text: res.message || "Checked out successfully.", type: "success" });
-      } else {
-        setNotification({ text: res.message || "Check-out failed.", type: "error" });
+      } catch {
+        setAttendance(previous);
+        setNotification({ text: "Network error during check-out.", type: "error" });
       }
     });
   };

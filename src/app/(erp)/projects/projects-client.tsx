@@ -135,6 +135,7 @@ export function ProjectsClient({
   const handleMoveTaskStatus = (taskId: string, targetStatus: TaskStatus) => {
     setErrorMessage(null);
     setSuccessMessage(null);
+    const previousTasks = [...tasks];
 
     // Optimistic update
     setTasks((prev) =>
@@ -142,16 +143,21 @@ export function ProjectsClient({
     );
 
     startTransition(async () => {
-      const res = await updateTaskStatusAction(companyId, taskId, targetStatus);
-      if (!res.success) {
-        setErrorMessage(res.message || "Failed to update task status.");
-        // Rollback
-        setTasks(initialTasks);
-      } else {
-        setSuccessMessage(`Task updated to ${targetStatus}`);
-        if (res.data) {
-          setTasks((prev) => prev.map((t) => (t.id === taskId ? res.data : t)));
+      try {
+        const res = await updateTaskStatusAction(companyId, taskId, targetStatus);
+        if (!res.success) {
+          setErrorMessage(res.message || "Failed to update task status.");
+          // Rollback
+          setTasks(previousTasks);
+        } else {
+          setSuccessMessage(`Task updated to ${targetStatus}`);
+          if (res.data) {
+            setTasks((prev) => prev.map((t) => (t.id === taskId ? res.data : t)));
+          }
         }
+      } catch {
+        setErrorMessage("Network error while updating task.");
+        setTasks(previousTasks);
       }
     });
   };

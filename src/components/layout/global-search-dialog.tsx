@@ -39,18 +39,32 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
     }
   }, [open]);
 
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+
   const fetchResults = React.useCallback(async (searchQuery: string) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, {
+        signal: controller.signal,
+      });
       if (res.ok) {
         const data = await res.json();
         setResults(data.results || []);
       }
-    } catch {
-      // Ignore network aborts in palette
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        return; // Don't turn off loading or modify results if aborted by a fresher query
+      }
     } finally {
-      setIsLoading(false);
+      if (abortControllerRef.current === controller) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -60,6 +74,9 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
   }, []);
@@ -79,7 +96,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
 
     debounceTimerRef.current = setTimeout(() => {
       fetchResults(val);
-    }, 200);
+    }, 250);
   };
 
   const handleSelect = (item: SearchResultItem) => {
