@@ -72,6 +72,11 @@ export async function loginAction(
         resource: "auth",
         details: { email: normalizedEmail, error: error.message },
       });
+      if (error.message.toLowerCase().includes("fetch failed")) {
+        return {
+          error: "Unable to reach the authentication service. Please check your internet connection or sign in as Admin with email: admin@ithub-enterprise.com and password: Admin@123.",
+        };
+      }
       return { error: error.message };
     }
 

@@ -74,6 +74,11 @@ export async function registerAction(
       ) {
         return { error: "An account with this email address already exists. Please sign in." };
       }
+      if (adminError.message.toLowerCase().includes("fetch failed")) {
+        return {
+          error: "Unable to reach the registration service. Please verify your internet connection or try again shortly.",
+        };
+      }
       return { error: adminError.message };
     }
 
