@@ -188,8 +188,8 @@ export function ErpHeroShowcase() {
         <div className="space-y-1 sm:border-x sm:border-slate-200 sm:px-4">
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
             <Globe className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
-            <a href="https://www.ubiz.site" target="_blank" rel="noreferrer" className="hover:underline">
-              www.ubiz.site
+            <a href="https://www.ithub-enterprise.com" target="_blank" rel="noreferrer" className="hover:underline">
+              www.ithub-enterprise.com
             </a>
           </div>
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
