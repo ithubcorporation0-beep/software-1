@@ -30,7 +30,7 @@ export function isValidAdminPassword(password: string): boolean {
     return false;
   }
 
-  const passBuffer = Buffer.from(password, "utf8");
+  const passBuffer = Buffer.from(password.trim(), "utf8");
   const configBuffer = Buffer.from(configuredPassword, "utf8");
 
   if (passBuffer.length !== configBuffer.length) {

@@ -59,7 +59,7 @@ export async function registerAction(
     const { data: adminUser, error: adminError } = await adminClient.auth.admin.createUser({
       email: normalizedEmail,
       password,
-      email_confirm: false, // Enforce email confirmation requirement
+      email_confirm: true, // Auto-confirm so users can sign in immediately
       user_metadata: {
         full_name: fullName,
         requested_company: companyName,
@@ -161,8 +161,12 @@ export async function registerAction(
 
       return { success: true };
     } catch (fallbackErr: any) {
+      const errMsg = fallbackErr?.message || "";
+      const isNetworkError = errMsg.toLowerCase().includes("fetch failed");
       return {
-        error: fallbackErr.message || "An unexpected error occurred during account creation.",
+        error: isNetworkError
+          ? "Unable to reach the registration service. Please check your internet connection and try again."
+          : errMsg || "An unexpected error occurred during account creation.",
       };
     }
   }

@@ -88,8 +88,12 @@ export async function loginAction(
     if (err?.digest?.startsWith("NEXT_REDIRECT")) {
       throw err;
     }
+    const errMsg = err?.message || "";
+    const isNetworkError = errMsg.toLowerCase().includes("fetch failed");
     return {
-      error: err.message || "An unexpected error occurred during login.",
+      error: isNetworkError
+        ? "Unable to reach the authentication service. Please check your internet connection or try again shortly."
+        : errMsg || "An unexpected error occurred during login.",
     };
   }
 
