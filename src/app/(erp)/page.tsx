@@ -16,16 +16,14 @@ async function DashboardTelemetryStreamer({ companyId }: { companyId: string }) 
     dashboardData = null;
   }
 
-  const {
-    metrics,
-    company = { name: "Business Solutions Tax Consultants", plan: "ENTERPRISE" },
-    lastUpdatedAt,
-  } = dashboardData || {};
+  const metrics = dashboardData?.metrics;
+  const company = dashboardData?.company || { name: "Business Solutions Tax Consultants", plan: "ENTERPRISE" };
+  const lastUpdatedAt = dashboardData?.lastUpdatedAt;
 
   return (
     <ExploreModulesDashboard
       metrics={metrics}
-      companyName={company.name || "Business Solutions Tax Consultants"}
+      companyName={company?.name || "Business Solutions Tax Consultants"}
       userDisplayName="BSTC"
       lastUpdatedAt={lastUpdatedAt}
     />

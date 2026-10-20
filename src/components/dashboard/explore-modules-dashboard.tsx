@@ -204,7 +204,7 @@ export function ExploreModulesDashboard({
 
         {/* Date & Ledger Freshness Pill */}
         <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
-          {lastUpdatedAt && (
+          {lastUpdatedAt && !isNaN(new Date(lastUpdatedAt).getTime()) && (
             <div className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200/90 dark:border-emerald-900/80 bg-emerald-50/70 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 shadow-xs">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>

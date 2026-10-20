@@ -159,11 +159,12 @@ export default function ErrorBoundary({
         An unexpected exception was caught by the route error boundary. The underlying transaction has been safely contained.
       </p>
       {error.message && (
-        <pre className="mt-4 max-w-lg overflow-x-auto rounded border bg-muted/60 p-2.5 text-left font-mono text-xs text-muted-foreground">
+        <pre className="mt-4 max-w-lg overflow-x-auto rounded border bg-muted/60 p-2.5 text-left font-mono text-xs text-muted-foreground whitespace-pre-wrap">
           {error.message}
+          {error.digest ? `\nServer Digest Reference: ${error.digest}` : ""}
         </pre>
       )}
-      <div className="mt-6 flex items-center gap-3">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <Button variant="default" size="sm" onClick={() => reset()}>
           <RotateCcw className="mr-2 h-4 w-4" />
           Retry Operation
@@ -172,6 +173,12 @@ export default function ErrorBoundary({
           <Button variant="outline" size="sm">
             <Home className="mr-2 h-4 w-4" />
             Dashboard
+          </Button>
+        </Link>
+        <Link href="/login">
+          <Button variant="secondary" size="sm">
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign In Again
           </Button>
         </Link>
       </div>

@@ -15,7 +15,6 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
-import { loginAction } from "./actions";
 import { ErpHeroShowcase } from "@/components/auth/erp-hero-showcase";
 
 function LoginForm() {
@@ -33,30 +32,37 @@ function LoginForm() {
 
   const passwordInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleFillAdmin = () => {
-    setEmail("admin@ithub-enterprise.com");
-    setPassword("Admin@123");
+  const executeLogin = async (targetEmail: string, targetPass: string) => {
     setServerError(null);
-
-    const formData = new FormData();
-    formData.set("email", "admin@ithub-enterprise.com");
-    formData.set("password", "Admin@123");
-    formData.set("redirectTo", redirectTo);
-
     startTransition(async () => {
-      const res = await loginAction({}, formData);
-      if (res?.error) {
-        setServerError(res.error);
-        setPassword("");
-        passwordInputRef.current?.focus();
+      try {
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: targetEmail, password: targetPass }),
+        });
+        const data = await response.json();
+        if (data.success) {
+          window.location.href = redirectTo || "/";
+        } else {
+          setServerError(data.error || "Authentication failed. Please verify credentials.");
+          setPassword("");
+          passwordInputRef.current?.focus();
+        }
+      } catch (err: any) {
+        setServerError(err?.message || "Failed to reach authentication service.");
       }
     });
   };
 
+  const handleFillAdmin = () => {
+    setEmail("admin@ithub-enterprise.com");
+    setPassword("Admin@123");
+    executeLogin("admin@ithub-enterprise.com", "Admin@123");
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setServerError(null);
-
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
       setServerError("Please enter both your email address and password.");
@@ -65,21 +71,7 @@ function LoginForm() {
       }
       return;
     }
-
-    const formData = new FormData(e.currentTarget);
-    formData.set("email", trimmedEmail);
-    formData.set("password", password);
-    formData.set("redirectTo", redirectTo);
-
-    startTransition(async () => {
-      const res = await loginAction({}, formData);
-      if (res?.error) {
-        setServerError(res.error);
-        // Clear only password for security; keep typed email!
-        setPassword("");
-        passwordInputRef.current?.focus();
-      }
-    });
+    executeLogin(trimmedEmail, password);
   };
 
   return (

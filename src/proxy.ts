@@ -34,7 +34,8 @@ export async function proxy(request: NextRequest) {
     pathname === "/favicon.ico" ||
     (pathname.includes(".") && !pathname.startsWith("/api"));
 
-  if (isPublicRoute) {
+  // Never redirect Next.js Server Action RPC payloads
+  if (isPublicRoute || request.headers.has("next-action")) {
     return response;
   }
 
@@ -43,8 +44,8 @@ export async function proxy(request: NextRequest) {
   const adminSession = verifyAdminSessionToken(adminCookie);
 
   if (adminSession) {
-    // Authenticated admin: redirect away from auth routes to dashboard
-    if (isAuthRoute) {
+    // Authenticated admin: redirect away from auth routes to dashboard (GET/HEAD only)
+    if (isAuthRoute && (request.method === "GET" || request.method === "HEAD")) {
       return NextResponse.redirect(new URL("/", request.url));
     }
     const totalMs = Math.round((performance.now() - startMs) * 100) / 100;
@@ -161,8 +162,8 @@ export async function proxy(request: NextRequest) {
       return redirectResponse;
     }
 
-    // Auth Route: already authenticated user -> redirect to /
-    if (isAuthenticated && isAuthRoute) {
+    // Auth Route: already authenticated user -> redirect to / (GET/HEAD only)
+    if (isAuthenticated && isAuthRoute && (request.method === "GET" || request.method === "HEAD")) {
       const redirectResponse = NextResponse.redirect(new URL("/", request.url));
       response.cookies.getAll().forEach((c) => {
         redirectResponse.cookies.set(c.name, c.value);

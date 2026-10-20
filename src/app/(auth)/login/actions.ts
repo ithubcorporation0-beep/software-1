@@ -13,15 +13,24 @@ import { sanitizeRedirectPath } from "@/lib/auth/redirect";
 
 export type LoginState = {
   error?: string | null;
+  success?: boolean;
+  redirectTo?: string;
   values?: {
     email?: string;
   };
 };
 
 export async function loginAction(
-  prevState: LoginState,
-  formData: FormData
+  param1: LoginState | FormData,
+  param2?: FormData
 ): Promise<LoginState> {
+  const formData =
+    param1 instanceof FormData
+      ? param1
+      : param2 instanceof FormData
+      ? param2
+      : new FormData();
+
   const email = (formData.get("email") as string)?.trim() || "";
   const password = (formData.get("password") as string) || "";
   const rawRedirect = formData.get("redirectTo") as string;
@@ -63,7 +72,10 @@ export async function loginAction(
       details: { email: adminEmail, method: "admin_token" },
     });
 
-    redirect(safeRedirectTo);
+    return {
+      success: true,
+      redirectTo: safeRedirectTo,
+    };
   }
 
   // 2. Otherwise, attempt authentication via Supabase
@@ -116,6 +128,8 @@ export async function loginAction(
     };
   }
 
-  // Next.js redirect must be called outside try/catch because it throws NEXT_REDIRECT
-  redirect(safeRedirectTo);
+  return {
+    success: true,
+    redirectTo: safeRedirectTo,
+  };
 }
