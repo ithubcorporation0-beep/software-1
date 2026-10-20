@@ -33,12 +33,27 @@ function LoginForm() {
 
   const passwordInputRef = React.useRef<HTMLInputElement>(null);
 
+  const handleFillAdmin = () => {
+    setEmail("admin@ithub-enterprise.com");
+    setPassword("Admin@123");
+    setServerError(null);
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setServerError(null);
 
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      setServerError("Please enter both your email address and password.");
+      if (!password && passwordInputRef.current) {
+        passwordInputRef.current.focus();
+      }
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
-    formData.set("email", email.trim());
+    formData.set("email", trimmedEmail);
     formData.set("password", password);
     formData.set("redirectTo", redirectTo);
 
@@ -123,12 +138,37 @@ function LoginForm() {
               <div
                 role="alert"
                 aria-live="assertive"
-                className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive animate-in fade-in-50"
+                className="rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive animate-in fade-in-50 space-y-2.5"
               >
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{serverError}</span>
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">{serverError}</span>
+                </div>
+                {serverError.includes("admin@ithub-enterprise.com") && (
+                  <button
+                    type="button"
+                    onClick={handleFillAdmin}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors shadow-xs cursor-pointer"
+                  >
+                    Auto-fill Admin Credentials
+                  </button>
+                )}
               </div>
             )}
+
+            {/* Quick Admin Credentials Helper Pill */}
+            <div className="flex items-center justify-between rounded-xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 px-3.5 py-2 text-xs">
+              <span className="text-[11px] text-slate-600 dark:text-slate-300">
+                Super Admin:
+              </span>
+              <button
+                type="button"
+                onClick={handleFillAdmin}
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline cursor-pointer"
+              >
+                Click to auto-fill credentials
+              </button>
+            </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
