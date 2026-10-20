@@ -23,16 +23,36 @@ import {
 
 export const customerSchema = z.object({
   customerCode: z.string().trim().optional(),
-  name: z.string().trim().min(2, "Customer contact name must be at least 2 characters").max(100),
+  name: z.string().trim().min(1, "Customer or contact name is required").max(100),
   companyName: z.string().trim().max(100).optional().or(z.literal("")),
+  contactPerson: z.string().trim().max(100).optional().or(z.literal("")),
   email: z.string().trim().email("Invalid email format").optional().or(z.literal("")),
   phone: z.string().trim().max(50).optional().or(z.literal("")),
+  mobileNumber: z.string().trim().max(50).optional().or(z.literal("")),
   whatsapp: z.string().trim().max(50).optional().or(z.literal("")),
   address: z.string().trim().max(255).optional().or(z.literal("")),
+  addressLine2: z.string().trim().max(255).optional().or(z.literal("")),
+  billingName: z.string().trim().max(100).optional().or(z.literal("")),
+  billingAddress: z.string().trim().max(255).optional().or(z.literal("")),
   city: z.string().trim().max(100).optional().or(z.literal("")),
-  country: z.string().trim().min(2).max(100).default("US"),
+  state: z.string().trim().max(100).optional().or(z.literal("")),
+  country: z.string().trim().min(2).max(100).default("Pakistan"),
+  zipCode: z.string().trim().max(20).optional().or(z.literal("")),
   taxNumber: z.string().trim().max(50).optional().or(z.literal("")),
-  customerType: z.enum(["B2B", "B2C", "Enterprise", "SMB", "Government", "Wholesale"]).default("B2B"),
+  ntnNumber: z.string().trim().max(50).optional().or(z.literal("")),
+  cnicNumber: z.string().trim().max(50).optional().or(z.literal("")),
+  strnNumber: z.string().trim().max(50).optional().or(z.literal("")),
+  loginStatus: z.string().trim().optional().or(z.literal("")),
+  customerType: z.string().default("Retailer"),
+  salesTaxRegType: z.string().trim().optional().or(z.literal("")),
+  salesTaxAtl: z.string().trim().optional().or(z.literal("")),
+  incomeTaxAtl: z.string().trim().optional().or(z.literal("")),
+  paymentTerms: z.string().trim().optional().or(z.literal("")),
+  carriedBy: z.string().trim().optional().or(z.literal("")),
+  customerCategory: z.string().trim().optional().or(z.literal("")),
+  customerGroup: z.string().trim().optional().or(z.literal("")),
+  openingBalance: z.coerce.number().optional().default(0),
+  creditLimit: z.coerce.number().optional().default(0),
   status: z.enum(["Active", "Inactive", "Lead", "Archived"]).default("Active"),
   notes: z.string().trim().max(5000).optional().or(z.literal("")),
 });
@@ -435,21 +455,50 @@ export async function createCustomer(
   }
 
   const now = new Date().toISOString();
+  const resolvedCustomerType: CustomerType = 
+    valid.customerType === "WS / Distributor" ? "Wholesale" :
+    valid.customerType === "Retailer" ? "B2C" :
+    (["B2B", "B2C", "Enterprise", "SMB", "Government", "Wholesale"].includes(valid.customerType) ? valid.customerType as CustomerType : "B2B");
+
+  const resolvedStatus: CustomerStatus = 
+    valid.loginStatus === "Disabled" || valid.loginStatus === "Inactive" ? "Inactive" :
+    (valid.status as CustomerStatus) || "Active";
+
   const newCustomer: Customer = {
     id: crypto.randomUUID(),
     company_id: companyId,
     customer_code: customerCode,
-    name: valid.name,
+    name: valid.name || valid.contactPerson || valid.companyName || "Valued Customer",
     company_name: valid.companyName || null,
+    contact_person: valid.contactPerson || null,
     email: valid.email || null,
-    phone: valid.phone || null,
+    phone: valid.phone || valid.mobileNumber || null,
+    mobile_number: valid.mobileNumber || null,
     whatsapp: valid.whatsapp || null,
-    address: valid.address || null,
+    address: valid.address || valid.billingAddress || null,
+    address_line_2: valid.addressLine2 || null,
+    billing_name: valid.billingName || null,
+    billing_address: valid.billingAddress || null,
     city: valid.city || null,
-    country: valid.country,
-    tax_number: valid.taxNumber || null,
-    customer_type: valid.customerType as CustomerType,
-    status: valid.status as CustomerStatus,
+    state: valid.state || null,
+    country: valid.country || "Pakistan",
+    zip_code: valid.zipCode || null,
+    tax_number: valid.taxNumber || valid.ntnNumber || null,
+    ntn_number: valid.ntnNumber || null,
+    cnic_number: valid.cnicNumber || null,
+    strn_number: valid.strnNumber || null,
+    login_status: valid.loginStatus || "Active",
+    customer_type: resolvedCustomerType,
+    sales_tax_reg_type: valid.salesTaxRegType || null,
+    sales_tax_atl: valid.salesTaxAtl || null,
+    income_tax_atl: valid.incomeTaxAtl || null,
+    payment_terms: valid.paymentTerms || null,
+    carried_by: valid.carriedBy || null,
+    customer_category: valid.customerCategory || null,
+    customer_group: valid.customerGroup || null,
+    opening_balance: valid.openingBalance || 0,
+    credit_limit: valid.creditLimit || 0,
+    status: resolvedStatus,
     notes: valid.notes || null,
     documents: [],
     total_spend: 0.0,
@@ -459,9 +508,32 @@ export async function createCustomer(
   };
 
   try {
+    const dbPayload = {
+      id: newCustomer.id,
+      company_id: newCustomer.company_id,
+      customer_code: newCustomer.customer_code,
+      name: newCustomer.name,
+      company_name: newCustomer.company_name,
+      email: newCustomer.email,
+      phone: newCustomer.phone,
+      whatsapp: newCustomer.whatsapp,
+      address: newCustomer.address,
+      city: newCustomer.city,
+      country: newCustomer.country,
+      tax_number: newCustomer.tax_number,
+      customer_type: newCustomer.customer_type,
+      status: newCustomer.status,
+      notes: newCustomer.notes,
+      documents: newCustomer.documents,
+      total_spend: newCustomer.total_spend,
+      created_by: newCustomer.created_by,
+      created_at: newCustomer.created_at,
+      updated_at: newCustomer.updated_at,
+    };
+
     const { data, error } = await supabase
       .from("customers")
-      .insert(newCustomer)
+      .insert(dbPayload)
       .select()
       .single();
 

@@ -62,6 +62,7 @@ import {
 import { PasswordField } from "@/components/auth/password-field";
 import { analyzePassword } from "@/lib/auth/password-policy";
 import { CompanyMemberItem } from "@/lib/users/server";
+import { CreateCustomerModal } from "@/components/customers/create-customer-modal";
 
 interface CorporateUserItem {
   id: string;
@@ -203,8 +204,7 @@ export function UserManagementClient({
   const [newUserRole, setNewUserRole] = React.useState(initialRoles[0]?.id || "admin");
   const [newRoleName, setNewRoleName] = React.useState("");
   const [newRoleCode, setNewRoleCode] = React.useState("");
-  const [newCustomerName, setNewCustomerName] = React.useState("");
-  const [newCustomerEmail, setNewCustomerEmail] = React.useState("");
+  const [customersCount, setCustomersCount] = React.useState(totalCustomersCount);
 
   // Search & Filter state for Users table
   const [userSearch, setUserSearch] = React.useState("");
@@ -214,7 +214,7 @@ export function UserManagementClient({
   const totalUsers = initialMembers.length;
   const activeUsers = initialMembers.filter((m) => m.status === "ACTIVE").length;
   const totalRoles = initialRoles.length;
-  const totalCustomers = totalCustomersCount;
+  const totalCustomers = customersCount;
   const totalVendors = totalVendorsCount;
 
   // Monthly data for "New Users This Year" bar chart derived from member creation dates
@@ -1440,51 +1440,15 @@ export function UserManagementClient({
         </DialogFooter>
       </Dialog>
 
-      {/* MODAL 3: Add Customer */}
-      <Dialog open={isAddCustomerOpen} onOpenChange={setIsAddCustomerOpen}>
-        <DialogHeader>
-          <DialogTitle>Add New Customer Record</DialogTitle>
-          <DialogDescription>
-            Register a commercial client into the CRM and billing ledger.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3 py-3">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-foreground">Customer / Company Name</label>
-            <Input
-              placeholder="e.g. Apex Global Logistics Ltd"
-              value={newCustomerName}
-              onChange={(e) => setNewCustomerName(e.target.value)}
-              className="h-8 text-xs"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-foreground">Billing Email</label>
-            <Input
-              type="email"
-              placeholder="accounts@apexlogistics.com"
-              value={newCustomerEmail}
-              onChange={(e) => setNewCustomerEmail(e.target.value)}
-              className="h-8 text-xs"
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => setIsAddCustomerOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            onClick={() => {
-              alert(`Customer created: ${newCustomerName}`);
-              setIsAddCustomerOpen(false);
-            }}
-          >
-            Save Customer
-          </Button>
-        </DialogFooter>
-      </Dialog>
+      {/* MODAL 3: Create Customer (Exact match to images 2 and 3) */}
+      <CreateCustomerModal
+        open={isAddCustomerOpen}
+        onOpenChange={setIsAddCustomerOpen}
+        companyId={companyId}
+        onCustomerCreated={() => {
+          setCustomersCount((prev) => prev + 1);
+        }}
+      />
       {/* MODAL 4: Child Companies */}
       <Dialog open={isChildCompaniesOpen} onOpenChange={setIsChildCompaniesOpen}>
         <DialogHeader>

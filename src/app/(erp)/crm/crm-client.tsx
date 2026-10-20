@@ -53,6 +53,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { CreateCustomerModal } from "@/components/customers/create-customer-modal";
 
 const KANBAN_STAGES: { id: LeadStatus; label: string; color: string }[] = [
   { id: "New", label: "New Leads", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
@@ -557,109 +558,16 @@ export function CrmClient({
             )}
           </CardContent>
 
-          {/* Add Customer Modal */}
-          <Dialog open={isAddCustomerOpen} onOpenChange={setIsAddCustomerOpen}>
-            <DialogHeader>
-              <DialogTitle className="text-sm font-semibold">Create Customer Account</DialogTitle>
-              <DialogDescription className="text-xs">
-                Enroll a commercial account with contact channels and billing details.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form action={createCustomerFormAction} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Contact Name *</label>
-                  <Input name="name" placeholder="e.g. Jane Doe" required />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Company Entity</label>
-                  <Input name="companyName" placeholder="e.g. Nexus Logistics LLC" />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Official Email</label>
-                  <Input name="email" type="email" placeholder="jane@nexus.com" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Phone Number</label>
-                  <Input name="phone" placeholder="+1 (555) 012-3456" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">WhatsApp Direct</label>
-                  <Input name="whatsapp" placeholder="+15550123456" />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Customer Type</label>
-                  <select
-                    name="customerType"
-                    defaultValue="B2B"
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    <option value="B2B">B2B Commercial</option>
-                    <option value="Enterprise">Enterprise</option>
-                    <option value="SMB">SMB</option>
-                    <option value="B2C">B2C Retail</option>
-                    <option value="Government">Government</option>
-                    <option value="Wholesale">Wholesale</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Status</label>
-                  <select
-                    name="status"
-                    defaultValue="Active"
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    <option value="Active">Active Customer</option>
-                    <option value="Lead">Lead / Prospect</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Tax ID / VAT</label>
-                  <Input name="taxNumber" placeholder="TAX-998822" />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs font-medium text-foreground">Physical Address</label>
-                  <Input name="address" placeholder="100 Tech Blvd, Suite 400" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">City</label>
-                  <Input name="city" placeholder="San Francisco" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground">Internal Account Notes</label>
-                <textarea
-                  name="notes"
-                  rows={2}
-                  placeholder="Key relationship background, credit considerations, or terms..."
-                  className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsAddCustomerOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" size="sm" disabled={isCreatingCustomer}>
-                  {isCreatingCustomer ? "Enrolling Customer..." : "Save Customer"}
-                </Button>
-              </div>
-            </form>
-          </Dialog>
+          {/* Add Customer Modal (Unified CreateCustomerModal matching images 2 & 3) */}
+          <CreateCustomerModal
+            open={isAddCustomerOpen}
+            onOpenChange={setIsAddCustomerOpen}
+            companyId={companyId}
+            onCustomerCreated={(newCust) => {
+              setCustomers((prev) => [newCust, ...prev]);
+              setFeedback({ message: `Customer "${newCust.name}" successfully created.`, type: "success" });
+            }}
+          />
 
           {/* Edit Customer Modal */}
           <Dialog open={!!editingCustomer} onOpenChange={(open) => !open && setEditingCustomer(null)}>

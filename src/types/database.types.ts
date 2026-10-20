@@ -137,6 +137,27 @@ export interface Customer {
   created_by?: string | null;
   created_at: string;
   updated_at: string;
+  // Extended Corporate, Pakistani Tax (FBR) & Commercial fields
+  contact_person?: string | null;
+  mobile_number?: string | null;
+  login_status?: string | null;
+  ntn_number?: string | null;
+  cnic_number?: string | null;
+  strn_number?: string | null;
+  sales_tax_reg_type?: string | null;
+  sales_tax_atl?: string | null;
+  income_tax_atl?: string | null;
+  payment_terms?: string | null;
+  carried_by?: string | null;
+  customer_category?: string | null;
+  customer_group?: string | null;
+  opening_balance?: number | null;
+  credit_limit?: number | null;
+  billing_name?: string | null;
+  billing_address?: string | null;
+  address_line_2?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
 }
 
 export interface CustomerNote {
@@ -374,6 +395,11 @@ export interface Invoice {
   items?: InvoiceItem[];
   payments?: Payment[];
   created_by?: string | null;
+  fbr_irn?: string | null;
+  fbr_uuid?: string | null;
+  fbr_qr_code_data?: string | null;
+  fbr_digital_signature?: string | null;
+  fbr_status?: "PENDING" | "VALIDATED" | "SUBMITTED" | "FAILED" | null;
   created_at: string;
   updated_at: string;
 }
