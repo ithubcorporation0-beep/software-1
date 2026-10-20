@@ -37,6 +37,20 @@ function LoginForm() {
     setEmail("admin@ithub-enterprise.com");
     setPassword("Admin@123");
     setServerError(null);
+
+    const formData = new FormData();
+    formData.set("email", "admin@ithub-enterprise.com");
+    formData.set("password", "Admin@123");
+    formData.set("redirectTo", redirectTo);
+
+    startTransition(async () => {
+      const res = await loginAction({}, formData);
+      if (res?.error) {
+        setServerError(res.error);
+        setPassword("");
+        passwordInputRef.current?.focus();
+      }
+    });
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -150,7 +164,7 @@ function LoginForm() {
                     onClick={handleFillAdmin}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors shadow-xs cursor-pointer"
                   >
-                    Auto-fill Admin Credentials
+                    Sign In as Admin (One-Click)
                   </button>
                 )}
               </div>
@@ -159,14 +173,14 @@ function LoginForm() {
             {/* Quick Admin Credentials Helper Pill */}
             <div className="flex items-center justify-between rounded-xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 px-3.5 py-2 text-xs">
               <span className="text-[11px] text-slate-600 dark:text-slate-300">
-                Super Admin:
+                Super Admin Access:
               </span>
               <button
                 type="button"
                 onClick={handleFillAdmin}
                 className="text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline cursor-pointer"
               >
-                Click to auto-fill credentials
+                Sign in as Admin (One-Click)
               </button>
             </div>
 
