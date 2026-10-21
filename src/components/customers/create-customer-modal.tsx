@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Customer } from "@/types/database.types";
+import { FbrThreeIndicators } from "@/lib/fbr-types";
 
 export interface CreateCustomerModalProps {
   open: boolean;
@@ -110,10 +111,13 @@ export function CreateCustomerModal({
     taxSection?: string;
     activeRate?: string;
     nonFilerRate?: string;
+    indicators?: FbrThreeIndicators;
     officialVerification?: {
       smsInstruction: string;
       portalUrl: string;
       irisUrl: string;
+      incomeTaxAtlUrl?: string;
+      salesTaxAtlUrl?: string;
     };
   } | null>(null);
 
@@ -159,7 +163,7 @@ export function CreateCustomerModal({
       ...prev,
       salesTaxAtl: status,
       incomeTaxAtl: status,
-      salesTaxRegType: status === "Active" ? "Registered" : (prev.salesTaxRegType || "Unregistered"),
+      salesTaxRegType: status === "Active" ? "Registered" : "Unregistered",
     }));
     if (taxVerificationResult) {
       setTaxVerificationResult({
@@ -167,6 +171,21 @@ export function CreateCustomerModal({
         verified: status === "Active",
         isFiler: status === "Active",
         atlStatus: status === "Active" ? "Active" : "Inactive",
+        indicators: {
+          salesTaxRegType: {
+            status: status === "Active" ? "Registered" : "Unregistered",
+            details: status === "Active" ? "Manual status: Registered" : "Manual status: Unregistered",
+          },
+          salesTaxAtl: {
+            status: status === "Active" ? "Verified Active" : "Verified Inactive",
+            details: status === "Active" ? "Manual status: Active" : "Manual status: Inactive",
+          },
+          incomeTaxAtl: {
+            status: status === "Active" ? "Verified Active" : "Verified Inactive",
+            isFiler: status === "Active",
+            details: status === "Active" ? "Manual status: Active Filer" : "Manual status: Inactive Non-Filer",
+          },
+        },
         message:
           status === "Active"
             ? `Status set to Active Filer. Standard ${
@@ -229,7 +248,36 @@ export function CreateCustomerModal({
         }
       }
 
-      if (data.validFormat && data.verificationSource === "AUTOMATED_GATEWAY") {
+      if (data.validFormat && data.indicators) {
+        const ind = data.indicators;
+        if (data.verificationSource === "AUTOMATED_GATEWAY" || data.verifiedOnline) {
+          setFormData((prev) => ({
+            ...prev,
+            salesTaxRegType:
+              ind.salesTaxRegType.status === "Registered"
+                ? "Registered"
+                : ind.salesTaxRegType.status === "Unregistered"
+                ? "Unregistered"
+                : ind.salesTaxRegType.status === "Exempt"
+                ? "Exempt"
+                : prev.salesTaxRegType || "Registered",
+            salesTaxAtl:
+              ind.salesTaxAtl.status === "Verified Active"
+                ? "Active"
+                : ind.salesTaxAtl.status === "Verified Inactive"
+                ? "In-Active"
+                : ind.salesTaxAtl.status === "Exempt"
+                ? "Exempt"
+                : "Active",
+            incomeTaxAtl:
+              ind.incomeTaxAtl.status === "Verified Active"
+                ? "Active"
+                : ind.incomeTaxAtl.status === "Verified Inactive"
+                ? "In-Active"
+                : "Active",
+          }));
+        }
+      } else if (data.validFormat && data.verificationSource === "AUTOMATED_GATEWAY") {
         if (data.isFiler) {
           setFormData((prev) => ({
             ...prev,
@@ -627,24 +675,116 @@ export function CreateCustomerModal({
                 </div>
               </div>
 
-              {/* Format is valid, but live FBR gateway is not configured in environment */}
-              {taxVerificationResult.validFormat && !taxVerificationResult.verifiedOnline && (
-                <div className="pt-2 border-t border-blue-200/60 dark:border-blue-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <div className="text-[11px] text-blue-800 dark:text-blue-300 font-mono">
-                    {taxVerificationResult.officialVerification?.smsInstruction}
+              {/* 3 Indicators as shown in UNAZ */}
+              {taxVerificationResult.indicators && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-black/5 dark:border-white/10">
+                  <div className="rounded-lg bg-white/70 dark:bg-black/30 p-2.5 border border-black/5 dark:border-white/5 space-y-1">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                      1. Sales Tax Reg Type
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={cn(
+                          "inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold",
+                          taxVerificationResult.indicators.salesTaxRegType.status === "Registered"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            : taxVerificationResult.indicators.salesTaxRegType.status === "Unregistered"
+                            ? "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300"
+                            : "bg-black/5 dark:bg-white/10"
+                        )}
+                      >
+                        {taxVerificationResult.indicators.salesTaxRegType.status}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <a
-                      href={taxVerificationResult.officialVerification?.portalUrl || "https://e.fbr.gov.pk/"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white dark:bg-zinc-800 text-blue-700 dark:text-blue-300 hover:text-blue-800 border border-blue-200 dark:border-zinc-700 text-xs font-medium transition-colors"
-                    >
-                      <span>FBR Portal</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                  <div className="rounded-lg bg-white/70 dark:bg-black/30 p-2.5 border border-black/5 dark:border-white/5 space-y-1">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                      2. Sales Tax ATL
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={cn(
+                          "inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold",
+                          taxVerificationResult.indicators.salesTaxAtl.status === "Verified Active"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            : taxVerificationResult.indicators.salesTaxAtl.status === "Verified Inactive"
+                            ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                            : "bg-black/5 dark:bg-white/10"
+                        )}
+                      >
+                        {taxVerificationResult.indicators.salesTaxAtl.status}
+                      </span>
+                    </div>
+                  </div>
 
+                  <div className="rounded-lg bg-white/70 dark:bg-black/30 p-2.5 border border-black/5 dark:border-white/5 space-y-1">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                      3. Income Tax ATL
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={cn(
+                          "inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold",
+                          taxVerificationResult.indicators.incomeTaxAtl.status === "Verified Active"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            : taxVerificationResult.indicators.incomeTaxAtl.status === "Verified Inactive"
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                            : "bg-black/5 dark:bg-white/10"
+                        )}
+                      >
+                        {taxVerificationResult.indicators.incomeTaxAtl.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Format is valid, but live FBR gateway is not configured in environment */}
+              {taxVerificationResult.validFormat && !taxVerificationResult.verifiedOnline && (
+                <div className="pt-2 border-t border-blue-200/60 dark:border-blue-900/60 space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="text-[11px] text-blue-800 dark:text-blue-300 font-mono">
+                      {taxVerificationResult.officialVerification?.smsInstruction}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                      <a
+                        href={taxVerificationResult.officialVerification?.irisUrl || "https://iris.fbr.gov.pk/"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white dark:bg-zinc-800 text-blue-700 dark:text-blue-300 hover:text-blue-800 border border-blue-200 dark:border-zinc-700 text-xs font-medium transition-colors"
+                        title="IRIS Verification Portal"
+                      >
+                        <span>IRIS Portal</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+
+                      <a
+                        href={taxVerificationResult.officialVerification?.incomeTaxAtlUrl || "https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white dark:bg-zinc-800 text-blue-700 dark:text-blue-300 hover:text-blue-800 border border-blue-200 dark:border-zinc-700 text-xs font-medium transition-colors"
+                        title="Income Tax ATL List Info"
+                      >
+                        <span>Income Tax ATL</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+
+                      <a
+                        href={taxVerificationResult.officialVerification?.salesTaxAtlUrl || "https://www.fbr.gov.pk/atl-sales-tax/163223"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white dark:bg-zinc-800 text-blue-700 dark:text-blue-300 hover:text-blue-800 border border-blue-200 dark:border-zinc-700 text-xs font-medium transition-colors"
+                        title="Sales Tax Active Taxpayer List"
+                      >
+                        <span>Sales Tax ATL</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-blue-200/40 dark:border-blue-900/40">
                     <button
                       type="button"
                       onClick={() => setAtlStatusQuick("Active")}

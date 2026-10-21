@@ -40,6 +40,9 @@ import {
   TaxpayerVerificationRecord,
   TaxpayerVerificationSource,
   TaxpayerAtlStatus,
+  SalesTaxRegTypeStatus,
+  SalesTaxAtlStatus,
+  IncomeTaxAtlStatus,
 } from "@/lib/fbr-types";
 import { FbrTaxpayerVerificationResult } from "@/lib/fbr-taxpayer-service";
 
@@ -69,9 +72,11 @@ export function TaxpayerVerificationInterface({
   const [verificationResult, setVerificationResult] = React.useState<FbrTaxpayerVerificationResult | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
-  // Manual Verification State
+  // Manual Verification State (Three UNAZ Indicators)
   const [manualSource, setManualSource] = React.useState<"MANUAL_PORTAL" | "MANUAL_SMS">("MANUAL_PORTAL");
-  const [manualStatus, setManualStatus] = React.useState<"Active" | "Inactive">("Active");
+  const [manualSalesTaxRegType, setManualSalesTaxRegType] = React.useState<SalesTaxRegTypeStatus>("Registered");
+  const [manualSalesTaxAtl, setManualSalesTaxAtl] = React.useState<SalesTaxAtlStatus>("Verified Active");
+  const [manualIncomeTaxAtl, setManualIncomeTaxAtl] = React.useState<IncomeTaxAtlStatus>("Verified Active");
   const [manualRef, setManualRef] = React.useState("");
   const [manualNotes, setManualNotes] = React.useState("");
   const [isRecordingManual, setIsRecordingManual] = React.useState(false);
@@ -143,13 +148,16 @@ export function TaxpayerVerificationInterface({
       const res = await recordManualTaxpayerVerificationAction(companyId, {
         taxNumber: taxInput.trim(),
         source: manualSource,
-        status: manualStatus,
+        status: manualIncomeTaxAtl === "Verified Active" ? "Active" : "Inactive",
+        salesTaxRegType: manualSalesTaxRegType,
+        salesTaxAtl: manualSalesTaxAtl,
+        incomeTaxAtl: manualIncomeTaxAtl,
         referenceNumber: manualRef.trim() || undefined,
         notes: manualNotes.trim() || undefined,
       });
 
       if (res.success && res.data) {
-        setManualFeedback(`Manual verification successfully recorded: ${res.data.status} via ${res.data.source}.`);
+        setManualFeedback(`Manual verification successfully recorded via ${res.data.source}.`);
         await loadHistory();
 
         if (onSelectVerified && (res.data.idType === "CNIC" || res.data.idType === "NTN")) {
@@ -408,7 +416,90 @@ export function TaxpayerVerificationInterface({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* THREE VERIFICATION INDICATORS (UNAZ COMPLIANCE SPECIFICATION) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                {/* 1. Sales Tax Reg Type */}
+                <div className="rounded-lg border bg-background/80 p-3 space-y-1.5 shadow-2xs">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                    1. Sales Tax Reg Type
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                        verificationResult.indicators.salesTaxRegType.status === "Registered"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                          : verificationResult.indicators.salesTaxRegType.status === "Unregistered"
+                          ? "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                          : verificationResult.indicators.salesTaxRegType.status === "Pending"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+                          : "bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                      }`}
+                    >
+                      {verificationResult.indicators.salesTaxRegType.status}
+                    </span>
+                    {verificationResult.indicators.salesTaxRegType.strn && (
+                      <span className="text-[11px] font-mono text-muted-foreground">
+                        STRN: {verificationResult.indicators.salesTaxRegType.strn}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-normal">
+                    {verificationResult.indicators.salesTaxRegType.details}
+                  </p>
+                </div>
+
+                {/* 2. Sales Tax ATL */}
+                <div className="rounded-lg border bg-background/80 p-3 space-y-1.5 shadow-2xs">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                    2. Sales Tax ATL
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                        verificationResult.indicators.salesTaxAtl.status === "Verified Active"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                          : verificationResult.indicators.salesTaxAtl.status === "Verified Inactive"
+                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                          : verificationResult.indicators.salesTaxAtl.status === "Pending"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+                          : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                      }`}
+                    >
+                      {verificationResult.indicators.salesTaxAtl.status}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-normal">
+                    {verificationResult.indicators.salesTaxAtl.details}
+                  </p>
+                </div>
+
+                {/* 3. Income Tax ATL */}
+                <div className="rounded-lg border bg-background/80 p-3 space-y-1.5 shadow-2xs">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                    3. Income Tax ATL
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                        verificationResult.indicators.incomeTaxAtl.status === "Verified Active"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                          : verificationResult.indicators.incomeTaxAtl.status === "Verified Inactive"
+                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                          : verificationResult.indicators.incomeTaxAtl.status === "Pending"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+                          : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                      }`}
+                    >
+                      {verificationResult.indicators.incomeTaxAtl.status}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-normal">
+                    {verificationResult.indicators.incomeTaxAtl.details}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-black/5 dark:border-white/5">
                 <div>
                   <span className="text-[10px] uppercase font-semibold opacity-70 block">
                     Identifier (Masked)
@@ -465,29 +556,19 @@ export function TaxpayerVerificationInterface({
           {/* -------------------------------------------------------------------
               MANUAL VERIFICATION WORKFLOW (WHEN AUTOMATED API IS UNAVAILABLE)
           -------------------------------------------------------------------- */}
-          <div className="rounded-lg border p-4 bg-muted/30 space-y-3">
+          <div className="rounded-lg border p-4 bg-muted/30 space-y-3.5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h4 className="text-xs font-semibold flex items-center gap-1.5">
                   <Globe className="h-4 w-4 text-blue-600" />
-                  Official Manual Verification Workflow
+                  Official Government Verification Portals
                 </h4>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  When authorized PRAL API credentials are not yet sealed or during gateway downtime, use official government verification portals.
+                  Query verified state records across official FBR authorities and record the 3 indicators.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <a
-                  href="https://e.fbr.gov.pk/esbn/Service.aspx?PID=TaxpayerVerification"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-background border text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:bg-muted transition-colors"
-                >
-                  <Globe className="h-3 w-3" />
-                  <span>FBR e-Portal</span>
-                  <ExternalLink className="h-2.5 w-2.5 opacity-60" />
-                </a>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <a
                   href="https://iris.fbr.gov.pk/"
                   target="_blank"
@@ -495,7 +576,37 @@ export function TaxpayerVerificationInterface({
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-background border text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:bg-muted transition-colors"
                 >
                   <Lock className="h-3 w-3" />
-                  <span>Iris 2.0</span>
+                  <span>IRIS 2.0 Portal</span>
+                  <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                </a>
+                <a
+                  href="https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-background border text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-muted transition-colors"
+                >
+                  <Globe className="h-3 w-3" />
+                  <span>Income Tax ATL Info</span>
+                  <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                </a>
+                <a
+                  href="https://www.fbr.gov.pk/atl-sales-tax/163223"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-background border text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:bg-muted transition-colors"
+                >
+                  <Globe className="h-3 w-3" />
+                  <span>Sales Tax ATL Info</span>
+                  <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                </a>
+                <a
+                  href="https://e.fbr.gov.pk/esbn/Service.aspx?PID=TaxpayerVerification"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-background border text-[11px] font-medium text-zinc-600 dark:text-zinc-400 hover:bg-muted transition-colors"
+                >
+                  <Search className="h-3 w-3" />
+                  <span>Online Inquiry</span>
                   <ExternalLink className="h-2.5 w-2.5 opacity-60" />
                 </a>
               </div>
@@ -506,26 +617,22 @@ export function TaxpayerVerificationInterface({
               <div className="flex items-center gap-2">
                 <Smartphone className="h-4 w-4 text-purple-600 shrink-0" />
                 <span className="font-mono text-[11px]">
-                  FBR SMS Service (9966): Send{" "}
-                  <strong>
-                    ATL {liveValidation?.cleaned || "1610154195663"}
-                  </strong>{" "}
-                  to <strong>9966</strong>
+                  FBR Cellular Gateway (9966): Income Tax: SMS <strong>ATL {liveValidation?.cleaned || "1610154195663"}</strong> to <strong>9966</strong> | Sales Tax: SMS <strong>ST {liveValidation?.cleaned || "1610154195663"}</strong> to <strong>9966</strong>
                 </span>
               </div>
-              <span className="text-[10px] text-muted-foreground">
-                Official FBR short-code (Standard carrier charges apply)
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                Official FBR short-code (Standard charges apply)
               </span>
             </div>
 
-            {/* RECORD MANUAL VERIFICATION FORM */}
+            {/* RECORD MANUAL VERIFICATION FORM (THREE INDICATORS) */}
             <div className="pt-2 border-t space-y-3">
               <h5 className="text-[11px] font-semibold text-foreground">
-                Record Verified Result (Manual Audit Trail)
+                Record Verified Result (Three Indicators Audit Trail)
               </h5>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-6 gap-2.5">
+                <div className="sm:col-span-1">
                   <label className="text-[10px] font-medium text-muted-foreground block mb-1">
                     Verification Source
                   </label>
@@ -534,39 +641,72 @@ export function TaxpayerVerificationInterface({
                     onChange={(e) => setManualSource(e.target.value as any)}
                     className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs"
                   >
-                    <option value="MANUAL_PORTAL">FBR e-Portal (Web Inquiry)</option>
-                    <option value="MANUAL_SMS">FBR SMS Service (9966)</option>
+                    <option value="MANUAL_PORTAL">FBR e-Portal (Web)</option>
+                    <option value="MANUAL_SMS">FBR SMS (9966)</option>
                   </select>
                 </div>
 
-                <div>
+                <div className="sm:col-span-1">
                   <label className="text-[10px] font-medium text-muted-foreground block mb-1">
-                    Verified Status
+                    1. Sales Tax Reg Type
                   </label>
                   <select
-                    value={manualStatus}
-                    onChange={(e) => setManualStatus(e.target.value as any)}
+                    value={manualSalesTaxRegType}
+                    onChange={(e) => setManualSalesTaxRegType(e.target.value as any)}
                     className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs font-semibold"
                   >
-                    <option value="Active">✓ Active Filer (Reduced Rate)</option>
-                    <option value="Inactive">✕ Inactive / Non-Filer (2x Rate)</option>
+                    <option value="Registered">Registered</option>
+                    <option value="Unregistered">Unregistered</option>
+                    <option value="Exempt">Exempt</option>
+                    <option value="Not Found">Not Found</option>
                   </select>
                 </div>
 
-                <div>
+                <div className="sm:col-span-1">
                   <label className="text-[10px] font-medium text-muted-foreground block mb-1">
-                    Portal Ref / SMS Code (Optional)
+                    2. Sales Tax ATL
+                  </label>
+                  <select
+                    value={manualSalesTaxAtl}
+                    onChange={(e) => setManualSalesTaxAtl(e.target.value as any)}
+                    className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs font-semibold"
+                  >
+                    <option value="Verified Active">✓ Active</option>
+                    <option value="Verified Inactive">✕ Inactive</option>
+                    <option value="Not Registered">Not Registered</option>
+                    <option value="Not Found">Not Found</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-1">
+                  <label className="text-[10px] font-medium text-muted-foreground block mb-1">
+                    3. Income Tax ATL
+                  </label>
+                  <select
+                    value={manualIncomeTaxAtl}
+                    onChange={(e) => setManualIncomeTaxAtl(e.target.value as any)}
+                    className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs font-semibold"
+                  >
+                    <option value="Verified Active">✓ Active (Filer)</option>
+                    <option value="Verified Inactive">✕ Inactive (Non-Filer)</option>
+                    <option value="Not Found">Not Found</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-1">
+                  <label className="text-[10px] font-medium text-muted-foreground block mb-1">
+                    Portal Ref / Code
                   </label>
                   <Input
                     type="text"
-                    placeholder="e.g. ATL-2026-9881"
+                    placeholder="e.g. ATL-9881"
                     value={manualRef}
                     onChange={(e) => setManualRef(e.target.value)}
                     className="h-8 text-xs font-mono"
                   />
                 </div>
 
-                <div className="flex items-end">
+                <div className="sm:col-span-1 flex items-end">
                   <Button
                     type="button"
                     onClick={handleRecordManual}
@@ -579,7 +719,7 @@ export function TaxpayerVerificationInterface({
                     ) : (
                       <FileText className="h-3 w-3" />
                     )}
-                    <span>Save Manual Record</span>
+                    <span>Save Record</span>
                   </Button>
                 </div>
               </div>
@@ -637,7 +777,9 @@ export function TaxpayerVerificationInterface({
                 <TableRow>
                   <TableHead className="text-xs">Masked Identifier</TableHead>
                   <TableHead className="text-xs">Type</TableHead>
-                  <TableHead className="text-xs">ATL Status</TableHead>
+                  <TableHead className="text-xs">1. Sales Reg Type</TableHead>
+                  <TableHead className="text-xs">2. Sales Tax ATL</TableHead>
+                  <TableHead className="text-xs">3. Income Tax ATL</TableHead>
                   <TableHead className="text-xs">Verification Source</TableHead>
                   <TableHead className="text-xs">Timestamp</TableHead>
                   <TableHead className="text-xs">Verified By</TableHead>
@@ -647,7 +789,7 @@ export function TaxpayerVerificationInterface({
               <TableBody>
                 {filteredHistory.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center text-xs text-muted-foreground">
+                    <TableCell colSpan={9} className="h-24 text-center text-xs text-muted-foreground">
                       No verification logs recorded yet. Query a CNIC or NTN above to generate an audit entry.
                     </TableCell>
                   </TableRow>
@@ -664,22 +806,42 @@ export function TaxpayerVerificationInterface({
                       </TableCell>
                       <TableCell>
                         <Badge
+                          variant="outline"
+                          className="text-[10px] font-semibold"
+                        >
+                          {item.indicators?.salesTaxRegType?.status || (item.status === "Active" ? "Registered" : "Unregistered")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
                           variant={
-                            item.status === "Active"
+                            (item.indicators?.salesTaxAtl?.status === "Verified Active" || (!item.indicators && item.status === "Active"))
                               ? "default"
-                              : item.status === "Inactive"
-                              ? "secondary"
-                              : "outline"
+                              : "secondary"
                           }
                           className={`text-[10px] ${
-                            item.status === "Active"
+                            (item.indicators?.salesTaxAtl?.status === "Verified Active" || (!item.indicators && item.status === "Active"))
                               ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                              : item.status === "Inactive"
-                              ? "bg-amber-600 hover:bg-amber-700 text-white"
                               : ""
                           }`}
                         >
-                          {item.status}
+                          {item.indicators?.salesTaxAtl?.status || (item.status === "Active" ? "Verified Active" : "Verified Inactive")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            (item.indicators?.incomeTaxAtl?.status === "Verified Active" || (!item.indicators && item.status === "Active"))
+                              ? "default"
+                              : "secondary"
+                          }
+                          className={`text-[10px] ${
+                            (item.indicators?.incomeTaxAtl?.status === "Verified Active" || (!item.indicators && item.status === "Active"))
+                              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                              : "bg-amber-600 hover:bg-amber-700 text-white"
+                          }`}
+                        >
+                          {item.indicators?.incomeTaxAtl?.status || (item.status === "Active" ? "Verified Active" : "Verified Inactive")}
                         </Badge>
                       </TableCell>
                       <TableCell>

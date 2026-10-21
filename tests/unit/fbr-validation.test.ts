@@ -99,6 +99,25 @@ describe("Pakistani Tax Identifier & FBR Validation Suite", () => {
       expect(res.atlStatus).toBe("Format Validated (ATL Unverified)");
       expect(res.message).toContain("Valid NTN format confirmed");
       expect(res.detail).toContain("NOT proof of Active Filer status");
+
+      // Verify the three indicators are present and marked Pending (not false active)
+      expect(res.indicators).toBeDefined();
+      expect(res.indicators.salesTaxRegType.status).toBe("Pending");
+      expect(res.indicators.salesTaxAtl.status).toBe("Pending");
+      expect(res.indicators.incomeTaxAtl.status).toBe("Pending");
+
+      // Verify official FBR portal and documentation links are populated
+      expect(res.officialVerification.irisUrl).toBe("https://iris.fbr.gov.pk/");
+      expect(res.officialVerification.incomeTaxAtlUrl).toBe("https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169");
+      expect(res.officialVerification.salesTaxAtlUrl).toBe("https://www.fbr.gov.pk/atl-sales-tax/163223");
+    });
+
+    it("returns separate Unable to Verify indicators on format error", async () => {
+      const res = await verifyFbrTaxpayer("161015419561411", "Retailer");
+      expect(res.indicators).toBeDefined();
+      expect(res.indicators.salesTaxRegType.status).toBe("Unable to Verify");
+      expect(res.indicators.salesTaxAtl.status).toBe("Unable to Verify");
+      expect(res.indicators.incomeTaxAtl.status).toBe("Unable to Verify");
     });
   });
 });

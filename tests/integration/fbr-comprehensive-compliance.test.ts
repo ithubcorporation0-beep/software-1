@@ -146,12 +146,21 @@ describe("Comprehensive FBR Compliance & Diagnostics Suite (13 Core Scenarios)",
         status: "Active (Manual Verification)",
         referenceNumber: "FBR-MANUAL-VER-9988",
         verifiedBy: "Compliance Officer",
+        indicators: {
+          salesTaxRegType: { status: "Registered" },
+          salesTaxAtl: { status: "Verified Active" },
+          incomeTaxAtl: { status: "Verified Active" },
+        },
       });
 
       expect(savedRecord).not.toBeNull();
       expect(savedRecord.source).toBe("MANUAL_PORTAL");
       expect(savedRecord.referenceNumber).toBe("FBR-MANUAL-VER-9988");
       expect(savedRecord.source).not.toBe("AUTOMATED_GATEWAY");
+      expect(savedRecord.indicators).toBeDefined();
+      expect(savedRecord.indicators.salesTaxRegType.status).toBe("Registered");
+      expect(savedRecord.indicators.salesTaxAtl.status).toBe("Verified Active");
+      expect(savedRecord.indicators.incomeTaxAtl.status).toBe("Verified Active");
     });
   });
 

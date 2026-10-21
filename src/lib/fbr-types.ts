@@ -87,6 +87,48 @@ export type TaxpayerAtlStatus =
   | "Format Error"
   | "API Connection Error";
 
+export type SalesTaxRegTypeStatus =
+  | "Registered"
+  | "Unregistered"
+  | "Exempt"
+  | "Not Found"
+  | "Pending"
+  | "Unable to Verify";
+
+export type SalesTaxAtlStatus =
+  | "Verified Active"
+  | "Verified Inactive"
+  | "Not Registered"
+  | "Not Found"
+  | "Pending"
+  | "Unable to Verify";
+
+export type IncomeTaxAtlStatus =
+  | "Verified Active"
+  | "Verified Inactive"
+  | "Not Registered"
+  | "Not Found"
+  | "Pending"
+  | "Unable to Verify";
+
+export interface FbrThreeIndicators {
+  salesTaxRegType: {
+    status: SalesTaxRegTypeStatus;
+    strn?: string;
+    category?: string;
+    details?: string;
+  };
+  salesTaxAtl: {
+    status: SalesTaxAtlStatus;
+    details?: string;
+  };
+  incomeTaxAtl: {
+    status: IncomeTaxAtlStatus;
+    isFiler: boolean;
+    details?: string;
+  };
+}
+
 export interface TaxpayerVerificationRecord {
   id: string;
   companyId: string;
@@ -97,6 +139,7 @@ export interface TaxpayerVerificationRecord {
   validFormat: boolean;
   status: TaxpayerAtlStatus;
   isFiler: boolean;
+  indicators?: FbrThreeIndicators;
   source: TaxpayerVerificationSource;
   verifiedAt: string;
   verifiedBy?: string;

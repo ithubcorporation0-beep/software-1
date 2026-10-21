@@ -7,6 +7,10 @@ import {
   TaxpayerVerificationRecord,
   TaxpayerVerificationSource,
   TaxpayerAtlStatus,
+  FbrThreeIndicators,
+  SalesTaxRegTypeStatus,
+  SalesTaxAtlStatus,
+  IncomeTaxAtlStatus,
 } from "./fbr-types";
 
 export interface FbrTaxpayerVerificationResult {
@@ -18,6 +22,7 @@ export interface FbrTaxpayerVerificationResult {
   maskedId: string;
   isFiler: boolean;
   atlStatus: TaxpayerAtlStatus;
+  indicators: FbrThreeIndicators;
   verificationSource: TaxpayerVerificationSource;
   fbrGatewayConfigured: boolean;
   verifiedOnline: boolean;
@@ -38,6 +43,8 @@ export interface FbrTaxpayerVerificationResult {
     smsInstruction: string;
     portalUrl: string;
     irisUrl: string;
+    incomeTaxAtlUrl: string;
+    salesTaxAtlUrl: string;
   };
 }
 
@@ -63,10 +70,12 @@ export async function verifyFbrTaxpayer(
   const officialVerification = {
     smsInstruction:
       validation.type === "CNIC"
-        ? `Send SMS: "ATL ${validation.cleaned}" to 9966`
-        : `Send SMS: "ATL ${validation.cleaned.slice(0, 7)}" to 9966`,
+        ? `Income Tax: SMS "ATL ${validation.cleaned}" to 9966 | Sales Tax: SMS "ST ${validation.cleaned}" to 9966`
+        : `Income Tax: SMS "ATL ${validation.cleaned.slice(0, 7)}" to 9966 | Sales Tax: SMS "ST ${validation.cleaned.slice(0, 7)}" to 9966`,
     portalUrl: "https://e.fbr.gov.pk/esbn/Service.aspx?PID=TaxpayerVerification",
     irisUrl: "https://iris.fbr.gov.pk/",
+    incomeTaxAtlUrl: "https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169",
+    salesTaxAtlUrl: "https://www.fbr.gov.pk/atl-sales-tax/163223",
   };
 
   const isRetailer = customerType === "Retailer";
@@ -76,6 +85,22 @@ export async function verifyFbrTaxpayer(
 
   // 1. If format is invalid, immediately reject
   if (!validation.isValid) {
+    const errorIndicators: FbrThreeIndicators = {
+      salesTaxRegType: {
+        status: "Unable to Verify",
+        details: validation.errorMessage || "Invalid identifier syntax",
+      },
+      salesTaxAtl: {
+        status: "Unable to Verify",
+        details: validation.errorMessage || "Invalid identifier syntax",
+      },
+      incomeTaxAtl: {
+        status: "Unable to Verify",
+        isFiler: false,
+        details: validation.errorMessage || "Invalid identifier syntax",
+      },
+    };
+
     const errorResult: FbrTaxpayerVerificationResult = {
       success: false,
       validFormat: false,
@@ -85,6 +110,7 @@ export async function verifyFbrTaxpayer(
       maskedId,
       isFiler: false,
       atlStatus: "Format Error",
+      indicators: errorIndicators,
       verificationSource: "FORMAT_VALIDATED_ONLY",
       fbrGatewayConfigured: Boolean(process.env.FBR_CLIENT_ID && process.env.FBR_CLIENT_SECRET),
       verifiedOnline: false,
@@ -108,6 +134,7 @@ export async function verifyFbrTaxpayer(
         validFormat: false,
         status: "Format Error",
         isFiler: false,
+        indicators: errorIndicators,
         source: "FORMAT_VALIDATED_ONLY",
         verifiedAt: now,
         verifiedBy,
@@ -153,6 +180,46 @@ export async function verifyFbrTaxpayer(
           data.status === "ACTIVE" ||
           data.is_active_taxpayer === true;
 
+        const isSalesRegistered = Boolean(
+          data.strn || data.sales_tax_registration_type || data.is_sales_tax_registered
+        );
+
+        const salesTaxRegStatus: SalesTaxRegTypeStatus =
+          data.sales_tax_registration_type || (isSalesRegistered ? "Registered" : "Unregistered");
+
+        const salesTaxAtlStatus: SalesTaxAtlStatus =
+          data.sales_tax_atl === "Active" || data.sales_tax_active === true
+            ? "Verified Active"
+            : data.sales_tax_atl === "Inactive" || data.sales_tax_active === false
+            ? "Verified Inactive"
+            : isSalesRegistered
+            ? "Verified Active"
+            : "Not Registered";
+
+        const incomeTaxAtlStatus: IncomeTaxAtlStatus = isFiler
+          ? "Verified Active"
+          : "Verified Inactive";
+
+        const indicators: FbrThreeIndicators = {
+          salesTaxRegType: {
+            status: salesTaxRegStatus,
+            strn: data.strn || undefined,
+            category: data.category || undefined,
+            details: isSalesRegistered
+              ? `Registered Sales Tax Entity (STRN: ${data.strn || "On File"})`
+              : "No Sales Tax Registration found on FBR database",
+          },
+          salesTaxAtl: {
+            status: salesTaxAtlStatus,
+            details: `Sales Tax Active Taxpayer Status: ${salesTaxAtlStatus}`,
+          },
+          incomeTaxAtl: {
+            status: incomeTaxAtlStatus,
+            isFiler,
+            details: `Income Tax Active Taxpayer Status: ${incomeTaxAtlStatus}`,
+          },
+        };
+
         const result: FbrTaxpayerVerificationResult = {
           success: true,
           validFormat: true,
@@ -162,6 +229,7 @@ export async function verifyFbrTaxpayer(
           maskedId,
           isFiler,
           atlStatus: isFiler ? "Active" : "Inactive",
+          indicators,
           verificationSource: "AUTOMATED_GATEWAY",
           fbrGatewayConfigured: true,
           verifiedOnline: true,
@@ -190,6 +258,7 @@ export async function verifyFbrTaxpayer(
             validFormat: true,
             status: isFiler ? "Active" : "Inactive",
             isFiler,
+            indicators,
             source: "AUTOMATED_GATEWAY",
             verifiedAt: now,
             verifiedBy: verifiedBy || "Automated Gateway",
@@ -201,6 +270,22 @@ export async function verifyFbrTaxpayer(
         return result;
       } else {
         // HTTP error from FBR API - Never assume Active or Inactive!
+        const apiErrorIndicators: FbrThreeIndicators = {
+          salesTaxRegType: {
+            status: "Unable to Verify",
+            details: `FBR Gateway returned HTTP ${fbrRes.status}. Taxpayer status is UNCONFIRMED.`,
+          },
+          salesTaxAtl: {
+            status: "Unable to Verify",
+            details: "Automated verification service error. Status not assumed.",
+          },
+          incomeTaxAtl: {
+            status: "Unable to Verify",
+            isFiler: false,
+            details: "Automated verification service error. Status not assumed.",
+          },
+        };
+
         const apiErrorResult: FbrTaxpayerVerificationResult = {
           success: false,
           validFormat: true,
@@ -210,6 +295,7 @@ export async function verifyFbrTaxpayer(
           maskedId,
           isFiler: false,
           atlStatus: "API Connection Error",
+          indicators: apiErrorIndicators,
           verificationSource: "AUTOMATED_GATEWAY",
           fbrGatewayConfigured: true,
           verifiedOnline: false,
@@ -233,6 +319,7 @@ export async function verifyFbrTaxpayer(
             validFormat: true,
             status: "API Connection Error",
             isFiler: false,
+            indicators: apiErrorIndicators,
             source: "AUTOMATED_GATEWAY",
             verifiedAt: now,
             verifiedBy,
@@ -245,6 +332,22 @@ export async function verifyFbrTaxpayer(
     } catch (err: any) {
       // Network/Timeout exception - Never mark Active or Inactive!
       const errorMsg = err?.message || "Connection timeout";
+      const networkErrorIndicators: FbrThreeIndicators = {
+        salesTaxRegType: {
+          status: "Unable to Verify",
+          details: `Connection error: ${errorMsg}`,
+        },
+        salesTaxAtl: {
+          status: "Unable to Verify",
+          details: "Network failure. Status not assumed. Please verify manually.",
+        },
+        incomeTaxAtl: {
+          status: "Unable to Verify",
+          isFiler: false,
+          details: "Network failure. Status not assumed. Please verify manually.",
+        },
+      };
+
       const apiErrorResult: FbrTaxpayerVerificationResult = {
         success: false,
         validFormat: true,
@@ -254,6 +357,7 @@ export async function verifyFbrTaxpayer(
         maskedId,
         isFiler: false,
         atlStatus: "API Connection Error",
+        indicators: networkErrorIndicators,
         verificationSource: "AUTOMATED_GATEWAY",
         fbrGatewayConfigured: true,
         verifiedOnline: false,
@@ -277,6 +381,7 @@ export async function verifyFbrTaxpayer(
           validFormat: true,
           status: "API Connection Error",
           isFiler: false,
+          indicators: networkErrorIndicators,
           source: "AUTOMATED_GATEWAY",
           verifiedAt: now,
           verifiedBy,
@@ -289,7 +394,23 @@ export async function verifyFbrTaxpayer(
   }
 
   // 3. Format is valid, but Live Automated Gateway is not configured.
-  // Explicitly state format is confirmed, but ATL status is UNVERIFIED.
+  // Explicitly state format is confirmed, but ATL status is UNVERIFIED / PENDING.
+  const pendingIndicators: FbrThreeIndicators = {
+    salesTaxRegType: {
+      status: "Pending",
+      details: "Syntax valid; pending inquiry via official FBR portal or SMS 9966",
+    },
+    salesTaxAtl: {
+      status: "Pending",
+      details: "Pending official inquiry via FBR Sales Tax ATL portal or SMS 9966",
+    },
+    incomeTaxAtl: {
+      status: "Pending",
+      isFiler: false,
+      details: "Pending official inquiry via FBR Income Tax ATL portal or SMS 9966",
+    },
+  };
+
   const unverifiedResult: FbrTaxpayerVerificationResult = {
     success: true,
     validFormat: true,
@@ -299,6 +420,7 @@ export async function verifyFbrTaxpayer(
     maskedId,
     isFiler: false,
     atlStatus: "Format Validated (ATL Unverified)",
+    indicators: pendingIndicators,
     verificationSource: "FORMAT_VALIDATED_ONLY",
     fbrGatewayConfigured: false,
     verifiedOnline: false,
@@ -326,6 +448,7 @@ export async function verifyFbrTaxpayer(
       validFormat: true,
       status: "Format Validated (ATL Unverified)",
       isFiler: false,
+      indicators: pendingIndicators,
       source: "FORMAT_VALIDATED_ONLY",
       verifiedAt: now,
       verifiedBy,
@@ -345,7 +468,10 @@ export async function recordManualTaxpayerVerification(
   params: {
     taxNumber: string;
     source: "MANUAL_PORTAL" | "MANUAL_SMS";
-    status: "Active" | "Inactive";
+    status?: "Active" | "Inactive";
+    salesTaxRegType?: SalesTaxRegTypeStatus;
+    salesTaxAtl?: SalesTaxAtlStatus;
+    incomeTaxAtl?: IncomeTaxAtlStatus;
     referenceNumber?: string;
     notes?: string;
     operatorName?: string;
@@ -362,7 +488,32 @@ export async function recordManualTaxpayerVerification(
 
   const maskedIdentifier = maskTaxIdentifier(validation.cleaned, validation.type);
   const now = new Date().toISOString();
-  const isFiler = params.status === "Active";
+  const isFiler = params.incomeTaxAtl ? params.incomeTaxAtl === "Verified Active" : params.status === "Active";
+
+  const resolvedSalesReg: SalesTaxRegTypeStatus =
+    params.salesTaxRegType || (isFiler ? "Registered" : "Unregistered");
+  const resolvedSalesAtl: SalesTaxAtlStatus =
+    params.salesTaxAtl || (isFiler ? "Verified Active" : "Verified Inactive");
+  const resolvedIncomeAtl: IncomeTaxAtlStatus =
+    params.incomeTaxAtl || (isFiler ? "Verified Active" : "Verified Inactive");
+
+  const indicators: FbrThreeIndicators = {
+    salesTaxRegType: {
+      status: resolvedSalesReg,
+      details: "Recorded via manual verification check",
+    },
+    salesTaxAtl: {
+      status: resolvedSalesAtl,
+      details: "Recorded via manual verification check",
+    },
+    incomeTaxAtl: {
+      status: resolvedIncomeAtl,
+      isFiler,
+      details: "Recorded via manual verification check",
+    },
+  };
+
+  const status: TaxpayerAtlStatus = isFiler ? "Active" : "Inactive";
 
   const record: TaxpayerVerificationRecord = {
     id: `ver-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -372,8 +523,9 @@ export async function recordManualTaxpayerVerification(
     formattedIdentifier: validation.formatted,
     maskedIdentifier,
     validFormat: true,
-    status: params.status,
+    status,
     isFiler,
+    indicators,
     source: params.source,
     verifiedAt: now,
     verifiedBy: params.operatorName || "Authorized Operator",
@@ -398,7 +550,8 @@ export async function recordManualTaxpayerVerification(
       idType: validation.type,
       maskedIdentifier,
       source: params.source,
-      status: params.status,
+      status,
+      indicators,
       referenceNumber: params.referenceNumber || null,
       operator: params.operatorName || "Authorized Operator",
     },
@@ -447,6 +600,7 @@ export async function recordTaxpayerVerification(
     validFormat: Boolean(record.validFormat),
     status: record.status || "Format Validated (ATL Unverified)",
     isFiler: Boolean(record.isFiler),
+    indicators: record.indicators,
     source: record.source || "FORMAT_VALIDATED_ONLY",
     verifiedAt: record.verifiedAt || new Date().toISOString(),
     verifiedBy: record.verifiedBy,

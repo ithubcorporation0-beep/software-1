@@ -298,7 +298,12 @@ import {
   getTaxpayerVerificationHistory,
   FbrTaxpayerVerificationResult,
 } from "@/lib/fbr-taxpayer-service";
-import { TaxpayerVerificationRecord } from "@/lib/fbr-types";
+import {
+  TaxpayerVerificationRecord,
+  SalesTaxRegTypeStatus,
+  SalesTaxAtlStatus,
+  IncomeTaxAtlStatus,
+} from "@/lib/fbr-types";
 import { getCurrentUser } from "@/lib/auth/server";
 
 /**
@@ -327,14 +332,17 @@ export async function verifyTaxpayerAction(
 }
 
 /**
- * Server Action for recording an authorized manual verification entry.
+ * Server Action for recording an authorized manual verification entry with three indicators.
  */
 export async function recordManualTaxpayerVerificationAction(
   companyId: string,
   payload: {
     taxNumber: string;
     source: "MANUAL_PORTAL" | "MANUAL_SMS";
-    status: "Active" | "Inactive";
+    status?: "Active" | "Inactive";
+    salesTaxRegType?: SalesTaxRegTypeStatus;
+    salesTaxAtl?: SalesTaxAtlStatus;
+    incomeTaxAtl?: IncomeTaxAtlStatus;
     referenceNumber?: string;
     notes?: string;
   }
@@ -353,7 +361,7 @@ export async function recordManualTaxpayerVerificationAction(
     revalidatePath("/settings");
     return {
       success: true,
-      message: `Manual verification successfully recorded as ${payload.status} (${payload.source}).`,
+      message: `Manual verification successfully recorded via ${payload.source}.`,
       data: res.data,
     };
   } catch (err: any) {

@@ -75,35 +75,65 @@ flowchart TD
 
 ---
 
-## 4. Official Manual Verification Fallbacks
+## 4. The Three FBR Verification Indicators (UNAZ Design)
+
+In strict accordance with Pakistan tax law and matching the UNAZ specification, taxpayer verification tracks **three distinct statutory dimensions**:
+
+1. **Sales Tax Reg Type**
+   - **Statuses**: `Registered`, `Unregistered`, `Exempt`, `Zero Rated`, `Wholesaler / Retailer`, `Pending`, `Unable to Verify`
+   - **Significance**: Indicates whether the entity is registered for Federal Sales Tax under the Sales Tax Act, 1990, holds an active STRN, or is exempt.
+
+2. **Sales Tax ATL**
+   - **Statuses**: `Verified Active`, `Verified Inactive`, `Exempt`, `Pending`, `Unable to Verify`
+   - **Significance**: Confirms whether the entity has filed current sales tax returns (Annexure C/I) and is in good standing on the Sales Tax Active Taxpayer List.
+   - **Official Info**: [FBR Sales Tax ATL Information](https://www.fbr.gov.pk/atl-sales-tax/163223)
+
+3. **Income Tax ATL**
+   - **Statuses**: `Verified Active`, `Verified Inactive`, `Pending`, `Unable to Verify`
+   - **Significance**: Determines withholding tax liability under Sections 236H (Retailer: 0.5% vs 1.0%) and 236G (Wholesaler: 0.1% vs 0.2%).
+   - **Official Info**: [FBR Income Tax ATL Information](https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169)
+
+---
+
+## 5. Official Verification Portals & Methods
 
 Because FBR does not offer an open, unauthenticated public REST API without licensed PRAL credentials, the ERP provides direct access to official verification methods:
 
-### 1. Official FBR SMS Service (Instant Verification)
-- **For Individuals (CNIC)**:
+### 1. Official FBR Verification Portals
+- **IRIS 2.0 Registration & Verification Portal**:
+  [https://iris.fbr.gov.pk/](https://iris.fbr.gov.pk/)
+- **FBR Income Tax ATL Directory**:
+  [https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169](https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169)
+- **FBR Sales Tax ATL Directory**:
+  [https://www.fbr.gov.pk/atl-sales-tax/163223](https://www.fbr.gov.pk/atl-sales-tax/163223)
+- **e-FBR Online Verification**:
+  [https://e.fbr.gov.pk/](https://e.fbr.gov.pk/)
+
+### 2. Official FBR SMS Service (Instant Verification)
+- **Income Tax ATL (CNIC)**:
   ```
   Send SMS: ATL <13-digit-CNIC> to 9966
   Example: ATL 1610154195663
   ```
-- **For Companies (NTN)**:
+- **Income Tax ATL (NTN)**:
   ```
   Send SMS: ATL <7-digit-NTN> to 9966
   Example: ATL 1234567
   ```
+- **Sales Tax Status (STRN/NTN)**:
+  ```
+  Send SMS: ST <STRN/NTN> to 9966
+  Example: ST 1234567
+  ```
 - The FBR cellular gateway replies within 10–30 seconds with the active filer status and taxpayer name.
-
-### 2. Official FBR Online Verification Portal
-- Clickable link provided directly in the ERP modal:
-  [https://e.fbr.gov.pk/](https://e.fbr.gov.pk/)
-- Navigates to the public Active Taxpayer List (Income Tax) search portal.
 
 ---
 
-## 5. UI States in Customer Registration Modal
+## 6. UI States in Customer Registration Modal & Verification Console
 
 | Scenario | UI Indicator | Action Required |
 | :--- | :--- | :--- |
-| **Invalid Format** (e.g. `161015419561411`) | 🔴 **Red Banner**: Error explaining 15 digits entered instead of 13 | Correct the CNIC/NTN number |
-| **Live FBR Verified Active** | 🟢 **Emerald Banner**: Official FBR record confirmed | Auto-sets `salesTaxAtl: "Active"` (0.5% rate) |
-| **Live FBR Non-Filer** | 🟡 **Amber Banner**: Taxpayer listed as Inactive | Auto-sets `salesTaxAtl: "In-Active"` (1.0% penalty) |
-| **Valid Format (Pending Gateway)** | 🔵 **Blue Banner**: Province & gender confirmed, official SMS/Portal links shown | User clicks **"✓ Set Active"** or **"✕ Set Non-Filer"** |
+| **Invalid Format** (e.g. `161015419561411`) | 🔴 **Red Banner**: Error explaining 15 digits entered instead of 13. Indicators marked `Unable to Verify`. | Correct the CNIC/NTN number |
+| **Live FBR Verified Active** | 🟢 **Emerald Banner**: Official FBR record confirmed. All 3 indicators marked `Registered` / `Active`. | Auto-sets dropdowns (0.5% rate) |
+| **Live FBR Non-Filer** | 🟡 **Amber Banner**: Taxpayer listed as Inactive. Indicators marked `Inactive`. | Auto-sets dropdowns (1.0% penalty) |
+| **Valid Format (Pending Gateway)** | 🔵 **Blue Banner**: Format confirmed, 3 indicators marked `Pending`. Direct links to IRIS, Income Tax ATL, and Sales Tax ATL provided. | User clicks **"✓ Set Active"** or **"✕ Set Non-Filer"** |
