@@ -22,7 +22,8 @@ export async function POST(request: Request) {
     const verification = await verifyFbrTaxpayer(
       taxNumber.trim(),
       customerType || "Retailer",
-      companyId
+      companyId,
+      user.email
     );
 
     return NextResponse.json({

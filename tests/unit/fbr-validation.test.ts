@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateCnic, validateNtn, validateTaxId, calculateNtnCheckDigit } from "@/lib/fbr-validation";
+import { validateCnic, validateNtn, validateTaxId, calculateNtnCheckDigit, maskTaxIdentifier } from "@/lib/fbr-validation";
 import { verifyFbrTaxpayer } from "@/lib/fbr-taxpayer-service";
 
 describe("Pakistani Tax Identifier & FBR Validation Suite", () => {
@@ -66,7 +66,7 @@ describe("Pakistani Tax Identifier & FBR Validation Suite", () => {
       const res = await verifyFbrTaxpayer("161015419561411", "Retailer");
       expect(res.success).toBe(false);
       expect(res.validFormat).toBe(false);
-      expect(res.atlStatus).toBe("Unregistered");
+      expect(res.atlStatus).toBe("Format Error");
       expect(res.message).toContain("15 digits");
     });
 
@@ -75,9 +75,31 @@ describe("Pakistani Tax Identifier & FBR Validation Suite", () => {
       expect(res.validFormat).toBe(true);
       expect(res.idType).toBe("CNIC");
       expect(res.formattedId).toBe("16101-5419566-3");
+      expect(res.maskedId).toBe("16101-*******-3");
+      expect(res.atlStatus).toBe("Format Validated (ATL Unverified)");
+      expect(res.isFiler).toBe(false);
+      expect(res.verificationSource).toBe("FORMAT_VALIDATED_ONLY");
       expect(res.officialVerification.smsInstruction).toContain("9966");
       expect(res.taxSection).toBe("Section 236H");
       expect(res.activeRate).toContain("0.5%");
     });
+
+    it("masks national identifiers accurately in maskTaxIdentifier", () => {
+      expect(maskTaxIdentifier("1610154195663", "CNIC")).toBe("16101-*******-3");
+      expect(maskTaxIdentifier("16101-5419566-3", "CNIC")).toBe("16101-*******-3");
+      expect(maskTaxIdentifier("1234567-8", "NTN")).toBe("1234***-8");
+      expect(maskTaxIdentifier("12345678", "NTN")).toBe("1234***-8");
+    });
+
+    it("never claims a taxpayer is Active solely because the identifier format is valid", async () => {
+      const res = await verifyFbrTaxpayer("1234567-9", "WS / Distributor");
+      expect(res.validFormat).toBe(true);
+      // Crucial test: Format valid does NOT mean active filer
+      expect(res.isFiler).toBe(false);
+      expect(res.atlStatus).toBe("Format Validated (ATL Unverified)");
+      expect(res.message).toContain("Valid NTN format confirmed");
+      expect(res.detail).toContain("NOT proof of Active Filer status");
+    });
   });
 });
+

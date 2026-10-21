@@ -197,3 +197,28 @@ export function validateTaxId(input: string): TaxIdValidationResult {
     errorMessage: `Invalid Tax ID format: Entered ${cleaned.length} digits (${raw}). A Pakistani CNIC must be 13 digits (XXXXX-XXXXXXX-X) and an NTN must be 7 or 8 digits (XXXXXXX-X).`,
   };
 }
+
+/**
+ * Masks a CNIC, NTN, or raw tax identifier for safe logging, display, and audit records.
+ * Example CNIC: "16101-5419566-3" -> "16101-*******-3"
+ * Example NTN:  "1234567-8" -> "1234***-8"
+ */
+export function maskTaxIdentifier(input: string, type?: string): string {
+  if (!input) return "";
+  const cleaned = input.replace(/[\s-]/g, "");
+  if (cleaned.length === 13 || type === "CNIC") {
+    if (cleaned.length >= 13) {
+      return `${cleaned.slice(0, 5)}-*******-${cleaned.slice(12, 13)}`;
+    }
+  }
+  if (cleaned.length === 8 || cleaned.length === 7 || type === "NTN") {
+    if (cleaned.length >= 7) {
+      return `${cleaned.slice(0, 4)}***-${cleaned.slice(-1)}`;
+    }
+  }
+  if (cleaned.length > 4) {
+    return `${cleaned.slice(0, 2)}${"*".repeat(Math.max(3, cleaned.length - 4))}${cleaned.slice(-2)}`;
+  }
+  return "***";
+}
+

@@ -73,3 +73,45 @@ export const DEFAULT_FBR_OVERVIEW: FbrIntegrationOverview = {
   credentialsStatus: DEFAULT_FBR_CREDENTIALS_STATUS,
   effectiveStatus: "Not Configured",
 };
+
+export type TaxpayerVerificationSource =
+  | "AUTOMATED_GATEWAY"
+  | "MANUAL_PORTAL"
+  | "MANUAL_SMS"
+  | "FORMAT_VALIDATED_ONLY";
+
+export type TaxpayerAtlStatus =
+  | "Active"
+  | "Inactive"
+  | "Format Validated (ATL Unverified)"
+  | "Format Error"
+  | "API Connection Error";
+
+export interface TaxpayerVerificationRecord {
+  id: string;
+  companyId: string;
+  idType: "CNIC" | "NTN" | "STRN" | "UNKNOWN";
+  rawIdentifier: string;
+  formattedIdentifier: string;
+  maskedIdentifier: string;
+  validFormat: boolean;
+  status: TaxpayerAtlStatus;
+  isFiler: boolean;
+  source: TaxpayerVerificationSource;
+  verifiedAt: string;
+  verifiedBy?: string;
+  referenceNumber?: string;
+  notes?: string;
+  taxpayerName?: string;
+  province?: string;
+  gender?: "Male" | "Female";
+  taxSection?: string;
+  activeRate?: string;
+  nonFilerRate?: string;
+  officialLinks?: {
+    portalUrl: string;
+    irisUrl: string;
+    smsInstruction: string;
+  };
+}
+

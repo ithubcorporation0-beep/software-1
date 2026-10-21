@@ -229,18 +229,27 @@ export function CreateCustomerModal({
         }
       }
 
-      if (data.validFormat && data.isFiler) {
-        setFormData((prev) => ({
-          ...prev,
-          salesTaxAtl: "Active",
-          incomeTaxAtl: "Active",
-          salesTaxRegType: prev.salesTaxRegType || "Registered",
-        }));
+      if (data.validFormat && data.verificationSource === "AUTOMATED_GATEWAY") {
+        if (data.isFiler) {
+          setFormData((prev) => ({
+            ...prev,
+            salesTaxAtl: "Active",
+            incomeTaxAtl: "Active",
+            salesTaxRegType: prev.salesTaxRegType || "Registered",
+          }));
+        } else {
+          setFormData((prev) => ({
+            ...prev,
+            salesTaxAtl: "In-Active",
+            incomeTaxAtl: "In-Active",
+            salesTaxRegType: prev.salesTaxRegType || "Unregistered",
+          }));
+        }
       } else if (!data.validFormat) {
         setFormData((prev) => ({
           ...prev,
-          salesTaxAtl: "In-Active",
-          incomeTaxAtl: "In-Active",
+          salesTaxAtl: "",
+          incomeTaxAtl: "",
           salesTaxRegType: "Unregistered",
         }));
       }

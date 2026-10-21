@@ -28,6 +28,7 @@ import {
   FbrIntegrationOverview,
 } from "@/lib/fbr-types";
 import { saveFbrSettingsAction, testFbrConnectionAction } from "@/app/(erp)/settings/actions";
+import { TaxpayerVerificationInterface } from "@/components/taxpayer/taxpayer-verification-interface";
 
 interface FbrSettingsTabProps {
   companyId: string;
@@ -545,7 +546,10 @@ export function FbrSettingsTab({ companyId, initialOverview }: FbrSettingsTabPro
         </CardContent>
       </Card>
 
-      {/* 6. Documentation & Official Integration Guides */}
+      {/* 6. Taxpayer Verification Console & History */}
+      <TaxpayerVerificationInterface companyId={companyId} />
+
+      {/* 7. Documentation & Official Integration Guides */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">

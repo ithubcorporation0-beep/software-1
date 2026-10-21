@@ -292,3 +292,97 @@ export async function testFbrConnectionAction(companyId: string): Promise<Action
   }
 }
 
+import {
+  verifyFbrTaxpayer,
+  recordManualTaxpayerVerification,
+  getTaxpayerVerificationHistory,
+  FbrTaxpayerVerificationResult,
+} from "@/lib/fbr-taxpayer-service";
+import { TaxpayerVerificationRecord } from "@/lib/fbr-types";
+import { getCurrentUser } from "@/lib/auth/server";
+
+/**
+ * Server Action for verifying a taxpayer (CNIC/NTN) via the FBR gateway or format check.
+ */
+export async function verifyTaxpayerAction(
+  companyId: string,
+  taxNumber: string,
+  customerType: string = "Retailer"
+): Promise<ActionState<FbrTaxpayerVerificationResult>> {
+  try {
+    const user = await getCurrentUser();
+    const res = await verifyFbrTaxpayer(taxNumber, customerType, companyId, user?.email);
+    revalidatePath("/settings");
+    return {
+      success: res.success,
+      message: res.message,
+      data: res,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Failed to verify taxpayer",
+    };
+  }
+}
+
+/**
+ * Server Action for recording an authorized manual verification entry.
+ */
+export async function recordManualTaxpayerVerificationAction(
+  companyId: string,
+  payload: {
+    taxNumber: string;
+    source: "MANUAL_PORTAL" | "MANUAL_SMS";
+    status: "Active" | "Inactive";
+    referenceNumber?: string;
+    notes?: string;
+  }
+): Promise<ActionState<TaxpayerVerificationRecord>> {
+  try {
+    const user = await getCurrentUser();
+    const res = await recordManualTaxpayerVerification(companyId, {
+      ...payload,
+      operatorName: user?.email || "Authorized Operator",
+    });
+
+    if (!res.success || !res.data) {
+      return { success: false, error: res.error || "Failed to record manual verification" };
+    }
+
+    revalidatePath("/settings");
+    return {
+      success: true,
+      message: `Manual verification successfully recorded as ${payload.status} (${payload.source}).`,
+      data: res.data,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Failed to record manual verification",
+    };
+  }
+}
+
+/**
+ * Server Action for fetching recent taxpayer verification history for a tenant.
+ */
+export async function getTaxpayerVerificationHistoryAction(
+  companyId: string
+): Promise<ActionState<TaxpayerVerificationRecord[]>> {
+  try {
+    const history = await getTaxpayerVerificationHistory(companyId);
+    return {
+      success: true,
+      data: history,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Failed to load verification history",
+      data: [],
+    };
+  }
+}
+
+
