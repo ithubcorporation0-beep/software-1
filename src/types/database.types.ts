@@ -399,7 +399,7 @@ export interface Invoice {
   fbr_uuid?: string | null;
   fbr_qr_code_data?: string | null;
   fbr_digital_signature?: string | null;
-  fbr_status?: "PENDING" | "VALIDATED" | "SUBMITTED" | "FAILED" | null;
+  fbr_status?: "PENDING" | "VALIDATED" | "SUBMITTED" | "ACCEPTED" | "REJECTED" | "UNKNOWN" | "CANCELLED" | "FAILED" | null;
   created_at: string;
   updated_at: string;
 }

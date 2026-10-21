@@ -26,7 +26,7 @@ describe("FBR Digital Invoicing Server Action & Service", () => {
     customer: {
       id: "cust-1",
       name: "Acme Industrial Traders",
-      tax_number: "7654321-0",
+      tax_number: "7654321-8",
       email: "billing@acme.pk",
       customer_type: "b2b",
     },
@@ -48,6 +48,8 @@ describe("FBR Digital Invoicing Server Action & Service", () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    process.env.FBR_CLIENT_ID = "mock_client_id_123";
+    process.env.FBR_CLIENT_SECRET = "mock_client_secret_456";
     process.env.FBR_VALIDATE_URL = "https://mock.fbr.gov.pk/invoices/validate";
     process.env.FBR_SUBMIT_URL = "https://mock.fbr.gov.pk/invoices/submit";
     process.env.FBR_SELLER_NTN = "1234567-8";
@@ -245,24 +247,153 @@ describe("FBR Digital Invoicing Server Action & Service", () => {
 
     // 1. Check overall success
     expect(result.success).toBe(true);
-    expect(result.message).toContain("successfully validated and submitted to FBR");
+    expect(result.message).toContain("successfully cleared by FBR");
     expect(result.data?.fbr_irn).toBe("IRN-20261020-99887766");
-    expect(result.data?.fbr_status).toBe("SUBMITTED");
+    expect(result.data?.fbr_status).toBe("ACCEPTED");
 
     // 2. Both Validate and Submit endpoints called in order
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(mockFetch.mock.calls[0][0]).toBe("https://mock.fbr.gov.pk/invoices/validate");
     expect(mockFetch.mock.calls[1][0]).toBe("https://mock.fbr.gov.pk/invoices/submit");
 
-    // 3. Database updated with required columns and fbr_status = 'SUBMITTED'
+    // 3. Database updated with required columns and fbr_status = 'ACCEPTED'
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         fbr_irn: "IRN-20261020-99887766",
         fbr_uuid: "uuid-9988-7766-5544",
         fbr_qr_code_data: "IRN-20261020-99887766||1234567-8||7654321-0||11800.00",
         fbr_digital_signature: "MEYCIQCc9A123456789DigitalSignatureString==",
-        fbr_status: "SUBMITTED",
+        fbr_status: "ACCEPTED",
       })
     );
+  });
+
+  it("blocks duplicate submission when invoice is already ACCEPTED with an official IRN", async () => {
+    const acceptedInvoice = {
+      ...mockInvoiceData,
+      fbr_status: "ACCEPTED",
+      fbr_irn: "IRN-EXISTING-12345",
+    };
+
+    const mockSupabase = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: acceptedInvoice,
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      }),
+    };
+
+    vi.spyOn(supabaseServer, "createClient").mockResolvedValue(mockSupabase as any);
+
+    const result = await submitInvoiceToFbrAction(mockCompanyId, mockInvoiceId);
+    expect(result.success).toBe(false);
+    expect(result.status).toBe("ACCEPTED");
+    expect(result.message).toContain("Duplicate Submission Blocked");
+    expect(result.message).toContain("IRN-EXISTING-12345");
+  });
+
+  it("blocks duplicate submission when invoice is in UNKNOWN state pending reconciliation", async () => {
+    const unknownInvoice = {
+      ...mockInvoiceData,
+      fbr_status: "UNKNOWN",
+    };
+
+    const mockSupabase = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: unknownInvoice,
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      }),
+    };
+
+    vi.spyOn(supabaseServer, "createClient").mockResolvedValue(mockSupabase as any);
+
+    const result = await submitInvoiceToFbrAction(mockCompanyId, mockInvoiceId);
+    expect(result.success).toBe(false);
+    expect(result.status).toBe("UNKNOWN");
+    expect(result.message).toContain("Uncertain Outcome Blocked");
+    expect(result.message).toContain("reconcile the invoice status first");
+  });
+
+  it("never marks an invoice Accepted merely because an HTTP request succeeded if IRN is missing", async () => {
+    vi.spyOn(fbrApi, "getFbrAccessToken").mockResolvedValue("mock_token_abc");
+
+    const mockUpdate = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    });
+
+    const mockSupabase = {
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === "invoices") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: mockInvoiceData,
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+            update: mockUpdate,
+          };
+        }
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+            }),
+          }),
+        };
+      }),
+    };
+
+    vi.spyOn(supabaseServer, "createClient").mockResolvedValue(mockSupabase as any);
+
+    const mockFetch = vi.fn().mockImplementation(async (url: string) => {
+      if (url === "https://mock.fbr.gov.pk/invoices/validate") {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ status: "SUCCESS", valid: true }),
+        };
+      }
+      if (url === "https://mock.fbr.gov.pk/invoices/submit") {
+        // HTTP 200 OK, but NO IRN returned
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            status: "SUCCESS",
+            message: "Received request without IRN clearance",
+          }),
+        };
+      }
+      throw new Error(`Unexpected endpoint ${url}`);
+    });
+
+    vi.stubGlobal("fetch", mockFetch);
+
+    const result = await submitInvoiceToFbrAction(mockCompanyId, mockInvoiceId);
+    expect(result.success).toBe(false);
+    expect(result.status).toBe("REJECTED");
+    expect(result.errors?.[0]).toContain("failed to provide an official IRN clearance reference");
   });
 });

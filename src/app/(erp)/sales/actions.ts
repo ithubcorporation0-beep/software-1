@@ -203,9 +203,59 @@ export async function voidPaymentAction(
   }
 }
 
-import { submitInvoiceToFbrAction as submitFbr } from "@/lib/fbr-actions";
+import {
+  submitInvoiceToFbrService,
+  getInvoiceFbrPreview,
+  reconcileInvoiceFbrStatusService,
+  createCreditNoteForFbrService,
+  createDebitNoteForFbrService,
+  cancelFbrInvoiceService,
+  getInvoiceFbrSubmissionHistory,
+} from "@/lib/fbr-service";
 
 export async function submitInvoiceToFbrAction(companyId: string, invoiceId: string) {
-  return await submitFbr(companyId, invoiceId);
+  return await submitInvoiceToFbrService(companyId, invoiceId);
 }
+
+export async function getInvoiceFbrPreviewAction(companyId: string, invoiceId: string) {
+  return await getInvoiceFbrPreview(companyId, invoiceId);
+}
+
+export async function reconcileInvoiceFbrStatusAction(companyId: string, invoiceId: string) {
+  return await reconcileInvoiceFbrStatusService(companyId, invoiceId);
+}
+
+export async function createCreditNoteForFbrAction(
+  companyId: string,
+  invoiceId: string,
+  reason: string,
+  creditAmount?: number
+) {
+  return await createCreditNoteForFbrService(companyId, invoiceId, { reason, creditAmount });
+}
+
+export async function createDebitNoteForFbrAction(
+  companyId: string,
+  invoiceId: string,
+  reason: string,
+  debitAmount: number
+) {
+  return await createDebitNoteForFbrService(companyId, invoiceId, { reason, debitAmount });
+}
+
+export async function cancelFbrInvoiceAction(
+  companyId: string,
+  invoiceId: string,
+  reason: string
+) {
+  return await cancelFbrInvoiceService(companyId, invoiceId, reason);
+}
+
+export async function getInvoiceFbrSubmissionHistoryAction(
+  companyId: string,
+  invoiceId: string
+) {
+  return await getInvoiceFbrSubmissionHistory(companyId, invoiceId);
+}
+
 

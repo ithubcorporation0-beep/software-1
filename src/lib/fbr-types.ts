@@ -115,3 +115,88 @@ export interface TaxpayerVerificationRecord {
   };
 }
 
+// ============================================================================
+// DIGITAL INVOICING (DI v1.12) SPECIFICATIONS & SUBMISSION LIFECYCLE
+// ============================================================================
+
+export type FbrInvoiceOutcomeStatus =
+  | "ACCEPTED"
+  | "REJECTED"
+  | "PENDING"
+  | "UNKNOWN"
+  | "CANCELLED"
+  | "NOT_SUBMITTED";
+
+export interface FbrValidationRuleCheck {
+  ruleId: string;
+  field: string;
+  title: string;
+  passed: boolean;
+  message: string;
+}
+
+export interface FbrInvoiceItemPayload {
+  item_code: string;
+  description: string;
+  hs_code: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  tax_amount: number;
+  total_amount: number;
+  discount?: number;
+}
+
+export interface FbrInvoicePayload {
+  seller_ntn: string;
+  seller_strn?: string;
+  pos_id?: string;
+  buyer_ntn: string;
+  buyer_cnic?: string;
+  buyer_name: string;
+  buyer_type?: string;
+  invoice_date: string;
+  invoice_number: string;
+  invoice_type: "Sale Invoice" | "Credit Note" | "Debit Note";
+  original_irn?: string;
+  reason?: string;
+  total_bill_amount: number;
+  total_sales_tax: number;
+  total_net_amount: number;
+  items: FbrInvoiceItemPayload[];
+}
+
+export interface FbrInvoicePreview {
+  invoiceId: string;
+  invoiceNumber: string;
+  issueDate: string;
+  payload: FbrInvoicePayload;
+  validationChecks: FbrValidationRuleCheck[];
+  isValid: boolean;
+  canSubmit: boolean;
+  environment: "sandbox" | "production";
+  integratorName: string;
+  isCredentialsConfigured: boolean;
+  isAlreadySubmitted: boolean;
+  existingIrn?: string | null;
+  existingStatus?: FbrInvoiceOutcomeStatus;
+  reconciliationRequired: boolean;
+}
+
+export interface FbrInvoiceSubmissionLog {
+  id: string;
+  invoiceId: string;
+  companyId: string;
+  environment: "sandbox" | "production";
+  attemptedAt: string;
+  status: FbrInvoiceOutcomeStatus;
+  httpStatus?: number;
+  fbrIrn?: string | null;
+  fbrUuid?: string | null;
+  fbrQrCodeData?: string | null;
+  fbrDigitalSignature?: string | null;
+  sanitizedErrors?: string[];
+  reconciliationNotes?: string;
+}
+
+

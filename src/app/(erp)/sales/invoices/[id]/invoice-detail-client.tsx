@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import type { Invoice, Payment, Customer } from "@/types/database.types";
 import { recordPaymentAction, voidPaymentAction } from "../../actions";
+import { FbrDigitalInvoicingPanel } from "@/components/sales/fbr-digital-invoicing-panel";
 
 interface InvoiceDetailClientProps {
   companyId: string;
@@ -228,6 +229,21 @@ export function InvoiceDetailClient({
           </button>
         </div>
       )}
+
+      {/* FBR Digital Invoicing Management Console */}
+      <div className="max-w-4xl mx-auto print:hidden">
+        <FbrDigitalInvoicingPanel
+          companyId={companyId}
+          invoice={invState}
+          onStatusUpdated={(newStatus, irn) =>
+            setInvState((prev) => ({
+              ...prev,
+              fbr_status: newStatus as any,
+              fbr_irn: irn || prev.fbr_irn,
+            }))
+          }
+        />
+      </div>
 
       {/* Printable Invoice Card */}
       <div className="bg-white text-neutral-900 rounded-xl p-8 shadow-xl max-w-4xl mx-auto border border-neutral-200 print:border-none print:shadow-none print:p-0 print:m-0 print:max-w-none">
