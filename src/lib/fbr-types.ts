@@ -98,6 +98,7 @@ export type SalesTaxRegTypeStatus =
 export type SalesTaxAtlStatus =
   | "Verified Active"
   | "Verified Inactive"
+  | "Exempt"
   | "Not Registered"
   | "Not Found"
   | "Pending"

@@ -12,6 +12,7 @@ import {
   SalesTaxAtlStatus,
   IncomeTaxAtlStatus,
 } from "./fbr-types";
+export * from "./fbr-provider-adapter";
 
 export interface FbrTaxpayerVerificationResult {
   success: boolean;
