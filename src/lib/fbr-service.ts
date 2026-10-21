@@ -994,7 +994,8 @@ export async function reconcileInvoiceFbrStatusService(
 
     if (res.ok) {
       const data = await res.json();
-      if (data.status === "SUCCESS" && (data.fbr_irn || data.irn)) {
+      const isCleared = (data.status === "SUCCESS" || data.status === "ACCEPTED" || data.found) && (data.fbr_irn || data.irn);
+      if (isCleared) {
         const fbrIrn = data.fbr_irn || data.irn;
         const fbrUuid = data.fbr_uuid || data.uuid || crypto.randomUUID();
         const fbrQrCodeData =
