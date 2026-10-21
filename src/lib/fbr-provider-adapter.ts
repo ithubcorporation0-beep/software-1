@@ -185,9 +185,19 @@ export class FbrTaxpayerProviderAdapter {
         }
 
         const data = await res.json();
-        const isRegistered = Boolean(
-          data.strn || data.sales_tax_registration_type || data.is_sales_tax_registered
-        );
+        const isExplicitlyUnregistered =
+          data.sales_tax_registration_type === "Unregistered" ||
+          data.sales_tax_registration_type === "Not Registered" ||
+          data.is_sales_tax_registered === false;
+
+        const isRegistered =
+          !isExplicitlyUnregistered &&
+          Boolean(
+            data.strn ||
+              data.is_sales_tax_registered ||
+              (data.sales_tax_registration_type && data.sales_tax_registration_type !== "Unregistered")
+          );
+
         const status: SalesTaxRegTypeStatus =
           data.sales_tax_registration_type || (isRegistered ? "Registered" : "Unregistered");
 

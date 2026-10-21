@@ -304,7 +304,7 @@ import {
   SalesTaxAtlStatus,
   IncomeTaxAtlStatus,
 } from "@/lib/fbr-types";
-import { getCurrentUser } from "@/lib/auth/server";
+import { getCurrentUser, requireCompanyMembership } from "@/lib/auth/server";
 
 /**
  * Server Action for verifying a taxpayer (CNIC/NTN) via the FBR gateway or format check.
@@ -316,6 +316,7 @@ export async function verifyTaxpayerAction(
 ): Promise<ActionState<FbrTaxpayerVerificationResult>> {
   try {
     const user = await getCurrentUser();
+    await requireCompanyMembership(companyId, user || undefined);
     const res = await verifyFbrTaxpayer(taxNumber, customerType, companyId, user?.email);
     revalidatePath("/settings");
     return {
@@ -349,6 +350,7 @@ export async function recordManualTaxpayerVerificationAction(
 ): Promise<ActionState<TaxpayerVerificationRecord>> {
   try {
     const user = await getCurrentUser();
+    await requireCompanyMembership(companyId, user || undefined);
     const res = await recordManualTaxpayerVerification(companyId, {
       ...payload,
       operatorName: user?.email || "Authorized Operator",
@@ -379,6 +381,8 @@ export async function getTaxpayerVerificationHistoryAction(
   companyId: string
 ): Promise<ActionState<TaxpayerVerificationRecord[]>> {
   try {
+    const user = await getCurrentUser();
+    await requireCompanyMembership(companyId, user || undefined);
     const history = await getTaxpayerVerificationHistory(companyId);
     return {
       success: true,

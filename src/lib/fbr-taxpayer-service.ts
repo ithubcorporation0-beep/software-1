@@ -636,6 +636,7 @@ export async function recordTaxpayerVerification(
 export async function getTaxpayerVerificationHistory(
   companyId: string
 ): Promise<TaxpayerVerificationRecord[]> {
+  await requireCompanyMembership(companyId);
   const supabase = await createClient();
   const { data } = await supabase
     .from("company_settings")

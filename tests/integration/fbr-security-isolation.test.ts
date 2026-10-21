@@ -10,6 +10,7 @@ import {
   getTaxpayerVerificationHistory,
 } from "@/lib/fbr-taxpayer-service";
 import { recordAuditLog } from "@/lib/audit/server";
+import * as authServer from "@/lib/auth/server";
 import { ForbiddenError } from "@/lib/auth/server";
 
 // Mock Supabase Server Client
@@ -289,6 +290,12 @@ describe("FBR Security & Cross-Tenant Isolation Suite", () => {
     });
 
     it("ensures history retrieval sanitizes all identifier fields across the tenant", async () => {
+      vi.spyOn(authServer, "requireCompanyMembership").mockResolvedValue({
+        company: { id: companyAlpha },
+        role: "admin",
+        user: userAlpha,
+      } as any);
+
       mockFrom.mockImplementation((table: string) => {
         if (table === "company_settings") {
           return {
