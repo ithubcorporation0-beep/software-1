@@ -147,33 +147,64 @@ export class FbrTaxpayerProviderAdapter {
               Accept: "application/json",
             },
             cache: "no-store",
+            signal: AbortSignal.timeout(8000),
           }
         );
 
-        if (res.ok) {
-          const data = await res.json();
-          const isRegistered = Boolean(
-            data.strn || data.sales_tax_registration_type || data.is_sales_tax_registered
-          );
-          const status: SalesTaxRegTypeStatus =
-            data.sales_tax_registration_type || (isRegistered ? "Registered" : "Unregistered");
-
+        if (res.status === 429) {
           return {
-            success: true,
-            status,
-            strn: data.strn || undefined,
-            category: data.category || undefined,
+            success: false,
+            status: "Unable to Verify",
             source: "AUTOMATED_GATEWAY",
             verifiedAt: now,
-            referenceNumber: data.reference_number || undefined,
-            details: isRegistered
-              ? `Registered Sales Tax Entity (STRN: ${data.strn || "On File"})`
-              : "No Sales Tax Registration found on official FBR records",
+            details: "FBR verification service rate limit exceeded (HTTP 429). Please wait before retrying or verify via official IRIS portal.",
             officialPortalUrl: "https://iris.fbr.gov.pk/",
           };
         }
+
+        if (res.status === 404) {
+          return {
+            success: false,
+            status: "Not Found",
+            source: "AUTOMATED_GATEWAY",
+            verifiedAt: now,
+            details: "Tax identifier was not found on official FBR Sales Tax registration records.",
+            officialPortalUrl: "https://iris.fbr.gov.pk/",
+          };
+        }
+
+        if (!res.ok) {
+          return {
+            success: false,
+            status: "Unable to Verify",
+            source: "AUTOMATED_GATEWAY",
+            verifiedAt: now,
+            details: `FBR service returned HTTP ${res.status}. A service error is NOT proof of inactive status; please verify via official portal or SMS 9966.`,
+            officialPortalUrl: "https://iris.fbr.gov.pk/",
+          };
+        }
+
+        const data = await res.json();
+        const isRegistered = Boolean(
+          data.strn || data.sales_tax_registration_type || data.is_sales_tax_registered
+        );
+        const status: SalesTaxRegTypeStatus =
+          data.sales_tax_registration_type || (isRegistered ? "Registered" : "Unregistered");
+
+        return {
+          success: true,
+          status,
+          strn: data.strn || undefined,
+          category: data.category || undefined,
+          source: "AUTOMATED_GATEWAY",
+          verifiedAt: now,
+          referenceNumber: data.reference_number || undefined,
+          details: isRegistered
+            ? `Registered Sales Tax Entity (STRN: ${data.strn || "On File"})`
+            : "No Sales Tax Registration found on official FBR records",
+          officialPortalUrl: "https://iris.fbr.gov.pk/",
+        };
       } catch (err: any) {
-        // Log sanitized error with masked identifier
         console.warn(
           `[FBR PROVIDER ADAPTER] Sales Tax Reg query network issue for ${maskTaxIdentifier(
             validation.cleaned,
@@ -181,6 +212,15 @@ export class FbrTaxpayerProviderAdapter {
           )}:`,
           err.message
         );
+        const isTimeout = err.name === "TimeoutError" || err.message?.toLowerCase().includes("timeout") || err.message?.toLowerCase().includes("aborted");
+        return {
+          success: false,
+          status: "Unable to Verify",
+          source: "AUTOMATED_GATEWAY",
+          verifiedAt: now,
+          details: `FBR gateway connection failed (${isTimeout ? "Request timed out" : "Network error"}). A failed connection is NOT proof of inactive status; please verify via official portal or SMS 9966.`,
+          officialPortalUrl: "https://iris.fbr.gov.pk/",
+        };
       }
     }
 
@@ -239,32 +279,67 @@ export class FbrTaxpayerProviderAdapter {
               Accept: "application/json",
             },
             cache: "no-store",
+            signal: AbortSignal.timeout(8000),
           }
         );
 
-        if (res.ok) {
-          const data = await res.json();
-          let status: SalesTaxAtlStatus = "Not Registered";
-
-          if (data.sales_tax_atl === "Active" || data.sales_tax_active === true) {
-            status = "Verified Active";
-          } else if (data.sales_tax_atl === "Inactive" || data.sales_tax_active === false) {
-            status = "Verified Inactive";
-          } else if (data.sales_tax_exempt === true) {
-            status = "Exempt";
-          }
-
+        if (res.status === 429) {
           return {
-            success: true,
-            status,
+            success: false,
+            status: "Unable to Verify",
             source: "AUTOMATED_GATEWAY",
             verifiedAt: now,
-            referenceNumber: data.reference_number || undefined,
-            details: `FBR Sales Tax ATL Status: ${status}`,
+            details: "FBR verification service rate limit reached (HTTP 429). Please wait before retrying or use the official Sales Tax ATL portal.",
             officialPortalUrl: "https://www.fbr.gov.pk/atl-sales-tax/163223",
             smsInstruction,
           };
         }
+
+        if (res.status === 404) {
+          return {
+            success: false,
+            status: "Not Found",
+            source: "AUTOMATED_GATEWAY",
+            verifiedAt: now,
+            details: "Tax identifier was not found on official FBR Sales Tax records.",
+            officialPortalUrl: "https://www.fbr.gov.pk/atl-sales-tax/163223",
+            smsInstruction,
+          };
+        }
+
+        if (!res.ok) {
+          return {
+            success: false,
+            status: "Unable to Verify",
+            source: "AUTOMATED_GATEWAY",
+            verifiedAt: now,
+            details: `FBR service returned HTTP ${res.status}. A service error is NOT proof of inactive status; please verify via official portal or SMS 9966.`,
+            officialPortalUrl: "https://www.fbr.gov.pk/atl-sales-tax/163223",
+            smsInstruction,
+          };
+        }
+
+        const data = await res.json();
+        let status: SalesTaxAtlStatus = "Not Registered";
+
+        if (data.sales_tax_atl === "Active" || data.sales_tax_active === true) {
+          status = "Verified Active";
+        } else if (data.sales_tax_atl === "Inactive" || data.sales_tax_active === false) {
+          status = "Verified Inactive";
+        } else if (data.sales_tax_exempt === true) {
+          status = "Exempt";
+        }
+
+        return {
+          success: true,
+          status,
+          source: "AUTOMATED_GATEWAY",
+          verifiedAt: now,
+          referenceNumber: data.reference_number || undefined,
+          details: `FBR Sales Tax ATL Status: ${status}`,
+          officialPortalUrl: "https://www.fbr.gov.pk/atl-sales-tax/163223",
+          smsInstruction,
+        };
       } catch (err: any) {
         console.warn(
           `[FBR PROVIDER ADAPTER] Sales Tax ATL query network issue for ${maskTaxIdentifier(
@@ -273,6 +348,16 @@ export class FbrTaxpayerProviderAdapter {
           )}:`,
           err.message
         );
+        const isTimeout = err.name === "TimeoutError" || err.message?.toLowerCase().includes("timeout") || err.message?.toLowerCase().includes("aborted");
+        return {
+          success: false,
+          status: "Unable to Verify",
+          source: "AUTOMATED_GATEWAY",
+          verifiedAt: now,
+          details: `FBR gateway connection failed (${isTimeout ? "Request timed out" : "Network error"}). A failed connection is NOT proof of inactive status; please verify via official portal or SMS 9966.`,
+          officialPortalUrl: "https://www.fbr.gov.pk/atl-sales-tax/163223",
+          smsInstruction,
+        };
       }
     }
 
@@ -343,28 +428,18 @@ export class FbrTaxpayerProviderAdapter {
               Accept: "application/json",
             },
             cache: "no-store",
+            signal: AbortSignal.timeout(8000),
           }
         );
 
-        if (res.ok) {
-          const data = await res.json();
-          const isFiler =
-            data.atl_status === "Active" ||
-            data.status === "ACTIVE" ||
-            data.is_active_taxpayer === true;
-
-          const status: IncomeTaxAtlStatus = isFiler ? "Verified Active" : "Verified Inactive";
-
+        if (res.status === 429) {
           return {
-            success: true,
-            status,
-            isFiler,
+            success: false,
+            status: "Unable to Verify",
+            isFiler: false,
             source: "AUTOMATED_GATEWAY",
             verifiedAt: now,
-            referenceNumber: data.reference_number || undefined,
-            details: isFiler
-              ? `Active Filer verified on FBR ATL database. Standard ${withholdingTaxSection} (${activeRate}) applied.`
-              : `Inactive / Non-Filer record confirmed on FBR ATL. Non-filer penalty (${nonFilerRate}) applies.`,
+            details: "FBR verification service rate limit reached (HTTP 429). Please wait before retrying or use the official Income Tax ATL portal.",
             officialPortalUrl:
               "https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169",
             smsInstruction,
@@ -373,6 +448,66 @@ export class FbrTaxpayerProviderAdapter {
             nonFilerRate,
           };
         }
+
+        if (res.status === 404) {
+          return {
+            success: false,
+            status: "Not Found",
+            isFiler: false,
+            source: "AUTOMATED_GATEWAY",
+            verifiedAt: now,
+            details: "Tax identifier was not found on official FBR Income Tax records.",
+            officialPortalUrl:
+              "https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169",
+            smsInstruction,
+            withholdingTaxSection,
+            activeRate,
+            nonFilerRate,
+          };
+        }
+
+        if (!res.ok) {
+          return {
+            success: false,
+            status: "Unable to Verify",
+            isFiler: false,
+            source: "AUTOMATED_GATEWAY",
+            verifiedAt: now,
+            details: `FBR service returned HTTP ${res.status}. A service error is NOT proof of inactive status; please verify via official portal or SMS 9966.`,
+            officialPortalUrl:
+              "https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169",
+            smsInstruction,
+            withholdingTaxSection,
+            activeRate,
+            nonFilerRate,
+          };
+        }
+
+        const data = await res.json();
+        const isFiler =
+          data.atl_status === "Active" ||
+          data.status === "ACTIVE" ||
+          data.is_active_taxpayer === true;
+
+        const status: IncomeTaxAtlStatus = isFiler ? "Verified Active" : "Verified Inactive";
+
+        return {
+          success: true,
+          status,
+          isFiler,
+          source: "AUTOMATED_GATEWAY",
+          verifiedAt: now,
+          referenceNumber: data.reference_number || undefined,
+          details: isFiler
+            ? `Active Filer verified on FBR ATL database. Standard ${withholdingTaxSection} (${activeRate}) applied.`
+            : `Inactive / Non-Filer record confirmed on FBR ATL. Non-filer penalty (${nonFilerRate}) applies.`,
+          officialPortalUrl:
+            "https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169",
+          smsInstruction,
+          withholdingTaxSection,
+          activeRate,
+          nonFilerRate,
+        };
       } catch (err: any) {
         console.warn(
           `[FBR PROVIDER ADAPTER] Income Tax ATL query network issue for ${maskTaxIdentifier(
@@ -381,6 +516,21 @@ export class FbrTaxpayerProviderAdapter {
           )}:`,
           err.message
         );
+        const isTimeout = err.name === "TimeoutError" || err.message?.toLowerCase().includes("timeout") || err.message?.toLowerCase().includes("aborted");
+        return {
+          success: false,
+          status: "Unable to Verify",
+          isFiler: false,
+          source: "AUTOMATED_GATEWAY",
+          verifiedAt: now,
+          details: `FBR gateway connection failed (${isTimeout ? "Request timed out" : "Network error"}). A failed connection is NOT proof of inactive status; please verify via official portal or SMS 9966.`,
+          officialPortalUrl:
+            "https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169",
+          smsInstruction,
+          withholdingTaxSection,
+          activeRate,
+          nonFilerRate,
+        };
       }
     }
 

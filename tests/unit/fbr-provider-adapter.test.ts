@@ -199,6 +199,100 @@ describe("FBR Taxpayer Verification Provider Adapter Suite", () => {
     });
   });
 
+  describe("Safeguards Against False Inactive / False Unregistered Claims", () => {
+    beforeEach(() => {
+      process.env.FBR_CLIENT_ID = "live_client_id_123";
+      process.env.FBR_CLIENT_SECRET = "live_client_secret_456";
+      vi.spyOn(fbrApi, "getFbrAccessToken").mockResolvedValue("mock_bearer_token");
+    });
+
+    it("handles HTTP 429 rate limit as Unable to Verify, never as Inactive or Unregistered", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        statusText: "Too Many Requests",
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      const adapter = new FbrTaxpayerProviderAdapter();
+
+      const regRes = await adapter.checkSalesTaxRegistration("NTN", validNtn);
+      expect(regRes.status).toBe("Unable to Verify");
+      expect(regRes.status).not.toBe("Unregistered");
+      expect(regRes.details).toContain("rate limit exceeded (HTTP 429)");
+
+      const stAtlRes = await adapter.checkSalesTaxATL("NTN", validNtn);
+      expect(stAtlRes.status).toBe("Unable to Verify");
+      expect(stAtlRes.status).not.toBe("Verified Inactive");
+      expect(stAtlRes.details).toContain("rate limit reached (HTTP 429)");
+
+      const incAtlRes = await adapter.checkIncomeTaxATL("NTN", validNtn);
+      expect(incAtlRes.status).toBe("Unable to Verify");
+      expect(incAtlRes.status).not.toBe("Verified Inactive");
+      expect(incAtlRes.isFiler).toBe(false);
+      expect(incAtlRes.details).toContain("rate limit reached (HTTP 429)");
+    });
+
+    it("handles HTTP 404 as Not Found, never as false Inactive", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      const adapter = new FbrTaxpayerProviderAdapter();
+
+      const regRes = await adapter.checkSalesTaxRegistration("NTN", validNtn);
+      expect(regRes.status).toBe("Not Found");
+      expect(regRes.details).toContain("not found");
+
+      const stAtlRes = await adapter.checkSalesTaxATL("NTN", validNtn);
+      expect(stAtlRes.status).toBe("Not Found");
+      expect(stAtlRes.status).not.toBe("Verified Inactive");
+
+      const incAtlRes = await adapter.checkIncomeTaxATL("NTN", validNtn);
+      expect(incAtlRes.status).toBe("Not Found");
+      expect(incAtlRes.status).not.toBe("Verified Inactive");
+      expect(incAtlRes.isFiler).toBe(false);
+    });
+
+    it("handles HTTP 500 server error as Unable to Verify with explicit notice that failure is NOT proof of inactive status", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      const adapter = new FbrTaxpayerProviderAdapter();
+
+      const res = await adapter.checkIncomeTaxATL("CNIC", validCnic);
+      expect(res.status).toBe("Unable to Verify");
+      expect(res.status).not.toBe("Verified Inactive");
+      expect(res.details).toContain("A service error is NOT proof of inactive status");
+      expect(res.officialPortalUrl).toBeDefined();
+      expect(res.smsInstruction).toBeDefined();
+    });
+
+    it("handles network timeout / AbortError as Unable to Verify without marking inactive", async () => {
+      const timeoutErr = new Error("The operation was aborted due to timeout");
+      timeoutErr.name = "TimeoutError";
+
+      const mockFetch = vi.fn().mockRejectedValue(timeoutErr);
+      vi.stubGlobal("fetch", mockFetch);
+
+      const adapter = new FbrTaxpayerProviderAdapter();
+
+      const res = await adapter.checkSalesTaxATL("CNIC", validCnic);
+      expect(res.status).toBe("Unable to Verify");
+      expect(res.status).not.toBe("Verified Inactive");
+      expect(res.details).toContain("Request timed out");
+      expect(res.details).toContain("A failed connection is NOT proof of inactive status");
+      expect(res.smsInstruction).toContain("9966");
+    });
+  });
+
   describe("Composite Orchestration (verifyAllThreeChecks)", () => {
     it("executes the three checks independently and returns structured indicators conforming to FbrThreeIndicators", async () => {
       const adapter = new FbrTaxpayerProviderAdapter();
@@ -215,3 +309,4 @@ describe("FBR Taxpayer Verification Provider Adapter Suite", () => {
     });
   });
 });
+
