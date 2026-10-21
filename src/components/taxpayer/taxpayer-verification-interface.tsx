@@ -17,6 +17,11 @@ import {
   UserX,
   Info,
   Lock,
+  Building2,
+  Receipt,
+  Scale,
+  HelpCircle,
+  Check,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +50,100 @@ import {
   IncomeTaxAtlStatus,
 } from "@/lib/fbr-types";
 import { FbrTaxpayerVerificationResult } from "@/lib/fbr-taxpayer-service";
+
+export type IndicatorDisplayState =
+  | "Verified Active"
+  | "Verified Inactive"
+  | "Registered"
+  | "Not Registered"
+  | "Unable to Verify"
+  | "Pending Authorization"
+  | "Manual Verification Required";
+
+export function resolveSalesTaxRegState(
+  status: SalesTaxRegTypeStatus | undefined,
+  isGatewayConfigured: boolean
+): IndicatorDisplayState {
+  if (!status) return isGatewayConfigured ? "Pending Authorization" : "Manual Verification Required";
+  if (status === "Registered" || status === "Exempt") return "Registered";
+  if (status === "Unregistered" || status === "Not Registered" || status === "Not Found") return "Not Registered";
+  if (status === "Unable to Verify") return "Unable to Verify";
+  if (status === "Pending Authorization") return "Pending Authorization";
+  if (status === "Manual Verification Required") return "Manual Verification Required";
+  if (status === "Pending") {
+    return isGatewayConfigured ? "Pending Authorization" : "Manual Verification Required";
+  }
+  return "Unable to Verify";
+}
+
+export function resolveSalesTaxAtlState(
+  status: SalesTaxAtlStatus | undefined,
+  isGatewayConfigured: boolean
+): IndicatorDisplayState {
+  if (!status) return isGatewayConfigured ? "Pending Authorization" : "Manual Verification Required";
+  if (status === "Verified Active" || status === "Exempt") return "Verified Active";
+  if (status === "Verified Inactive") return "Verified Inactive";
+  if (status === "Not Registered") return "Not Registered";
+  if (status === "Unable to Verify") return "Unable to Verify";
+  if (status === "Pending Authorization") return "Pending Authorization";
+  if (status === "Manual Verification Required") return "Manual Verification Required";
+  if (status === "Pending" || status === "Not Found") {
+    return isGatewayConfigured ? "Pending Authorization" : "Manual Verification Required";
+  }
+  return "Unable to Verify";
+}
+
+export function resolveIncomeTaxAtlState(
+  status: IncomeTaxAtlStatus | undefined,
+  isGatewayConfigured: boolean
+): IndicatorDisplayState {
+  if (!status) return isGatewayConfigured ? "Pending Authorization" : "Manual Verification Required";
+  if (status === "Verified Active") return "Verified Active";
+  if (status === "Verified Inactive") return "Verified Inactive";
+  if (status === "Not Registered") return "Not Registered";
+  if (status === "Unable to Verify") return "Unable to Verify";
+  if (status === "Pending Authorization") return "Pending Authorization";
+  if (status === "Manual Verification Required") return "Manual Verification Required";
+  if (status === "Pending" || status === "Not Found") {
+    return isGatewayConfigured ? "Pending Authorization" : "Manual Verification Required";
+  }
+  return "Unable to Verify";
+}
+
+export function getStatusBadgeClass(state: IndicatorDisplayState): string {
+  switch (state) {
+    case "Verified Active":
+    case "Registered":
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-semibold";
+    case "Verified Inactive":
+      return "bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300 dark:border-rose-800 font-semibold";
+    case "Not Registered":
+      return "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 font-semibold";
+    case "Unable to Verify":
+      return "bg-red-100 text-red-800 dark:bg-red-950/70 dark:text-red-300 border border-red-300 dark:border-red-800 font-semibold";
+    case "Pending Authorization":
+      return "bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-800 font-semibold";
+    case "Manual Verification Required":
+      return "bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-semibold";
+    default:
+      return "bg-muted text-muted-foreground border font-semibold";
+  }
+}
+
+export function formatVerificationSource(source: TaxpayerVerificationSource | string): string {
+  switch (source) {
+    case "AUTOMATED_GATEWAY":
+      return "Automated PRAL Gateway";
+    case "MANUAL_PORTAL":
+      return "Manual FBR e-Portal (Web)";
+    case "MANUAL_SMS":
+      return "Manual FBR SMS (9966)";
+    case "FORMAT_VALIDATED_ONLY":
+      return "Format Validated Only";
+    default:
+      return source;
+  }
+}
 
 interface TaxpayerVerificationInterfaceProps {
   companyId: string;
@@ -374,170 +473,317 @@ export function TaxpayerVerificationInterface({
             )}
           </div>
 
-          {/* VERIFICATION RESULT CARD (IF QUERY EXECUTED) */}
-          {verificationResult && (
-            <div
-              className={`rounded-lg border p-4 text-xs space-y-3 ${
-                verificationResult.atlStatus === "Active"
-                  ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100"
-                  : verificationResult.atlStatus === "Inactive"
-                  ? "border-amber-300 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100"
-                  : verificationResult.atlStatus === "API Connection Error"
-                  ? "border-rose-300 bg-rose-50/80 dark:border-rose-900 dark:bg-rose-950/40 text-rose-900 dark:text-rose-100"
-                  : "border-blue-200 bg-blue-50/70 dark:border-blue-900 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100"
-              }`}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-black/10 dark:border-white/10">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm">
-                    {verificationResult.atlStatus === "Active"
-                      ? "Active Taxpayer (ATL Active)"
-                      : verificationResult.atlStatus === "Inactive"
-                      ? "Inactive / Non-Filer Taxpayer"
-                      : verificationResult.atlStatus === "API Connection Error"
-                      ? "FBR API Connection Error"
-                      : "Format Validated (ATL Status Unverified)"}
-                  </span>
-                  <Badge
-                    variant={
-                      verificationResult.verificationSource === "AUTOMATED_GATEWAY"
-                        ? "default"
-                        : "secondary"
-                    }
-                    className="text-[10px]"
-                  >
-                    Source: {verificationResult.verificationSource}
-                  </Badge>
+          {/* THREE SEPARATE RESULT CARDS (SALES TAX REG, SALES TAX ATL, INCOME TAX ATL) */}
+          {verificationResult && (() => {
+            const stRegState = resolveSalesTaxRegState(
+              verificationResult.indicators?.salesTaxRegType?.status,
+              verificationResult.fbrGatewayConfigured
+            );
+            const stAtlState = resolveSalesTaxAtlState(
+              verificationResult.indicators?.salesTaxAtl?.status,
+              verificationResult.fbrGatewayConfigured
+            );
+            const incAtlState = resolveIncomeTaxAtlState(
+              verificationResult.indicators?.incomeTaxAtl?.status,
+              verificationResult.fbrGatewayConfigured
+            );
+
+            return (
+              <div className="space-y-4 pt-1">
+                {/* IDENTIFIER SUMMARY BANNER */}
+                <div className="rounded-lg border bg-card p-3.5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-foreground">
+                          {verificationResult.maskedId}
+                        </span>
+                        <Badge variant="outline" className="text-[10px] font-semibold">
+                          {verificationResult.idType}
+                        </Badge>
+                        {verificationResult.province && (
+                          <span className="text-[11px] text-muted-foreground">
+                            • {verificationResult.province}
+                          </span>
+                        )}
+                        {verificationResult.businessName && (
+                          <span className="text-[11px] font-medium text-foreground">
+                            • {verificationResult.businessName}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {verificationResult.taxSection} ({customerType}) • Statutory Withholding:{" "}
+                        <strong className="text-foreground">
+                          {verificationResult.isFiler
+                            ? verificationResult.activeRate
+                            : verificationResult.nonFilerRate}
+                        </strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:items-end gap-1 text-[11px] text-muted-foreground shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      <span>Verified: {new Date(verificationResult.verifiedAt).toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span>Gateway Mode:</span>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {verificationResult.fbrGatewayConfigured ? "Live PRAL API" : "Manual / Format Verification"}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-[11px] opacity-80">
-                  <Clock className="h-3 w-3" />
-                  <span>Verified at: {new Date(verificationResult.verifiedAt).toLocaleString()}</span>
-                </div>
-              </div>
+                {/* THREE SEPARATE RESULT CARDS */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* CARD 1: SALES TAX REG TYPE */}
+                  <Card className="border shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                    <CardHeader className="pb-3 border-b bg-muted/20">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-md bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 flex items-center justify-center shrink-0">
+                            <Building2 className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-sm font-semibold">
+                              Sales Tax Reg Type
+                            </CardTitle>
+                            <CardDescription className="text-[10px]">
+                              Sales Tax Act, 1990 Registration
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] whitespace-nowrap ${getStatusBadgeClass(stRegState)}`}>
+                          {stRegState}
+                        </span>
+                      </div>
+                    </CardHeader>
 
-              {/* THREE VERIFICATION INDICATORS (UNAZ COMPLIANCE SPECIFICATION) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                {/* 1. Sales Tax Reg Type */}
-                <div className="rounded-lg border bg-background/80 p-3 space-y-1.5 shadow-2xs">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
-                    1. Sales Tax Reg Type
-                  </span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
-                        verificationResult.indicators.salesTaxRegType.status === "Registered"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
-                          : verificationResult.indicators.salesTaxRegType.status === "Unregistered"
-                          ? "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                          : verificationResult.indicators.salesTaxRegType.status === "Pending"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
-                          : "bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
-                      }`}
-                    >
-                      {verificationResult.indicators.salesTaxRegType.status}
-                    </span>
-                    {verificationResult.indicators.salesTaxRegType.strn && (
-                      <span className="text-[11px] font-mono text-muted-foreground">
-                        STRN: {verificationResult.indicators.salesTaxRegType.strn}
+                    <CardContent className="pt-3.5 space-y-3 text-xs flex-1">
+                      <div>
+                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                          Verified Registration Status
+                        </span>
+                        <p className="text-xs font-semibold text-foreground mt-0.5">
+                          {verificationResult.indicators.salesTaxRegType.strn
+                            ? `STRN: ${verificationResult.indicators.salesTaxRegType.strn}`
+                            : stRegState === "Registered"
+                            ? "STRN on Official File"
+                            : "No STRN Assigned"}
+                        </p>
+                        {verificationResult.indicators.salesTaxRegType.category && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Category: {verificationResult.indicators.salesTaxRegType.category}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="p-2.5 rounded-md bg-muted/40 border text-[11px] text-muted-foreground leading-relaxed">
+                        {verificationResult.indicators.salesTaxRegType.details}
+                      </div>
+
+                      <div className="space-y-1 pt-1 border-t">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Verification Source:</span>
+                          <span className="font-medium text-foreground">
+                            {formatVerificationSource(verificationResult.verificationSource)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Timestamp:</span>
+                          <span className="font-mono text-muted-foreground">
+                            {new Date(verificationResult.verifiedAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+
+                    <CardFooter className="pt-2.5 border-t bg-muted/10 flex items-center justify-between text-[11px]">
+                      <a
+                        href="https://iris.fbr.gov.pk/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        <span>FBR IRIS Portal</span>
+                      </a>
+                      <span className="text-[10px] text-muted-foreground">
+                        Rule 12(1) STR
                       </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground leading-normal">
-                    {verificationResult.indicators.salesTaxRegType.details}
-                  </p>
-                </div>
+                    </CardFooter>
+                  </Card>
 
-                {/* 2. Sales Tax ATL */}
-                <div className="rounded-lg border bg-background/80 p-3 space-y-1.5 shadow-2xs">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
-                    2. Sales Tax ATL
-                  </span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
-                        verificationResult.indicators.salesTaxAtl.status === "Verified Active"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
-                          : verificationResult.indicators.salesTaxAtl.status === "Verified Inactive"
-                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
-                          : verificationResult.indicators.salesTaxAtl.status === "Pending"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
-                          : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                      }`}
-                    >
-                      {verificationResult.indicators.salesTaxAtl.status}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground leading-normal">
-                    {verificationResult.indicators.salesTaxAtl.details}
-                  </p>
-                </div>
+                  {/* CARD 2: SALES TAX ATL */}
+                  <Card className="border shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                    <CardHeader className="pb-3 border-b bg-muted/20">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-md bg-indigo-100 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shrink-0">
+                            <Receipt className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-sm font-semibold">
+                              Sales Tax ATL
+                            </CardTitle>
+                            <CardDescription className="text-[10px]">
+                              Monthly Return Filing Compliance
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] whitespace-nowrap ${getStatusBadgeClass(stAtlState)}`}>
+                          {stAtlState}
+                        </span>
+                      </div>
+                    </CardHeader>
 
-                {/* 3. Income Tax ATL */}
-                <div className="rounded-lg border bg-background/80 p-3 space-y-1.5 shadow-2xs">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
-                    3. Income Tax ATL
-                  </span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
-                        verificationResult.indicators.incomeTaxAtl.status === "Verified Active"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
-                          : verificationResult.indicators.incomeTaxAtl.status === "Verified Inactive"
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
-                          : verificationResult.indicators.incomeTaxAtl.status === "Pending"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
-                          : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                      }`}
-                    >
-                      {verificationResult.indicators.incomeTaxAtl.status}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground leading-normal">
-                    {verificationResult.indicators.incomeTaxAtl.details}
-                  </p>
+                    <CardContent className="pt-3.5 space-y-3 text-xs flex-1">
+                      <div>
+                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                          Verified Return Status
+                        </span>
+                        <p className="text-xs font-semibold text-foreground mt-0.5">
+                          {stAtlState === "Verified Active"
+                            ? "Active Sales Tax Return Filer"
+                            : stAtlState === "Verified Inactive"
+                            ? "Inactive / Defaulting Filer"
+                            : stAtlState === "Not Registered"
+                            ? "Unregistered for Sales Tax"
+                            : "Return Status Unverified"}
+                        </p>
+                        {verificationResult.referenceNumber && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 font-mono">
+                            Ref: {verificationResult.referenceNumber}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="p-2.5 rounded-md bg-muted/40 border text-[11px] text-muted-foreground leading-relaxed">
+                        {verificationResult.indicators.salesTaxAtl.details}
+                      </div>
+
+                      <div className="space-y-1 pt-1 border-t">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Verification Source:</span>
+                          <span className="font-medium text-foreground">
+                            {formatVerificationSource(verificationResult.verificationSource)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Timestamp:</span>
+                          <span className="font-mono text-muted-foreground">
+                            {new Date(verificationResult.verifiedAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+
+                    <CardFooter className="pt-2.5 border-t bg-muted/10 flex items-center justify-between text-[11px]">
+                      <a
+                        href="https://www.fbr.gov.pk/atl-sales-tax/163223"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        <span>Sales Tax ATL List</span>
+                      </a>
+                      <span className="text-[10px] font-mono text-muted-foreground">
+                        SMS: ST to 9966
+                      </span>
+                    </CardFooter>
+                  </Card>
+
+                  {/* CARD 3: INCOME TAX ATL */}
+                  <Card className="border shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                    <CardHeader className="pb-3 border-b bg-muted/20">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-md bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                            <Scale className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-sm font-semibold">
+                              Income Tax ATL
+                            </CardTitle>
+                            <CardDescription className="text-[10px]">
+                              Income Tax Ordinance, 2001
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] whitespace-nowrap ${getStatusBadgeClass(incAtlState)}`}>
+                          {incAtlState}
+                        </span>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="pt-3.5 space-y-3 text-xs flex-1">
+                      <div>
+                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                          Annual Return Filer Status
+                        </span>
+                        <p className="text-xs font-semibold text-foreground mt-0.5">
+                          {incAtlState === "Verified Active"
+                            ? "Active Filer (ATL Active)"
+                            : incAtlState === "Verified Inactive"
+                            ? "Inactive / Non-Filer"
+                            : "Filer Status Unconfirmed"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {verificationResult.taxSection}: Withholding Rate:{" "}
+                          <strong className="text-foreground">
+                            {verificationResult.isFiler
+                              ? verificationResult.activeRate
+                              : verificationResult.nonFilerRate}
+                          </strong>
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-md bg-muted/40 border text-[11px] text-muted-foreground leading-relaxed">
+                        {verificationResult.indicators.incomeTaxAtl.details}
+                      </div>
+
+                      <div className="space-y-1 pt-1 border-t">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Verification Source:</span>
+                          <span className="font-medium text-foreground">
+                            {formatVerificationSource(verificationResult.verificationSource)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Timestamp:</span>
+                          <span className="font-mono text-muted-foreground">
+                            {new Date(verificationResult.verifiedAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+
+                    <CardFooter className="pt-2.5 border-t bg-muted/10 flex items-center justify-between text-[11px]">
+                      <a
+                        href="https://www.fbr.gov.pk/categ/active-taxpayer-list-income-tax/51147/30859/71169"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        <span>Income Tax ATL Portal</span>
+                      </a>
+                      <span className="text-[10px] font-mono text-muted-foreground">
+                        SMS: ATL to 9966
+                      </span>
+                    </CardFooter>
+                  </Card>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-black/5 dark:border-white/5">
-                <div>
-                  <span className="text-[10px] uppercase font-semibold opacity-70 block">
-                    Identifier (Masked)
-                  </span>
-                  <span className="font-mono font-bold text-xs">
-                    {verificationResult.maskedId}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-semibold opacity-70 block">
-                    Applicable Tax Section
-                  </span>
-                  <span className="font-semibold text-xs">
-                    {verificationResult.taxSection}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-semibold opacity-70 block">
-                    Withholding Rate
-                  </span>
-                  <span className="font-bold text-xs">
-                    {verificationResult.isFiler
-                      ? verificationResult.activeRate
-                      : verificationResult.nonFilerRate}
-                  </span>
-                </div>
-              </div>
-
-              <p className="font-medium text-xs leading-relaxed">
-                {verificationResult.message}
-              </p>
-              {verificationResult.detail && (
-                <p className="text-[11px] opacity-85 leading-relaxed">
-                  {verificationResult.detail}
-                </p>
-              )}
-            </div>
-          )}
+            );
+          })()}
 
           {errorMessage && (
             <div className="rounded-lg border border-rose-300 bg-rose-50/80 p-3 text-xs text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200 flex items-center gap-2">
@@ -805,44 +1051,43 @@ export function TaxpayerVerificationInterface({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] font-semibold"
-                        >
-                          {item.indicators?.salesTaxRegType?.status || (item.status === "Active" ? "Registered" : "Unregistered")}
-                        </Badge>
+                        {(() => {
+                          const state = resolveSalesTaxRegState(
+                            item.indicators?.salesTaxRegType?.status || (item.status === "Active" ? "Registered" : "Unregistered"),
+                            item.source === "AUTOMATED_GATEWAY"
+                          );
+                          return (
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${getStatusBadgeClass(state)}`}>
+                              {state}
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            (item.indicators?.salesTaxAtl?.status === "Verified Active" || (!item.indicators && item.status === "Active"))
-                              ? "default"
-                              : "secondary"
-                          }
-                          className={`text-[10px] ${
-                            (item.indicators?.salesTaxAtl?.status === "Verified Active" || (!item.indicators && item.status === "Active"))
-                              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                              : ""
-                          }`}
-                        >
-                          {item.indicators?.salesTaxAtl?.status || (item.status === "Active" ? "Verified Active" : "Verified Inactive")}
-                        </Badge>
+                        {(() => {
+                          const state = resolveSalesTaxAtlState(
+                            item.indicators?.salesTaxAtl?.status || (item.status === "Active" ? "Verified Active" : "Verified Inactive"),
+                            item.source === "AUTOMATED_GATEWAY"
+                          );
+                          return (
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${getStatusBadgeClass(state)}`}>
+                              {state}
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            (item.indicators?.incomeTaxAtl?.status === "Verified Active" || (!item.indicators && item.status === "Active"))
-                              ? "default"
-                              : "secondary"
-                          }
-                          className={`text-[10px] ${
-                            (item.indicators?.incomeTaxAtl?.status === "Verified Active" || (!item.indicators && item.status === "Active"))
-                              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                              : "bg-amber-600 hover:bg-amber-700 text-white"
-                          }`}
-                        >
-                          {item.indicators?.incomeTaxAtl?.status || (item.status === "Active" ? "Verified Active" : "Verified Inactive")}
-                        </Badge>
+                        {(() => {
+                          const state = resolveIncomeTaxAtlState(
+                            item.indicators?.incomeTaxAtl?.status || (item.status === "Active" ? "Verified Active" : "Verified Inactive"),
+                            item.source === "AUTOMATED_GATEWAY"
+                          );
+                          return (
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${getStatusBadgeClass(state)}`}>
+                              {state}
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <Badge

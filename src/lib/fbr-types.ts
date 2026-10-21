@@ -89,10 +89,13 @@ export type TaxpayerAtlStatus =
 
 export type SalesTaxRegTypeStatus =
   | "Registered"
+  | "Not Registered"
   | "Unregistered"
   | "Exempt"
   | "Not Found"
   | "Pending"
+  | "Pending Authorization"
+  | "Manual Verification Required"
   | "Unable to Verify";
 
 export type SalesTaxAtlStatus =
@@ -102,6 +105,8 @@ export type SalesTaxAtlStatus =
   | "Not Registered"
   | "Not Found"
   | "Pending"
+  | "Pending Authorization"
+  | "Manual Verification Required"
   | "Unable to Verify";
 
 export type IncomeTaxAtlStatus =
@@ -110,6 +115,8 @@ export type IncomeTaxAtlStatus =
   | "Not Registered"
   | "Not Found"
   | "Pending"
+  | "Pending Authorization"
+  | "Manual Verification Required"
   | "Unable to Verify";
 
 export interface FbrThreeIndicators {
