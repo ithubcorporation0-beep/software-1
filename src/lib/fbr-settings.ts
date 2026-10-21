@@ -87,8 +87,12 @@ export function deriveEffectiveStatus(
 
 /**
  * Retrieves the company's FBR integration settings.
+ * Enforces: Platform administrators cannot automatically inspect tenant credentials without verified membership.
  */
-export async function getCompanyFbrSettings(companyId: string): Promise<FbrIntegrationOverview> {
+export async function getCompanyFbrSettings(
+  companyId: string,
+  providedUser?: any
+): Promise<FbrIntegrationOverview> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("company_settings")
@@ -108,7 +112,37 @@ export async function getCompanyFbrSettings(companyId: string): Promise<FbrInteg
     sellerNtn: savedFbr.sellerNtn || process.env.FBR_SELLER_NTN || "",
   };
 
-  const credentialsStatus = getFbrCredentialsStatus();
+  // CRITICAL SECURITY RULE:
+  // "Do not assume that a platform administrator should automatically be able to read every company's credentials."
+  let isRestrictedPlatformAdmin = false;
+  if (providedUser && providedUser.is_super_admin) {
+    const { data: directMembership } = await supabase
+      .from("memberships")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("user_id", providedUser.id)
+      .eq("status", "ACTIVE")
+      .maybeSingle();
+
+    if (!directMembership) {
+      isRestrictedPlatformAdmin = true;
+    }
+  }
+
+  let credentialsStatus = getFbrCredentialsStatus();
+  if (isRestrictedPlatformAdmin) {
+    credentialsStatus = {
+      hasClientId: false,
+      maskedClientId: "Restricted (Direct Tenant Membership Required)",
+      hasClientSecret: false,
+      hasSellerNtn: false,
+      tokenUrl: "[RESTRICTED]",
+      validateUrl: "[RESTRICTED]",
+      submitUrl: "[RESTRICTED]",
+      inquiryUrl: "[RESTRICTED]",
+    };
+  }
+
   const effectiveStatus = deriveEffectiveStatus(config, credentialsStatus);
 
   return {

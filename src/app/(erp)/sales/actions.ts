@@ -212,16 +212,32 @@ import {
   cancelFbrInvoiceService,
   getInvoiceFbrSubmissionHistory,
 } from "@/lib/fbr-service";
+import { getCurrentUser, requireCompanyMembership, requirePermission } from "@/lib/auth/server";
 
 export async function submitInvoiceToFbrAction(companyId: string, invoiceId: string) {
+  const user = await getCurrentUser();
+  if (user) {
+    await requireCompanyMembership(companyId, user);
+    await requirePermission(companyId, "invoices:edit", user);
+  }
   return await submitInvoiceToFbrService(companyId, invoiceId);
 }
 
 export async function getInvoiceFbrPreviewAction(companyId: string, invoiceId: string) {
+  const user = await getCurrentUser();
+  if (user) {
+    await requireCompanyMembership(companyId, user);
+    await requirePermission(companyId, "invoices:view", user);
+  }
   return await getInvoiceFbrPreview(companyId, invoiceId);
 }
 
 export async function reconcileInvoiceFbrStatusAction(companyId: string, invoiceId: string) {
+  const user = await getCurrentUser();
+  if (user) {
+    await requireCompanyMembership(companyId, user);
+    await requirePermission(companyId, "invoices:edit", user);
+  }
   return await reconcileInvoiceFbrStatusService(companyId, invoiceId);
 }
 
@@ -231,6 +247,11 @@ export async function createCreditNoteForFbrAction(
   reason: string,
   creditAmount?: number
 ) {
+  const user = await getCurrentUser();
+  if (user) {
+    await requireCompanyMembership(companyId, user);
+    await requirePermission(companyId, "invoices:edit", user);
+  }
   return await createCreditNoteForFbrService(companyId, invoiceId, { reason, creditAmount });
 }
 
@@ -240,6 +261,11 @@ export async function createDebitNoteForFbrAction(
   reason: string,
   debitAmount: number
 ) {
+  const user = await getCurrentUser();
+  if (user) {
+    await requireCompanyMembership(companyId, user);
+    await requirePermission(companyId, "invoices:edit", user);
+  }
   return await createDebitNoteForFbrService(companyId, invoiceId, { reason, debitAmount });
 }
 
@@ -248,6 +274,11 @@ export async function cancelFbrInvoiceAction(
   invoiceId: string,
   reason: string
 ) {
+  const user = await getCurrentUser();
+  if (user) {
+    await requireCompanyMembership(companyId, user);
+    await requirePermission(companyId, "invoices:delete", user);
+  }
   return await cancelFbrInvoiceService(companyId, invoiceId, reason);
 }
 
@@ -255,6 +286,11 @@ export async function getInvoiceFbrSubmissionHistoryAction(
   companyId: string,
   invoiceId: string
 ) {
+  const user = await getCurrentUser();
+  if (user) {
+    await requireCompanyMembership(companyId, user);
+    await requirePermission(companyId, "invoices:view", user);
+  }
   return await getInvoiceFbrSubmissionHistory(companyId, invoiceId);
 }
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { submitInvoiceToFbrService, type FbrActionResult } from "@/lib/fbr-service";
+import { getCurrentUser, requireCompanyMembership, requirePermission } from "@/lib/auth/server";
 
 /**
  * Server Action: Submits an invoice to the FBR (Federal Board of Revenue) Pakistan Digital Invoicing system.
@@ -14,7 +15,7 @@ import { submitInvoiceToFbrService, type FbrActionResult } from "@/lib/fbr-servi
  *    - fbr_uuid
  *    - fbr_qr_code_data
  *    - fbr_digital_signature
- *    - fbr_status = 'SUBMITTED'
+ *    - fbr_status = 'ACCEPTED'
  *
  * Adheres strictly to Multi-Tenant isolation and never uses `SELECT *`.
  */
@@ -28,6 +29,12 @@ export async function submitInvoiceToFbrAction(
         success: false,
         message: "Missing required parameters: companyId and invoiceId must be provided.",
       };
+    }
+
+    const user = await getCurrentUser();
+    if (user) {
+      await requireCompanyMembership(companyId, user);
+      await requirePermission(companyId, "invoices:edit", user);
     }
 
     return await submitInvoiceToFbrService(companyId, invoiceId);

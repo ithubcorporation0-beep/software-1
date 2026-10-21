@@ -1,16 +1,28 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/server";
+import { getCurrentUser, requireCompanyMembership } from "@/lib/auth/server";
 import { verifyFbrTaxpayer } from "@/lib/fbr-taxpayer-service";
 
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized access: Please sign in." }, { status: 401 });
     }
 
     const body = await request.json();
     const { taxNumber, customerType, companyId } = body;
+
+    // Enforce tenant isolation: prevent user from executing or recording verification against unauthorized tenant
+    if (companyId) {
+      try {
+        await requireCompanyMembership(companyId, user);
+      } catch (authErr: any) {
+        return NextResponse.json(
+          { error: authErr.message || "Forbidden: You are not authorized to access this tenant." },
+          { status: 403 }
+        );
+      }
+    }
 
     if (!taxNumber || typeof taxNumber !== "string" || !taxNumber.trim()) {
       return NextResponse.json(

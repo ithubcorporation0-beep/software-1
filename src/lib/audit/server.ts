@@ -22,11 +22,19 @@ const REDACTED_KEYS = new Set([
   "accesstoken",
   "refreshtoken",
   "secret",
+  "clientsecret",
+  "client_secret",
+  "privatekey",
   "key",
   "apikey",
   "servicekey",
   "authorization",
   "credential",
+  "cnic",
+  "ntn",
+  "rawidentifier",
+  "signature",
+  "fbr_digital_signature",
 ]);
 
 /**

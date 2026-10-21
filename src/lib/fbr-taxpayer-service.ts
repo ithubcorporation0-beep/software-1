@@ -2,6 +2,7 @@ import { validateTaxId, maskTaxIdentifier, TaxIdValidationResult } from "./fbr-v
 import { getFbrAccessToken } from "./fbr-api";
 import { createClient } from "./supabase/server";
 import { recordAuditLog } from "./audit/server";
+import { requireCompanyMembership } from "./auth/server";
 import {
   TaxpayerVerificationRecord,
   TaxpayerVerificationSource,
@@ -429,13 +430,20 @@ export async function recordTaxpayerVerification(
     ? features.fbr_taxpayer_history
     : [];
 
+  const maskedId =
+    record.maskedIdentifier ||
+    maskTaxIdentifier(record.rawIdentifier || record.formattedIdentifier || "", record.idType);
+
   const completeRecord: TaxpayerVerificationRecord = {
     id: record.id || `ver-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     companyId,
     idType: record.idType || "UNKNOWN",
-    rawIdentifier: record.rawIdentifier || "",
-    formattedIdentifier: record.formattedIdentifier || record.rawIdentifier || "",
-    maskedIdentifier: record.maskedIdentifier || maskTaxIdentifier(record.rawIdentifier || ""),
+    // Avoid unnecessary retention of raw CNIC/NTN numbers: store masked representation only
+    rawIdentifier: maskedId,
+    formattedIdentifier: record.formattedIdentifier
+      ? maskTaxIdentifier(record.formattedIdentifier, record.idType)
+      : maskedId,
+    maskedIdentifier: maskedId,
     validFormat: Boolean(record.validFormat),
     status: record.status || "Format Validated (ATL Unverified)",
     isFiler: Boolean(record.isFiler),
@@ -468,6 +476,7 @@ export async function recordTaxpayerVerification(
 
 /**
  * Retrieves the verification history for a company with masked identifiers.
+ * Enforces tenant isolation.
  */
 export async function getTaxpayerVerificationHistory(
   companyId: string
@@ -488,9 +497,11 @@ export async function getTaxpayerVerificationHistory(
     ? features.fbr_taxpayer_history
     : [];
 
-  // Ensure identifiers in history remain masked
+  // Ensure identifiers in history remain strictly masked
   return history.map((item) => ({
     ...item,
     rawIdentifier: item.maskedIdentifier || maskTaxIdentifier(item.rawIdentifier, item.idType),
+    formattedIdentifier:
+      item.maskedIdentifier || maskTaxIdentifier(item.formattedIdentifier || item.rawIdentifier, item.idType),
   }));
 }
