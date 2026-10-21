@@ -203,5 +203,9 @@ export async function voidPaymentAction(
   }
 }
 
-export { submitInvoiceToFbrAction } from "@/lib/fbr-actions";
+import { submitInvoiceToFbrAction as submitFbr } from "@/lib/fbr-actions";
+
+export async function submitInvoiceToFbrAction(companyId: string, invoiceId: string) {
+  return await submitFbr(companyId, invoiceId);
+}
 
