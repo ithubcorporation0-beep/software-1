@@ -9,6 +9,9 @@ import {
   AlertCircle,
   Loader2,
   ShieldCheck,
+  ShieldAlert,
+  Info,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Customer } from "@/types/database.types";
@@ -91,7 +94,27 @@ export function CreateCustomerModal({
   const [isVerifyingTax, setIsVerifyingTax] = React.useState(false);
   const [taxVerificationResult, setTaxVerificationResult] = React.useState<{
     verified: boolean;
+    validFormat: boolean;
+    idType?: "CNIC" | "NTN" | "STRN" | "UNKNOWN";
+    rawId?: string;
+    formattedId?: string;
+    isFiler?: boolean;
+    atlStatus?: "Active" | "Inactive" | "Unregistered" | "Pending";
+    fbrGatewayConfigured?: boolean;
+    verifiedOnline?: boolean;
+    province?: string;
+    gender?: "Male" | "Female";
+    businessName?: string;
     message: string;
+    detail?: string;
+    taxSection?: string;
+    activeRate?: string;
+    nonFilerRate?: string;
+    officialVerification?: {
+      smsInstruction: string;
+      portalUrl: string;
+      irisUrl: string;
+    };
   } | null>(null);
 
   // Reset form when modal opens
@@ -122,8 +145,6 @@ export function CreateCustomerModal({
     };
   }, [open, onOpenChange]);
 
-  if (!open) return null;
-
   const handleChange = (
     field: keyof FormState,
     value: string | "Retailer" | "WS / Distributor"
@@ -132,12 +153,40 @@ export function CreateCustomerModal({
     if (errorMessage) setErrorMessage(null);
   };
 
-  const handleVerifyTax = () => {
-    const taxNum = formData.ntnNumber.trim() || formData.cnicNumber.trim();
+  // Quick setter for Active Filer vs Non-Filer status
+  const setAtlStatusQuick = (status: "Active" | "In-Active") => {
+    setFormData((prev) => ({
+      ...prev,
+      salesTaxAtl: status,
+      incomeTaxAtl: status,
+      salesTaxRegType: status === "Active" ? "Registered" : (prev.salesTaxRegType || "Unregistered"),
+    }));
+    if (taxVerificationResult) {
+      setTaxVerificationResult({
+        ...taxVerificationResult,
+        verified: status === "Active",
+        isFiler: status === "Active",
+        atlStatus: status === "Active" ? "Active" : "Inactive",
+        message:
+          status === "Active"
+            ? `Status set to Active Filer. Standard ${
+                formData.customerType === "Retailer" ? "236H (0.5%)" : "236G (0.1%)"
+              } tax rate applied.`
+            : `Status set to In-Active / Non-Filer. Penalty rate ${
+                formData.customerType === "Retailer" ? "236H (1.0%)" : "236G (0.2%)"
+              } applied.`,
+      });
+    }
+  };
+
+  const handleVerifyTax = async () => {
+    const taxNum = formData.cnicNumber.trim() || formData.ntnNumber.trim();
     if (!taxNum) {
       setTaxVerificationResult({
         verified: false,
-        message: "Please enter an NTN Number or CNIC Number to verify against FBR ATL.",
+        validFormat: false,
+        message: "Please enter a CNIC Number (13 digits) or NTN Number (7-8 digits) to verify against FBR ATL.",
+        detail: "Example CNIC: 16101-5419566-3 | Example NTN: 1234567-8",
       });
       return;
     }
@@ -145,30 +194,68 @@ export function CreateCustomerModal({
     setIsVerifyingTax(true);
     setTaxVerificationResult(null);
 
-    // Simulate real-time FBR online inquiry with realistic response
-    setTimeout(() => {
-      setIsVerifyingTax(false);
-      const isCompliant = !taxNum.toLowerCase().includes("fail");
-      if (isCompliant) {
-        setTaxVerificationResult({
-          verified: true,
-          message: `Active FBR ATL record verified for ${formData.companyName || formData.contactPerson || taxNum}. Standard ${
-            formData.customerType === "Retailer" ? "236H (0.5%)" : "236G (0.1%)"
-          } tax rates applied.`,
-        });
+    try {
+      const res = await fetch("/api/fbr/verify-taxpayer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taxNumber: taxNum,
+          customerType: formData.customerType,
+          companyId,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Failed to verify tax number");
+      }
+
+      const data = json.data;
+
+      // Automatically format and place identifier in the correct field
+      if (data.validFormat && data.formattedId) {
+        if (data.idType === "CNIC") {
+          setFormData((prev) => ({
+            ...prev,
+            cnicNumber: data.formattedId,
+            // If the user typed their 13-digit CNIC into the NTN box, clear it from NTN
+            ntnNumber: prev.ntnNumber.replace(/[\s-]/g, "") === data.rawId.replace(/[\s-]/g, "") ? "" : prev.ntnNumber,
+          }));
+        } else if (data.idType === "NTN") {
+          setFormData((prev) => ({
+            ...prev,
+            ntnNumber: data.formattedId,
+          }));
+        }
+      }
+
+      if (data.validFormat && data.isFiler) {
         setFormData((prev) => ({
           ...prev,
           salesTaxAtl: "Active",
           incomeTaxAtl: "Active",
           salesTaxRegType: prev.salesTaxRegType || "Registered",
         }));
-      } else {
-        setTaxVerificationResult({
-          verified: false,
-          message: "Tax identifier was not found on active FBR Active Taxpayer List (ATL). Higher non-filer withholding rates will apply.",
-        });
+      } else if (!data.validFormat) {
+        setFormData((prev) => ({
+          ...prev,
+          salesTaxAtl: "In-Active",
+          incomeTaxAtl: "In-Active",
+          salesTaxRegType: "Unregistered",
+        }));
       }
-    }, 600);
+
+      setTaxVerificationResult(data);
+    } catch (err: any) {
+      setTaxVerificationResult({
+        verified: false,
+        validFormat: false,
+        message: err.message || "Unable to complete tax number verification.",
+        detail: "Please check your network connection and verify identifier format.",
+      });
+    } finally {
+      setIsVerifyingTax(false);
+    }
   };
 
   const submitCustomer = async (andNew: boolean) => {
@@ -474,21 +561,90 @@ export function CreateCustomerModal({
           {taxVerificationResult && (
             <div
               className={cn(
-                "rounded-xl border p-3 flex items-start gap-2.5 text-xs transition-all animate-in fade-in-50",
-                taxVerificationResult.verified
-                  ? "border-emerald-200 bg-emerald-50/80 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  : "border-amber-200 bg-amber-50/80 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300"
+                "rounded-xl border p-4 text-xs transition-all animate-in fade-in-50 space-y-2.5",
+                !taxVerificationResult.validFormat
+                  ? "border-red-300 bg-red-50/90 text-red-900 dark:border-red-900/70 dark:bg-red-950/50 dark:text-red-200"
+                  : taxVerificationResult.verifiedOnline && taxVerificationResult.isFiler
+                  ? "border-emerald-300 bg-emerald-50/90 text-emerald-900 dark:border-emerald-900/70 dark:bg-emerald-950/50 dark:text-emerald-200"
+                  : taxVerificationResult.verifiedOnline && !taxVerificationResult.isFiler
+                  ? "border-amber-300 bg-amber-50/90 text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/50 dark:text-amber-200"
+                  : "border-blue-200 bg-blue-50/80 text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
               )}
             >
-              <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
-              <div>
-                <p className="font-semibold">
-                  {taxVerificationResult.verified
-                    ? "FBR Active Taxpayer (ATL) Verified"
-                    : "Verification Notice"}
-                </p>
-                <p className="mt-0.5">{taxVerificationResult.message}</p>
+              <div className="flex items-start gap-2.5">
+                {!taxVerificationResult.validFormat ? (
+                  <AlertCircle className="h-5 w-5 shrink-0 text-red-600 dark:text-red-400 mt-0.5" />
+                ) : taxVerificationResult.verifiedOnline && taxVerificationResult.isFiler ? (
+                  <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                ) : taxVerificationResult.verifiedOnline && !taxVerificationResult.isFiler ? (
+                  <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                ) : (
+                  <Info className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
+                )}
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-sm">
+                      {!taxVerificationResult.validFormat
+                        ? "Tax Identifier Format Error"
+                        : taxVerificationResult.verifiedOnline && taxVerificationResult.isFiler
+                        ? "FBR Active Taxpayer (ATL) Verified Live"
+                        : taxVerificationResult.verifiedOnline && !taxVerificationResult.isFiler
+                        ? "FBR Inactive / Non-Filer Record"
+                        : `${taxVerificationResult.idType || "Tax ID"} Format Validated`}
+                    </p>
+                    {taxVerificationResult.formattedId && (
+                      <span className="font-mono text-xs px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 font-semibold">
+                        {taxVerificationResult.formattedId}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mt-1 font-medium">{taxVerificationResult.message}</p>
+                  {taxVerificationResult.detail && (
+                    <p className="mt-1 text-xs opacity-90 leading-relaxed">
+                      {taxVerificationResult.detail}
+                    </p>
+                  )}
+                </div>
               </div>
+
+              {/* Format is valid, but live FBR gateway is not configured in environment */}
+              {taxVerificationResult.validFormat && !taxVerificationResult.verifiedOnline && (
+                <div className="pt-2 border-t border-blue-200/60 dark:border-blue-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="text-[11px] text-blue-800 dark:text-blue-300 font-mono">
+                    {taxVerificationResult.officialVerification?.smsInstruction}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <a
+                      href={taxVerificationResult.officialVerification?.portalUrl || "https://e.fbr.gov.pk/"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white dark:bg-zinc-800 text-blue-700 dark:text-blue-300 hover:text-blue-800 border border-blue-200 dark:border-zinc-700 text-xs font-medium transition-colors"
+                    >
+                      <span>FBR Portal</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() => setAtlStatusQuick("Active")}
+                      className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      ✓ Set Active (0.5%)
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setAtlStatusQuick("In-Active")}
+                      className="px-2.5 py-1 rounded bg-zinc-700 hover:bg-zinc-800 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      ✕ Set Non-Filer
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
