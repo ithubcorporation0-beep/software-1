@@ -346,6 +346,15 @@ export function CreateCustomerModal({
     }
   };
 
+  React.useEffect(() => {
+    if (!open) {
+      setErrorMessage(null);
+      setSuccessNotice(null);
+    }
+  }, [open]);
+
+  if (!open) return null;
+
   return (
     <div
       role="dialog"

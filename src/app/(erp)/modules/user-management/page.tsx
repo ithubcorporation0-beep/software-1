@@ -3,7 +3,7 @@ import { ContentLayout } from "@/components/layout/content-layout";
 import { UserManagementClient } from "./user-management-client";
 import { getCompanyMembers, getCompanyRoles } from "@/lib/users/server";
 import { getCustomers } from "@/lib/crm/server";
-import { getCurrentUser } from "@/lib/auth/server";
+import { getCurrentUser, getUserMemberships } from "@/lib/auth/server";
 
 const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -14,7 +14,14 @@ export const metadata = {
 
 export default async function UserManagementPage() {
   const user = await getCurrentUser();
-  const companyId = DEFAULT_COMPANY_ID;
+  let companyId = DEFAULT_COMPANY_ID;
+
+  if (user) {
+    const memberships = await getUserMemberships(user.id);
+    if (memberships.length > 0 && memberships[0].company_id) {
+      companyId = memberships[0].company_id;
+    }
+  }
 
   // Load authorized tenant members, roles, and customers in parallel
   const [members, roles, customersResult] = await Promise.all([
