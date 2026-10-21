@@ -6,6 +6,7 @@ import { getCompanySettings } from "@/lib/company/server";
 import { getCompanyMembers, getCompanyRoles, getPermissionsCatalog } from "@/lib/users/server";
 import { getCompanyAuditLogs } from "@/lib/audit/server";
 import { requireCompanyMembership } from "@/lib/auth/server";
+import { getCompanyFbrSettings, DEFAULT_FBR_CONFIG, getFbrCredentialsStatus } from "@/lib/fbr-settings";
 
 const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -27,7 +28,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   }
 
   // Load authorized tenant data
-  const [companySettings, members, roles, permissionsCatalog, auditLogs] = await Promise.all([
+  const [companySettings, members, roles, permissionsCatalog, auditLogs, fbrOverview] = await Promise.all([
     getCompanySettings(companyId).catch(() => ({
       companyId,
       name: "IT-HUB Global Technologies Corp",
@@ -57,13 +58,18 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     getCompanyRoles(companyId).catch(() => []),
     getPermissionsCatalog().catch(() => []),
     getCompanyAuditLogs(companyId, { limit: 50 }).catch(() => []),
+    getCompanyFbrSettings(companyId).catch(() => ({
+      config: DEFAULT_FBR_CONFIG,
+      credentialsStatus: getFbrCredentialsStatus(),
+      effectiveStatus: "Not Configured" as const,
+    })),
   ]);
 
   return (
     <ContentLayout>
       <PageHeader
         title="Company Settings & Governance"
-        description="Multi-tenant organization profile, role-based access control (RBAC), and compliance audit trails."
+        description="Multi-tenant organization profile, role-based access control (RBAC), FBR electronic invoicing, and compliance audit trails."
         breadcrumbs={[
           { label: "Settings & Governance" }
         ]}
@@ -75,6 +81,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         roles={roles}
         permissionsCatalog={permissionsCatalog}
         auditLogs={auditLogs}
+        fbrOverview={fbrOverview}
         initialTab={initialTab}
       />
     </ContentLayout>

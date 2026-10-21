@@ -224,3 +224,71 @@ export async function deleteCustomRoleAction(
     };
   }
 }
+
+import {
+  updateCompanyFbrSettings,
+  testFbrConnection,
+  FbrCompanyConfig,
+  FbrOnboardingStatus,
+} from "@/lib/fbr-settings";
+
+/**
+ * Server Action for updating company FBR integration configuration.
+ */
+export async function saveFbrSettingsAction(
+  companyId: string,
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState<FbrCompanyConfig>> {
+  try {
+    const rawData = {
+      enabled: formData.get("enabled") === "true" || formData.get("enabled") === "on",
+      environment: (formData.get("environment") as "sandbox" | "production") || "sandbox",
+      integratorName: (formData.get("integratorName") as string) || "PRAL (Pakistan Revenue Automation Limited)",
+      sellerNtn: (formData.get("sellerNtn") as string) || "",
+      sellerStrn: (formData.get("sellerStrn") as string) || "",
+      posId: (formData.get("posId") as string) || "",
+      enableDigitalInvoicing: formData.get("enableDigitalInvoicing") === "true" || formData.get("enableDigitalInvoicing") === "on",
+      enableTaxpayerVerification: formData.get("enableTaxpayerVerification") === "true" || formData.get("enableTaxpayerVerification") === "on",
+      onboardingStatus: (formData.get("onboardingStatus") as FbrOnboardingStatus) || "Not Configured",
+    };
+
+    const res = await updateCompanyFbrSettings(companyId, rawData);
+    if (!res.success) {
+      return { success: false, error: res.error || "Failed to update FBR integration settings" };
+    }
+
+    revalidatePath("/settings");
+    return {
+      success: true,
+      message: "FBR integration configuration saved successfully.",
+      data: res.data,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Failed to update FBR integration settings",
+    };
+  }
+}
+
+/**
+ * Server Action for testing live connection to FBR gateway.
+ */
+export async function testFbrConnectionAction(companyId: string): Promise<ActionState> {
+  try {
+    const res = await testFbrConnection(companyId);
+    revalidatePath("/settings");
+    return {
+      success: res.success,
+      message: res.message,
+      data: { status: res.status },
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Failed to test FBR connection",
+    };
+  }
+}
+

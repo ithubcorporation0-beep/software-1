@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Eye,
   Check,
+  Receipt,
 } from "lucide-react";
 import { CompanyExtendedSettings } from "@/lib/company/server";
 import { CompanyMemberItem } from "@/lib/users/server";
@@ -46,6 +47,8 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { FbrIntegrationOverview, DEFAULT_FBR_OVERVIEW } from "@/lib/fbr-types";
+import { FbrSettingsTab } from "@/components/settings/fbr-settings-tab";
 
 interface SettingsClientProps {
   companySettings: CompanyExtendedSettings;
@@ -53,6 +56,7 @@ interface SettingsClientProps {
   roles: Array<Role & { permissions: string[] }>;
   permissionsCatalog: Permission[];
   auditLogs: AuditLog[];
+  fbrOverview?: FbrIntegrationOverview;
   initialTab?: string;
 }
 
@@ -62,9 +66,10 @@ export function SettingsClient({
   roles: initialRoles,
   permissionsCatalog,
   auditLogs: initialAuditLogs,
+  fbrOverview,
   initialTab = "company",
 }: SettingsClientProps) {
-  const [activeTab, setActiveTab] = React.useState<"company" | "users" | "roles" | "audit">(
+  const [activeTab, setActiveTab] = React.useState<"company" | "users" | "roles" | "audit" | "fbr">(
     (initialTab as any) || "company"
   );
 
@@ -345,6 +350,23 @@ export function SettingsClient({
           Audit Trail
           <Badge variant="outline" className="ml-1 text-[10px] h-4">
             {auditLogs.length}
+          </Badge>
+        </button>
+        <button
+          onClick={() => setActiveTab("fbr")}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium transition-colors ${
+            activeTab === "fbr"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          }`}
+        >
+          <Receipt className="h-4 w-4" />
+          FBR Integration
+          <Badge
+            variant={fbrOverview?.effectiveStatus.includes("Connected") ? "outline" : "secondary"}
+            className="ml-1 text-[10px] h-4"
+          >
+            {fbrOverview?.effectiveStatus || "FBR"}
           </Badge>
         </button>
       </div>
@@ -1401,6 +1423,16 @@ export function SettingsClient({
             </div>
           </Dialog>
         </Card>
+      )}
+
+      {/* =========================================================================
+          TAB 5: FBR INTEGRATION & DIGITAL INVOICING
+      ========================================================================= */}
+      {activeTab === "fbr" && (
+        <FbrSettingsTab
+          companyId={companySettings.companyId}
+          initialOverview={fbrOverview || DEFAULT_FBR_OVERVIEW}
+        />
       )}
     </div>
   );
