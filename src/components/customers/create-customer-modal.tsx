@@ -50,6 +50,14 @@ interface FormState {
   state: string;
   country: string;
   zipCode: string;
+  sameAsBilling: boolean;
+  shippingName: string;
+  shippingAddress: string;
+  shippingAddressLine2: string;
+  shippingCity: string;
+  shippingState: string;
+  shippingCountry: string;
+  shippingZipCode: string;
 }
 
 const INITIAL_FORM_STATE: FormState = {
@@ -78,6 +86,14 @@ const INITIAL_FORM_STATE: FormState = {
   state: "",
   country: "Pakistan",
   zipCode: "",
+  sameAsBilling: true,
+  shippingName: "",
+  shippingAddress: "",
+  shippingAddressLine2: "",
+  shippingCity: "",
+  shippingState: "",
+  shippingCountry: "Pakistan",
+  shippingZipCode: "",
 };
 
 export function CreateCustomerModal({
@@ -357,6 +373,14 @@ export function CreateCustomerModal({
         state: formData.state || undefined,
         country: formData.country.trim() || "Pakistan",
         zipCode: formData.zipCode.trim() || undefined,
+        sameAsBilling: formData.sameAsBilling,
+        shippingName: (formData.sameAsBilling ? formData.billingName : formData.shippingName).trim() || undefined,
+        shippingAddress: (formData.sameAsBilling ? formData.billingAddress : formData.shippingAddress).trim() || undefined,
+        shippingAddressLine2: (formData.sameAsBilling ? formData.addressLine2 : formData.shippingAddressLine2).trim() || undefined,
+        shippingCity: (formData.sameAsBilling ? formData.city : formData.shippingCity).trim() || undefined,
+        shippingState: formData.sameAsBilling ? formData.state : formData.shippingState || undefined,
+        shippingCountry: (formData.sameAsBilling ? formData.country : formData.shippingCountry).trim() || "Pakistan",
+        shippingZipCode: (formData.sameAsBilling ? formData.zipCode : formData.shippingZipCode).trim() || undefined,
         status: formData.loginStatus === "Inactive" ? "Inactive" : "Active",
       };
 
@@ -1032,6 +1056,64 @@ export function CreateCustomerModal({
               />
             </div>
           </div>
+
+          {/* Shipping Address Same as Billing Checkbox */}
+          <div className="pt-2">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={formData.sameAsBilling}
+                onChange={(e) => setFormData((prev) => ({ ...prev, sameAsBilling: e.target.checked }))}
+                className="rounded border-gray-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
+              />
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                Shipping address same as billing
+              </span>
+            </label>
+          </div>
+
+          {/* Conditional Shipping Address Block */}
+          {!formData.sameAsBilling && (
+            <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-zinc-800 animate-in fade-in duration-150">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Shipping Address
+              </h4>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Shipping Name"
+                  value={formData.shippingName}
+                  onChange={(e) => handleChange("shippingName", e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Shipping Address"
+                  value={formData.shippingAddress}
+                  onChange={(e) => handleChange("shippingAddress", e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="City"
+                  value={formData.shippingCity}
+                  onChange={(e) => handleChange("shippingCity", e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                />
+                <input
+                  type="text"
+                  placeholder="Zip Code"
+                  value={formData.shippingZipCode}
+                  onChange={(e) => handleChange("shippingZipCode", e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer (Exact match to Image 2 & 3: Cancel, Create & New, Create) */}

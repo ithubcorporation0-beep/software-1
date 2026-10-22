@@ -158,6 +158,35 @@ export interface Customer {
   address_line_2?: string | null;
   state?: string | null;
   zip_code?: string | null;
+  advance_balance?: number | null;
+  shipping_name?: string | null;
+  shipping_address?: string | null;
+  shipping_address_line_2?: string | null;
+  shipping_city?: string | null;
+  shipping_state?: string | null;
+  shipping_country?: string | null;
+  shipping_zip_code?: string | null;
+  same_as_billing?: boolean;
+}
+
+export interface CustomerGroup {
+  id: string;
+  company_id: string;
+  name: string;
+  description?: string | null;
+  customer_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomerCategory {
+  id: string;
+  company_id: string;
+  name: string;
+  description?: string | null;
+  customer_count?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CustomerNote {

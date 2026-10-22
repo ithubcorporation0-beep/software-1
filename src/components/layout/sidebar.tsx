@@ -61,6 +61,11 @@ export const navigationConfig: NavSection[] = [
     title: "Commercial & CRM",
     items: [
       {
+        title: "Customers",
+        href: "/account/customers",
+        icon: Users,
+      },
+      {
         title: "CRM",
         href: "/crm",
         icon: Users,
