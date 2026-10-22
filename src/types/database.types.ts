@@ -552,10 +552,17 @@ export interface Account {
   code: string;
   name: string;
   account_type: AccountType;
+  sub_type?: string | null;
+  parent_id?: string | null;
+  tax_line?: string | null;
+  currency?: string | null;
+  opening_balance?: number | null;
+  opening_balance_date?: string | null;
   description?: string | null;
   is_system: boolean;
   is_active: boolean;
   balance?: number;
+  sub_accounts?: Account[];
   created_at: string;
   updated_at: string;
 }

@@ -339,24 +339,20 @@ export function AccountingClient({
               {activeDropdown === "accounting-setup" && (
                 <div className="absolute top-full left-0 z-50 mt-1.5 min-w-[210px] rounded-2xl border border-border/70 bg-card p-1.5 shadow-xl animate-in fade-in-80 duration-150">
                   <div className="space-y-0.5">
-                    <button
-                      onClick={() => {
-                        setActiveTab("chart-of-accounts");
-                        setActiveDropdown(null);
-                      }}
-                      className="w-full text-left rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    <Link
+                      href="/accounting/chart-of-accounts"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full text-left rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
                     >
                       Chart Of Accounts
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveTab("chart-of-accounts");
-                        setActiveDropdown(null);
-                      }}
-                      className="w-full text-left rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    </Link>
+                    <Link
+                      href="/accounting/chart-of-accounts"
+                      onClick={() => setActiveDropdown(null)}
+                      className="block w-full text-left rounded-xl px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
                     >
                       Account Types
-                    </button>
+                    </Link>
                   </div>
                 </div>
               )}

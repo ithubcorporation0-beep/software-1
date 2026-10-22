@@ -929,7 +929,13 @@ export async function createAccount(
     code: string;
     name: string;
     account_type: AccountType;
-    description?: string;
+    sub_type?: string | null;
+    parent_id?: string | null;
+    tax_line?: string | null;
+    currency?: string | null;
+    opening_balance?: number | null;
+    opening_balance_date?: string | null;
+    description?: string | null;
   },
   creatorUser?: Profile
 ): Promise<Account> {
@@ -951,9 +957,16 @@ export async function createAccount(
     code,
     name,
     account_type: input.account_type,
+    sub_type: input.sub_type || null,
+    parent_id: input.parent_id || null,
+    tax_line: input.tax_line || null,
+    currency: input.currency || "PKR",
+    opening_balance: input.opening_balance ?? 0,
+    opening_balance_date: input.opening_balance_date || null,
     description: input.description || null,
     is_system: false,
     is_active: true,
+    balance: input.opening_balance ?? 0,
     created_at: now,
     updated_at: now,
   };
@@ -973,7 +986,7 @@ export async function createAccount(
     action: "ACCOUNT_CREATED",
     resource: "chart_of_accounts",
     resourceId: newAccount.id,
-    details: { code, name, type: input.account_type },
+    details: { code, name, type: input.account_type, sub_type: input.sub_type },
   });
 
   try {
@@ -983,6 +996,92 @@ export async function createAccount(
   }
 
   return newAccount;
+}
+
+export async function updateAccount(
+  companyId: string,
+  accountId: string,
+  input: {
+    name?: string;
+    description?: string | null;
+    sub_type?: string | null;
+    tax_line?: string | null;
+    is_active?: boolean;
+  },
+  actingUser?: Profile
+): Promise<Account> {
+  await requirePermission(companyId, "finance.write", actingUser);
+  const user = actingUser || (await requireUser());
+
+  const existing = (await getAccounts(companyId)).find((a) => a.id === accountId);
+  if (!existing) {
+    throw new Error(`Account with ID ${accountId} not found.`);
+  }
+
+  const updated: Account = {
+    ...existing,
+    name: input.name !== undefined ? input.name.trim() : existing.name,
+    description: input.description !== undefined ? input.description : existing.description,
+    sub_type: input.sub_type !== undefined ? input.sub_type : existing.sub_type,
+    tax_line: input.tax_line !== undefined ? input.tax_line : existing.tax_line,
+    is_active: input.is_active !== undefined ? input.is_active : existing.is_active,
+    updated_at: new Date().toISOString(),
+  };
+
+  const memIdx = memoryFinanceStore.accounts.findIndex((a) => a.id === accountId);
+  if (memIdx >= 0) {
+    memoryFinanceStore.accounts[memIdx] = updated;
+  }
+
+  try {
+    const supabase = await createClient();
+    await supabase
+      .from("chart_of_accounts")
+      .update({
+        name: updated.name,
+        description: updated.description,
+        sub_type: updated.sub_type,
+        tax_line: updated.tax_line,
+        is_active: updated.is_active,
+        updated_at: updated.updated_at,
+      })
+      .eq("id", accountId)
+      .eq("company_id", companyId);
+  } catch {
+    // Memory fallback
+  }
+
+  await recordAuditLog({
+    companyId,
+    userId: user.id,
+    action: "ACCOUNT_UPDATED",
+    resource: "chart_of_accounts",
+    resourceId: accountId,
+    details: input,
+  });
+
+  try {
+    await revalidateCompanyTag(companyId, "chart-of-accounts");
+  } catch {
+    // Non-blocking cache revalidation
+  }
+
+  return updated;
+}
+
+export async function toggleAccountActive(
+  companyId: string,
+  accountId: string,
+  actingUser?: Profile
+): Promise<Account> {
+  const account = (await getAccounts(companyId)).find((a) => a.id === accountId);
+  if (!account) {
+    throw new Error(`Account with ID ${accountId} not found.`);
+  }
+  if (account.is_system) {
+    throw new Error(`System core account [${account.code}] cannot be deactivated.`);
+  }
+  return updateAccount(companyId, accountId, { is_active: !account.is_active }, actingUser);
 }
 
 export async function getJournalEntries(
