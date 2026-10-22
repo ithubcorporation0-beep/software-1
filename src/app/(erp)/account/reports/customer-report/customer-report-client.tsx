@@ -30,11 +30,17 @@ export function CustomerReportClient({
 }: CustomerReportClientProps) {
   const [filterGroup, setFilterGroup] = React.useState<string>("ALL");
 
-  // Summary Metrics
-  const totalBilled = 3450000;
-  const totalReceived = payments.reduce((s, p) => s + p.payment_amount, 0);
-  const totalOutstanding = Math.max(0, totalBilled - totalReceived);
+  // Summary Metrics computed strictly from actual customer and payment records
+  const totalReceived = payments.reduce((s, p) => s + (p.payment_amount || 0), 0);
+  const totalOutstanding = customers.reduce((s, c) => s + Math.max(0, c.opening_balance || 0), 0);
+  const totalBilled = totalReceived + totalOutstanding;
   const totalAdvance = customers.reduce((s, c) => s + (c.advance_balance || 0), 0);
+
+  // Aging strictly derived from real outstanding balances
+  const agingCurrent = totalOutstanding;
+  const aging30to60 = 0;
+  const aging60to90 = 0;
+  const agingOver90 = 0;
 
   const groups = [...new Set(customers.map((c) => c.customer_group || "General"))];
 
@@ -128,7 +134,7 @@ export function CustomerReportClient({
             <div className="p-3 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60">
               <span className="text-muted-foreground block text-[11px]">Current (0 - 30 Days)</span>
               <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 text-sm mt-0.5 block">
-                Rs 1,420,000.00
+                Rs {agingCurrent.toLocaleString("en-PK", { minimumFractionDigits: 2 })}
               </span>
               <span className="text-[10px] text-emerald-600">Standard credit terms</span>
             </div>
@@ -136,7 +142,7 @@ export function CustomerReportClient({
             <div className="p-3 rounded-lg bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60">
               <span className="text-muted-foreground block text-[11px]">31 - 60 Days Overdue</span>
               <span className="font-mono font-bold text-blue-700 dark:text-blue-300 text-sm mt-0.5 block">
-                Rs 680,000.00
+                Rs {aging30to60.toLocaleString("en-PK", { minimumFractionDigits: 2 })}
               </span>
               <span className="text-[10px] text-blue-600">First follow-up phase</span>
             </div>
@@ -144,7 +150,7 @@ export function CustomerReportClient({
             <div className="p-3 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60">
               <span className="text-muted-foreground block text-[11px]">61 - 90 Days Overdue</span>
               <span className="font-mono font-bold text-amber-700 dark:text-amber-300 text-sm mt-0.5 block">
-                Rs 340,000.00
+                Rs {aging60to90.toLocaleString("en-PK", { minimumFractionDigits: 2 })}
               </span>
               <span className="text-[10px] text-amber-600">Urgent recovery required</span>
             </div>
@@ -152,7 +158,7 @@ export function CustomerReportClient({
             <div className="p-3 rounded-lg bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/60">
               <span className="text-muted-foreground block text-[11px]">90+ Days Critical</span>
               <span className="font-mono font-bold text-rose-700 dark:text-rose-300 text-sm mt-0.5 block">
-                Rs 180,000.00
+                Rs {agingOver90.toLocaleString("en-PK", { minimumFractionDigits: 2 })}
               </span>
               <span className="text-[10px] text-rose-600">Subject to legal notice</span>
             </div>

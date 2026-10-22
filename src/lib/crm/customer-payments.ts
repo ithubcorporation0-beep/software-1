@@ -4,93 +4,12 @@ import { recordAuditLog } from "@/lib/audit/server";
 import { CustomerPayment, CustomerPaymentStatus, CustomerPaymentType } from "@/types/database.types";
 import { getCustomers } from "@/lib/crm/server";
 
-// In-memory fallback store seeded with realistic data matching UNAZ ERP specification
-const memoryPayments: CustomerPayment[] = [
-  {
-    id: "cp-001",
-    company_id: "default",
-    payment_number: "CP-2026-06-034",
-    customer_id: "cust-001",
-    customer_name: "Gul Muhammad Traders",
-    payment_date: "2026-06-25",
-    payment_amount: 85000,
-    payment_type: "Against Invoices",
-    payment_method: "Bank Transfer",
-    reference_number: "HBL-TRX-948102",
-    status: "Cleared",
-    notes: "Cleared settlement against tax invoice INV-2026-001",
-    invoice_number: "INV-2026-001",
-    created_at: "2026-06-25T10:30:00Z",
-    updated_at: "2026-06-25T10:30:00Z",
-  },
-  {
-    id: "cp-002",
-    company_id: "default",
-    payment_number: "CP-2026-06-033",
-    customer_id: "cust-002",
-    customer_name: "Dr Naseem Akhtar",
-    payment_date: "2026-06-23",
-    payment_amount: 145000,
-    payment_type: "Against Invoices",
-    payment_method: "Cash",
-    reference_number: "CSH-REC-5512",
-    status: "Cleared",
-    notes: "Direct cash collection received at counter",
-    invoice_number: "INV-2026-004",
-    created_at: "2026-06-23T14:15:00Z",
-    updated_at: "2026-06-23T14:15:00Z",
-  },
-  {
-    id: "cp-003",
-    company_id: "default",
-    payment_number: "CP-2026-06-032",
-    customer_id: "cust-003",
-    customer_name: "Dr Sher Rehman",
-    payment_date: "2026-06-18",
-    payment_amount: 62500,
-    payment_type: "Advance Payment",
-    payment_method: "Cheque",
-    reference_number: "MCB-CHQ-77819",
-    status: "Cleared",
-    notes: "Advance deposit against upcoming Q3 fabric consignments",
-    created_at: "2026-06-18T11:00:00Z",
-    updated_at: "2026-06-18T11:00:00Z",
-  },
-  {
-    id: "cp-004",
-    company_id: "default",
-    payment_number: "CP-2026-06-031",
-    customer_id: "cust-004",
-    customer_name: "Al-Rehman Enterprises",
-    payment_date: "2026-06-15",
-    payment_amount: 210000,
-    payment_type: "Against Invoices",
-    payment_method: "Bank Transfer",
-    reference_number: "UBL-PAY-882310",
-    status: "Cleared",
-    notes: "Settlement for wholesale order batch #14",
-    invoice_number: "INV-2026-008",
-    created_at: "2026-06-15T09:45:00Z",
-    updated_at: "2026-06-15T09:45:00Z",
-  },
-  {
-    id: "cp-005",
-    company_id: "default",
-    payment_number: "CP-2026-06-030",
-    customer_id: "cust-005",
-    customer_name: "Kohinoor Textile Mills",
-    payment_date: "2026-06-10",
-    payment_amount: 350000,
-    payment_type: "Against Invoices",
-    payment_method: "Online Transfer",
-    reference_number: "MEZAN-RT-109234",
-    status: "Cleared",
-    notes: "Corporate supply monthly clearance",
-    invoice_number: "INV-2026-012",
-    created_at: "2026-06-10T16:20:00Z",
-    updated_at: "2026-06-10T16:20:00Z",
-  },
-];
+// In-memory fallback store for customer payments
+const memoryPayments: CustomerPayment[] = [];
+
+export function resetMemoryPaymentsStore(): void {
+  memoryPayments.length = 0;
+}
 
 export async function getCustomerPayments(
   companyId: string,
@@ -351,25 +270,6 @@ export async function getCustomerLedger(
     balance: running,
   });
 
-  // Sample invoices
-  const sampleInvoices = [
-    { date: "2026-05-10", ref: "INV-2026-001", desc: "Commercial Tax Invoice - IT Hardware", amount: 120000 },
-    { date: "2026-06-02", ref: "INV-2026-004", desc: "Commercial Tax Invoice - Consulting Hours", amount: 160000 },
-  ];
-
-  for (const inv of sampleInvoices) {
-    running += inv.amount;
-    entries.push({
-      id: "inv-" + inv.ref,
-      date: inv.date,
-      type: "Invoice",
-      reference: inv.ref,
-      description: inv.desc,
-      debit: inv.amount,
-      credit: 0,
-      balance: running,
-    });
-  }
 
   for (const pay of payments) {
     running -= pay.payment_amount;

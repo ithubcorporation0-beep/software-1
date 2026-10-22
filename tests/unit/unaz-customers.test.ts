@@ -304,18 +304,11 @@ CUST-902,"Balochistan Mineral Corp","Nasir Baloch","nasir@bmc.pk","03451112223",
   });
 
   describe("UNAZ Customer Payments, Batch Clearance & Customer Ledger", () => {
-    it("returns pre-seeded customer payments matching UNAZ screenshot vouchers", async () => {
-      const { getCustomerPayments } = await import("@/lib/crm/customer-payments");
+    it("starts with empty customer payments list without demo seed data", async () => {
+      const { getCustomerPayments, resetMemoryPaymentsStore } = await import("@/lib/crm/customer-payments");
+      resetMemoryPaymentsStore();
       const payments = await getCustomerPayments(TEST_COMPANY_ID);
-      expect(payments.length).toBeGreaterThanOrEqual(3);
-
-      const p1 = payments.find((p) => p.payment_number === "CP-2026-06-034");
-      expect(p1).toBeDefined();
-      expect(p1?.customer_name).toContain("Gul");
-
-      const p2 = payments.find((p) => p.payment_number === "CP-2026-06-033");
-      expect(p2).toBeDefined();
-      expect(p2?.customer_name).toContain("Dr Naseem Akhtar");
+      expect(payments.length).toBe(0);
     });
 
     it("creates a customer payment and updates customer balances", async () => {

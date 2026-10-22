@@ -43,9 +43,8 @@ export function DueBatchClient({ companyId, customers }: DueBatchClientProps) {
 
   // Initialize due items from customers
   const [items, setItems] = React.useState<DueCustomerItem[]>(() => {
-    return customers.map((c, i) => {
-      // If customer has opening_balance or sample balance
-      const bal = c.opening_balance || (i % 2 === 0 ? 85000 + i * 25000 : 45000 + i * 15000);
+    return customers.map((c) => {
+      const bal = Number(c.opening_balance) || 0;
       return {
         id: c.id,
         name: c.name,
