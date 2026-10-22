@@ -14,7 +14,15 @@ import {
   importCustomersFromCsv,
 } from "@/lib/crm/customer-settings";
 import { deleteCustomer } from "@/lib/crm/server";
-import { CustomerStatus, CustomerGroup, CustomerCategory } from "@/types/database.types";
+import {
+  getCustomerPayments,
+  createCustomerPayment,
+  updateCustomerPaymentStatus,
+  deleteCustomerPayment,
+  recordBatchPayments,
+  getCustomerLedger,
+} from "@/lib/crm/customer-payments";
+import { CustomerStatus, CustomerGroup, CustomerCategory, CustomerPayment, CustomerPaymentStatus } from "@/types/database.types";
 
 export interface ActionState<T = any> {
   success: boolean;
@@ -221,5 +229,96 @@ export async function importCustomersFromCsvAction(
     };
   } catch (err: any) {
     return { success: false, error: err.message || "CSV Import failed" };
+  }
+}
+
+export async function getCustomerPaymentsAction(
+  companyId: string
+): Promise<ActionState<CustomerPayment[]>> {
+  try {
+    const data = await getCustomerPayments(companyId);
+    return { success: true, data };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to load payments" };
+  }
+}
+
+export async function createCustomerPaymentAction(
+  companyId: string,
+  payload: any
+): Promise<ActionState<CustomerPayment>> {
+  try {
+    const res = await createCustomerPayment(companyId, payload);
+    if (!res.success) {
+      return { success: false, error: res.error || "Failed to create payment" };
+    }
+    revalidatePath("/account/customer-payments");
+    revalidatePath("/account/customers");
+    revalidatePath("/crm");
+    return { success: true, data: res.data, message: `Payment ${res.data?.payment_number} recorded successfully.` };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to record payment" };
+  }
+}
+
+export async function updateCustomerPaymentStatusAction(
+  companyId: string,
+  id: string,
+  status: CustomerPaymentStatus
+): Promise<ActionState> {
+  try {
+    const res = await updateCustomerPaymentStatus(companyId, id, status);
+    if (!res.success) {
+      return { success: false, error: res.error || "Failed to update status" };
+    }
+    revalidatePath("/account/customer-payments");
+    return { success: true, message: `Payment status marked as ${status}.` };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to update payment status" };
+  }
+}
+
+export async function deleteCustomerPaymentAction(
+  companyId: string,
+  id: string
+): Promise<ActionState> {
+  try {
+    const res = await deleteCustomerPayment(companyId, id);
+    if (!res.success) {
+      return { success: false, error: res.error || "Failed to delete payment" };
+    }
+    revalidatePath("/account/customer-payments");
+    return { success: true, message: "Payment record deleted." };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to delete payment" };
+  }
+}
+
+export async function recordBatchPaymentsAction(
+  companyId: string,
+  items: Array<{ customer_id: string; customer_name: string; amount: number; reference?: string }>
+): Promise<ActionState<{ processedCount: number; errors?: string[] }>> {
+  try {
+    const res = await recordBatchPayments(companyId, items);
+    if (!res.success) {
+      return { success: false, error: res.errors?.join("; ") || "Batch payment failed" };
+    }
+    revalidatePath("/account/customer-payments");
+    revalidatePath("/account/customers");
+    return { success: true, data: { processedCount: res.processedCount, errors: res.errors }, message: `Processed ${res.processedCount} batch payments.` };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Batch payment failed" };
+  }
+}
+
+export async function getCustomerLedgerAction(
+  companyId: string,
+  customerId?: string
+): Promise<ActionState<any>> {
+  try {
+    const data = await getCustomerLedger(companyId, customerId);
+    return { success: true, data };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to fetch ledger" };
   }
 }

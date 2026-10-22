@@ -302,4 +302,72 @@ CUST-902,"Balochistan Mineral Corp","Nasir Baloch","nasir@bmc.pk","03451112223",
       expect(fetched?.customer.advance_balance).toBe(75000);
     });
   });
+
+  describe("UNAZ Customer Payments, Batch Clearance & Customer Ledger", () => {
+    it("returns pre-seeded customer payments matching UNAZ screenshot vouchers", async () => {
+      const { getCustomerPayments } = await import("@/lib/crm/customer-payments");
+      const payments = await getCustomerPayments(TEST_COMPANY_ID);
+      expect(payments.length).toBeGreaterThanOrEqual(3);
+
+      const p1 = payments.find((p) => p.payment_number === "CP-2026-06-034");
+      expect(p1).toBeDefined();
+      expect(p1?.customer_name).toContain("Gul");
+
+      const p2 = payments.find((p) => p.payment_number === "CP-2026-06-033");
+      expect(p2).toBeDefined();
+      expect(p2?.customer_name).toContain("Dr Naseem Akhtar");
+    });
+
+    it("creates a customer payment and updates customer balances", async () => {
+      const { createCustomerPayment, getCustomerPayments } = await import("@/lib/crm/customer-payments");
+      const res = await createCustomerPayment(TEST_COMPANY_ID, {
+        customer_id: "c-1",
+        customer_name: "Gul Muhammad Traders",
+        payment_date: "2026-06-26",
+        payment_method: "Bank Transfer",
+        payment_amount: 50000,
+        reference_number: "TRX-998877",
+        notes: "Advance payment clearance",
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.data?.payment_number).toMatch(/^CP-/);
+      expect(res.data?.payment_amount).toBe(50000);
+
+      const all = await getCustomerPayments(TEST_COMPANY_ID, { search: "TRX-998877" });
+      expect(all.length).toBe(1);
+    });
+
+    it("processes batch payments across multiple invoices/dues", async () => {
+      const { recordBatchPayments } = await import("@/lib/crm/customer-payments");
+      const res = await recordBatchPayments(TEST_COMPANY_ID, [
+        {
+          customer_id: "c-1",
+          customer_name: "Gul Muhammad Traders",
+          amount: 25000,
+          reference: "INV-2026-001",
+        },
+        {
+          customer_id: "c-2",
+          customer_name: "Dr Naseem Akhtar",
+          amount: 35000,
+          reference: "INV-2026-002",
+        },
+      ]);
+
+      expect(res.success).toBe(true);
+      expect(res.processedCount).toBe(2);
+    });
+
+    it("computes customer ledger running debit, credit, and net balances", async () => {
+      const { getCustomerLedger } = await import("@/lib/crm/customer-payments");
+      const ledger = await getCustomerLedger(TEST_COMPANY_ID, "c-1");
+
+      expect(ledger.entries.length).toBeGreaterThanOrEqual(1);
+      expect(typeof ledger.totalDebit).toBe("number");
+      expect(typeof ledger.totalCredit).toBe("number");
+      expect(typeof ledger.closingBalance).toBe("number");
+      expect(ledger.entries.every((e) => typeof e.balance === "number")).toBe(true);
+    });
+  });
 });

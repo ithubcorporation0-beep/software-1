@@ -7,6 +7,7 @@ import { NotificationsPopover } from "./notifications-popover";
 import { UserMenu } from "./user-menu";
 import { GlobalSearchDialog } from "./global-search-dialog";
 import { MobileNav } from "./mobile-nav";
+import { UnazTopNav } from "./unaz-top-nav";
 import { Badge } from "@/components/ui/badge";
 
 export function Header() {
@@ -28,7 +29,7 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-20 flex h-14 w-full items-center justify-between border-b bg-card/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        {/* Left Side: Mobile toggle + Workspace Context */}
+        {/* Left Side: Mobile toggle + Workspace Context + UNAZ Navigation */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setMobileNavOpen(true)}
@@ -51,6 +52,9 @@ export function Header() {
               </span>
             </div>
           </div>
+
+          <div className="h-5 w-px bg-border/60 hidden xl:block mx-1" />
+          <UnazTopNav />
         </div>
 
         {/* Center: Global Search Entry Point */}

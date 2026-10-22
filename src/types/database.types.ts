@@ -189,6 +189,28 @@ export interface CustomerCategory {
   updated_at: string;
 }
 
+export type CustomerPaymentType = "Against Invoices" | "Advance Payment";
+export type CustomerPaymentStatus = "Cleared" | "Pending" | "Cancelled";
+
+export interface CustomerPayment {
+  id: string;
+  company_id: string;
+  payment_number: string;
+  customer_id: string;
+  customer_name: string;
+  payment_date: string;
+  payment_amount: number;
+  payment_type: CustomerPaymentType;
+  payment_method: string;
+  reference_number?: string | null;
+  status: CustomerPaymentStatus;
+  notes?: string | null;
+  invoice_id?: string | null;
+  invoice_number?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CustomerNote {
   id: string;
   company_id: string;

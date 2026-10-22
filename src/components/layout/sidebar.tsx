@@ -18,17 +18,24 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   ShieldCheck,
   Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
+export interface SubNavItem {
+  title: string;
+  href: string;
+}
+
 export interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  children?: SubNavItem[];
 }
 
 export interface NavSection {
@@ -64,6 +71,14 @@ export const navigationConfig: NavSection[] = [
         title: "Customers",
         href: "/account/customers",
         icon: Users,
+        children: [
+          { title: "Customer List", href: "/account/customers" },
+          { title: "Customer Payment", href: "/account/customer-payments" },
+          { title: "Due & Batch Payment", href: "/account/customer-payments/due-batch" },
+          { title: "Customer Report", href: "/account/reports/customer-report" },
+          { title: "Customer Ledger", href: "/account/reports/customer-ledger" },
+          { title: "Customer Setting", href: "/account/customer-groups" },
+        ],
       },
       {
         title: "CRM",
@@ -142,6 +157,13 @@ export const navigationConfig: NavSection[] = [
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = React.useState(false);
+  const [expandedMenus, setExpandedMenus] = React.useState<Record<string, boolean>>({
+    Customers: true,
+  });
+
+  const toggleMenu = (title: string) => {
+    setExpandedMenus((prev) => ({ ...prev, [title]: !prev[title] }));
+  };
 
   return (
     <aside
@@ -194,6 +216,69 @@ export function Sidebar({ className }: { className?: string }) {
                     ? pathname === "/"
                     : pathname === item.href || pathname.startsWith(`${item.href}/`);
                 const Icon = item.icon;
+
+                const hasChildren = item.children && item.children.length > 0;
+                const isExpanded = !!expandedMenus[item.title];
+                const isChildActive = hasChildren && item.children!.some((c) => pathname === c.href || pathname.startsWith(`${c.href}/`));
+                const isItemActive = isActive || isChildActive;
+
+                if (hasChildren && !collapsed) {
+                  return (
+                    <div key={item.title} className="space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleMenu(item.title)}
+                        className={cn(
+                          "w-full group flex items-center justify-between rounded-md px-2.5 py-2 text-xs font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring text-left",
+                          isItemActive
+                            ? "bg-muted/80 text-foreground font-semibold"
+                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Icon
+                            className={cn(
+                              "h-4 w-4 shrink-0 transition-colors",
+                              isItemActive
+                                ? "text-primary"
+                                : "text-muted-foreground group-hover:text-foreground"
+                            )}
+                          />
+                          <span className="truncate">{item.title}</span>
+                        </div>
+                        <ChevronDown
+                          className={cn(
+                            "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
+                            isExpanded && "rotate-180"
+                          )}
+                        />
+                      </button>
+
+                      {isExpanded && (
+                        <div className="pl-6 pr-1 space-y-0.5 pt-0.5 border-l border-border/60 ml-4">
+                          {item.children!.map((child) => {
+                            const isCurrentChild = pathname === child.href;
+                            return (
+                              <Link
+                                key={child.href}
+                                href={child.href}
+                                prefetch={true}
+                                className={cn(
+                                  "block rounded-md px-2.5 py-1.5 text-xs transition-colors",
+                                  isCurrentChild
+                                    ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                                )}
+                              >
+                                {child.title}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
 
                 return (
                   <Link
