@@ -118,3 +118,18 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.4);
 }
+
+.custom-desktop-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-desktop-scrollbar::-webkit-scrollbar-track {
+  background: #1a2026;
+}
+.custom-desktop-scrollbar::-webkit-scrollbar-thumb {
+  background: #2d3742;
+  border-radius: 4px;
+}
+.custom-desktop-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+

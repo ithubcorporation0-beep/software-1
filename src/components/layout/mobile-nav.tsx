@@ -85,29 +85,52 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                 {section.items.map((item) => {
                   const isActive = pathname === item.href;
                   const Icon = item.icon;
+                  const hasChildren = item.children && item.children.length > 0;
+
                   return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={onClose}
-                      aria-current={isActive ? "page" : undefined}
-                      className={cn(
-                        "flex items-center justify-between rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
-                        isActive
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    <div key={item.title} className="space-y-0.5">
+                      <Link
+                        href={item.href}
+                        onClick={onClose}
+                        aria-current={isActive ? "page" : undefined}
+                        className={cn(
+                          "flex items-center justify-between rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span>{item.title}</span>
+                        </div>
+                        {item.badge && (
+                          <Badge variant="neutral" className="text-[9px] h-4">
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </Link>
+
+                      {hasChildren && (
+                        <div className="pl-6 space-y-0.5 border-l border-border/60 ml-4 py-1">
+                          {item.children!.map((child) => (
+                            <Link
+                              key={child.title}
+                              href={child.href}
+                              onClick={onClose}
+                              className={cn(
+                                "block rounded px-2 py-1 text-xs transition-colors",
+                                pathname === child.href
+                                  ? "bg-primary/10 text-primary font-semibold"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                              )}
+                            >
+                              {child.title}
+                            </Link>
+                          ))}
+                        </div>
                       )}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <span>{item.title}</span>
-                      </div>
-                      {item.badge && (
-                        <Badge variant="neutral" className="text-[9px] h-4">
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </Link>
+                    </div>
                   );
                 })}
               </nav>
