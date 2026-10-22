@@ -7,7 +7,7 @@ import { getCustomers } from "@/lib/crm/server";
 import { requireCompanyMembership } from "@/lib/auth/server";
 
 export const metadata: Metadata = {
-  title: "Customer Payments | UNAZ ERP",
+  title: "Customer Payments | IT-HUB ERP",
   description: "Customer payment transactions, receipts, voucher printing, and batch payments.",
 };
 

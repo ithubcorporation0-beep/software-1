@@ -202,7 +202,7 @@ export function CustomerPaymentsClient({
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-primary">Accounts & Commercial</span>
               <span className="text-muted-foreground/60">•</span>
-              <span className="text-xs font-medium text-muted-foreground">UNAZ ERP Receipts</span>
+              <span className="text-xs font-medium text-muted-foreground">IT-HUB ERP Receipts</span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5 mt-1">
               <CreditCard className="h-6 w-6 text-primary" />

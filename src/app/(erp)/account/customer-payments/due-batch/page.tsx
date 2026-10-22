@@ -6,7 +6,7 @@ import { getCustomers } from "@/lib/crm/server";
 import { requireCompanyMembership } from "@/lib/auth/server";
 
 export const metadata: Metadata = {
-  title: "Due & Batch Payments | UNAZ ERP",
+  title: "Due & Batch Payments | IT-HUB ERP",
   description: "Bulk batch customer payment clearance and overdue receivables processing.",
 };
 

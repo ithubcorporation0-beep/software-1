@@ -7,7 +7,7 @@ import { getCustomerLedger } from "@/lib/crm/customer-payments";
 import { requireCompanyMembership } from "@/lib/auth/server";
 
 export const metadata: Metadata = {
-  title: "Customer Ledger Statement | UNAZ ERP",
+  title: "Customer Ledger Statement | IT-HUB ERP",
   description: "Account receivables ledger statement, running balances, debits, and credits.",
 };
 

@@ -15,8 +15,8 @@ export function ContentLayout({
   return (
     <div
       className={cn(
-        "flex-1 p-4 sm:p-6 lg:p-8 animate-in fade-in-50 duration-150",
-        !fullWidth && "mx-auto max-w-7xl",
+        "flex-1 p-2 sm:p-3.5 lg:p-4 animate-in fade-in-50 duration-150 w-full",
+        !fullWidth && "max-w-[1750px] mx-auto",
         className
       )}
     >

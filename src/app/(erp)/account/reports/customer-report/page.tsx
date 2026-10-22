@@ -7,7 +7,7 @@ import { getCustomerPayments } from "@/lib/crm/customer-payments";
 import { requireCompanyMembership } from "@/lib/auth/server";
 
 export const metadata: Metadata = {
-  title: "Customer Intelligence & Receivables Report | UNAZ ERP",
+  title: "Customer Intelligence & Receivables Report | IT-HUB ERP",
   description: "Customer accounts aging analysis, total balances, collections, and credit utilization.",
 };
 
