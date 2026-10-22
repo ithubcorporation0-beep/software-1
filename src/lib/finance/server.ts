@@ -123,35 +123,68 @@ export const STANDARD_CHART_OF_ACCOUNTS: Array<{
   code: string;
   name: string;
   account_type: AccountType;
+  sub_type?: string;
+  tax_line?: string;
+  parent_code?: string;
   description: string;
 }> = [
   // 1000s: Current & Non-Current Assets
-  { code: "1010", name: "Cash on Hand", account_type: "Asset", description: "Petty cash and drawer funds" },
-  { code: "1020", name: "Operating Bank Account", account_type: "Asset", description: "Primary operating checking account" },
-  { code: "1200", name: "Accounts Receivable", account_type: "Asset", description: "Amounts owed by customers for billed invoices" },
-  { code: "1500", name: "Equipment & Hardware", account_type: "Asset", description: "Office IT hardware, servers, and equipment" },
+  { code: "1000", name: "Cash and Cash Equivalents", account_type: "Asset", sub_type: "Cash on Hand", tax_line: "Non-Taxable", description: "Parent heading for liquid cash, drawers, and bank balances" },
+  { code: "1010", name: "Cash on Hand / Petty Cash", account_type: "Asset", sub_type: "Cash on Hand", tax_line: "Non-Taxable", parent_code: "1000", description: "Petty cash and drawer funds" },
+  { code: "1020", name: "Operating Bank Account", account_type: "Asset", sub_type: "Checking", tax_line: "Non-Taxable", parent_code: "1000", description: "Primary operating checking account" },
+  { code: "1030", name: "Payroll Bank Account", account_type: "Asset", sub_type: "Checking", tax_line: "Non-Taxable", parent_code: "1000", description: "Dedicated salary and payroll disbursement account" },
+  { code: "1040", name: "Business Savings Account", account_type: "Asset", sub_type: "Savings", tax_line: "Non-Taxable", parent_code: "1000", description: "Interest-bearing reserve account" },
+
+  // Accounts Receivable
+  { code: "1200", name: "Accounts Receivable", account_type: "Asset", sub_type: "Accounts Receivable", tax_line: "Non-Taxable", description: "Amounts owed by customers for billed invoices" },
+  { code: "1210", name: "Trade Debtors - Commercial Clients", account_type: "Asset", sub_type: "Accounts Receivable", tax_line: "Non-Taxable", parent_code: "1200", description: "Billed customer invoice balances" },
+  { code: "1220", name: "Employee Advances Receivable", account_type: "Asset", sub_type: "Employee Advances", tax_line: "Non-Taxable", parent_code: "1200", description: "Short-term staff advances" },
+
+  // Other Current Assets
+  { code: "1300", name: "Other Current Assets", account_type: "Asset", sub_type: "Prepaid Expenses", tax_line: "Non-Taxable", description: "Parent heading for short-term operating assets" },
+  { code: "1310", name: "Prepaid Rent & Leases", account_type: "Asset", sub_type: "Prepaid Expenses", tax_line: "Non-Taxable", parent_code: "1300", description: "Advance payments for rent and facility leases" },
+  { code: "1320", name: "Advance Income Tax Withheld (WHT)", account_type: "Asset", sub_type: "Advance Income Tax (WHT)", tax_line: "Non-Taxable", parent_code: "1300", description: "Tax deducted at source by clients" },
+  { code: "1350", name: "Inventory Asset - Merchandise", account_type: "Asset", sub_type: "Inventory Asset", tax_line: "Non-Taxable", parent_code: "1300", description: "Finished merchandise and stock on hand" },
+
+  // Fixed Assets
+  { code: "1500", name: "Equipment & Hardware", account_type: "Asset", sub_type: "Computer Equipment", tax_line: "Non-Taxable", description: "Office IT hardware, servers, and equipment" },
+  { code: "1510", name: "Computer Hardware & Servers", account_type: "Asset", sub_type: "Computer Equipment", tax_line: "Non-Taxable", parent_code: "1500", description: "Laptops, workstations, servers, and network devices" },
+  { code: "1520", name: "Office Furniture & Fixtures", account_type: "Asset", sub_type: "Furniture & Fixtures", tax_line: "Non-Taxable", parent_code: "1500", description: "Desks, conference tables, chairs, and cabinets" },
+  { code: "1530", name: "Vehicles & Transport Equipment", account_type: "Asset", sub_type: "Vehicles", tax_line: "Non-Taxable", parent_code: "1500", description: "Company transport and delivery vehicles" },
+  { code: "1590", name: "Accumulated Depreciation", account_type: "Asset", sub_type: "Accumulated Depreciation", tax_line: "Non-Taxable", parent_code: "1500", description: "Contra-asset balance for equipment wear and tear" },
 
   // 2000s: Current & Non-Current Liabilities
-  { code: "2000", name: "Accounts Payable", account_type: "Liability", description: "Vendor bills and operating obligations due" },
-  { code: "2100", name: "Accrued Expenses & Payroll", account_type: "Liability", description: "Incurred expenses and salaries payable" },
+  { code: "2000", name: "Accounts Payable", account_type: "Liability", sub_type: "Accounts Payable", tax_line: "Non-Taxable", description: "Vendor bills and operating obligations due" },
+  { code: "2010", name: "Trade Creditors & Suppliers", account_type: "Liability", sub_type: "Trade Payables", tax_line: "Non-Taxable", parent_code: "2000", description: "Vendor bills awaiting payment" },
+  { code: "2100", name: "Accrued Expenses & Payroll", account_type: "Liability", sub_type: "Accrued Payables", tax_line: "Non-Taxable", description: "Incurred expenses and salaries payable" },
+  { code: "2110", name: "Salaries & Wages Payable", account_type: "Liability", sub_type: "Payroll Taxes Withheld", tax_line: "Non-Taxable", parent_code: "2100", description: "Approved payroll batches awaiting bank disbursement" },
+  { code: "2200", name: "Tax Liabilities Payable", account_type: "Liability", sub_type: "Sales Tax Payable (FBR)", tax_line: "FBR Sales Tax - Standard 18% (Supplies)", description: "Parent heading for government tax obligations" },
+  { code: "2210", name: "FBR Sales Tax Payable (18%)", account_type: "Liability", sub_type: "Sales Tax Payable (FBR)", tax_line: "FBR Sales Tax - Standard 18% (Supplies)", parent_code: "2200", description: "Output sales tax collected from customers" },
+  { code: "2220", name: "Provincial Services Tax (SRB/PRA)", account_type: "Liability", sub_type: "Provincial Tax Payable (SRB/PRA)", tax_line: "SRB Services Tax - Standard 13% (Sindh)", parent_code: "2200", description: "Provincial sales tax on taxable consulting services" },
+  { code: "2230", name: "Withholding Tax Payable (Sec 153)", account_type: "Liability", sub_type: "Payroll Taxes Withheld", tax_line: "WHT Sec 153 - Goods Withholding (5%)", parent_code: "2200", description: "Tax withheld from vendor disbursements" },
 
   // 3000s: Equity
-  { code: "3000", name: "Retained Earnings / Owner Equity", account_type: "Equity", description: "Accumulated net earnings and equity" },
+  { code: "3000", name: "Retained Earnings / Owner Equity", account_type: "Equity", sub_type: "Retained Earnings", tax_line: "Non-Taxable", description: "Accumulated net earnings and equity" },
+  { code: "3010", name: "Paid-In Capital", account_type: "Equity", sub_type: "Paid-In Capital", tax_line: "Non-Taxable", parent_code: "3000", description: "Initial and subsequent capital injections by partners" },
+  { code: "3030", name: "Owner Drawings", account_type: "Equity", sub_type: "Owner Draws", tax_line: "Non-Taxable", parent_code: "3000", description: "Distributions and capital draws by business owners" },
 
   // 4000s: Revenue
-  { code: "4000", name: "Sales Revenue", account_type: "Revenue", description: "Direct goods and product invoicing revenue" },
-  { code: "4100", name: "Service & Consulting Revenue", account_type: "Revenue", description: "Professional services and project revenue" },
+  { code: "4000", name: "Sales Revenue", account_type: "Revenue", sub_type: "Product Sales", tax_line: "FBR Sales Tax - Standard 18% (Supplies)", description: "Direct goods and product invoicing revenue" },
+  { code: "4100", name: "Service & Consulting Revenue", account_type: "Revenue", sub_type: "Service / Fee Income", tax_line: "SRB Services Tax - Standard 13% (Sindh)", parent_code: "4000", description: "Professional services and project revenue" },
+  { code: "4090", name: "Sales Discounts & Returns", account_type: "Revenue", sub_type: "Discounts Given", tax_line: "FBR Sales Tax - Standard 18% (Supplies)", parent_code: "4000", description: "Trade discounts granted and sales returns" },
 
   // 5000s: Operating Expenses
-  { code: "5010", name: "Rent Expense", account_type: "Expense", description: "Office and facility lease expenses" },
-  { code: "5020", name: "Utilities Expense", account_type: "Expense", description: "Electricity, internet, water, and power" },
-  { code: "5030", name: "Salaries & Wages Expense", account_type: "Expense", description: "Staff payroll, bonuses, and contractor fees" },
-  { code: "5040", name: "Marketing & Advertising", account_type: "Expense", description: "Lead generation, ads, and branding expenses" },
-  { code: "5050", name: "Transportation & Travel", account_type: "Expense", description: "Logistics, flights, mileage, and transit" },
-  { code: "5060", name: "Office Supplies", account_type: "Expense", description: "Stationery, consumables, and minor office items" },
-  { code: "5070", name: "Software & Cloud Subscriptions", account_type: "Expense", description: "SaaS licenses, servers, and cloud infrastructure" },
-  { code: "5080", name: "Equipment & Maintenance", account_type: "Expense", description: "Repairs, hardware upkeep, and tooling" },
-  { code: "5090", name: "Other Operating Expenses", account_type: "Expense", description: "Miscellaneous administrative operating expenses" },
+  { code: "5000", name: "General & Administrative Expenses", account_type: "Expense", sub_type: "Office Supplies", tax_line: "Non-Taxable", description: "Parent heading for ongoing administrative overhead" },
+  { code: "5010", name: "Rent Expense", account_type: "Expense", sub_type: "Rent or Lease", tax_line: "Non-Taxable", parent_code: "5000", description: "Office and facility lease expenses" },
+  { code: "5020", name: "Utilities Expense", account_type: "Expense", sub_type: "Utilities", tax_line: "Non-Taxable", parent_code: "5000", description: "Electricity, internet, water, and power" },
+  { code: "5030", name: "Salaries & Wages Expense", account_type: "Expense", sub_type: "Salaries & Benefits", tax_line: "Non-Taxable", parent_code: "5000", description: "Staff payroll, bonuses, and contractor fees" },
+  { code: "5040", name: "Marketing & Advertising", account_type: "Expense", sub_type: "Advertising & Marketing", tax_line: "Non-Taxable", parent_code: "5000", description: "Lead generation, ads, and branding expenses" },
+  { code: "5050", name: "Transportation & Travel", account_type: "Expense", sub_type: "Office Supplies", tax_line: "Non-Taxable", parent_code: "5000", description: "Logistics, flights, mileage, and transit" },
+  { code: "5060", name: "Office Supplies", account_type: "Expense", sub_type: "Office Supplies", tax_line: "Non-Taxable", parent_code: "5000", description: "Stationery, consumables, and minor office items" },
+  { code: "5070", name: "Software & Cloud Subscriptions", account_type: "Expense", sub_type: "Office Supplies", tax_line: "Non-Taxable", parent_code: "5000", description: "SaaS licenses, servers, and cloud infrastructure" },
+  { code: "5080", name: "Equipment & Maintenance", account_type: "Expense", sub_type: "Office Supplies", tax_line: "Non-Taxable", parent_code: "5000", description: "Repairs, hardware upkeep, and tooling" },
+  { code: "5090", name: "Other Operating Expenses", account_type: "Expense", sub_type: "Other Miscellaneous Expense", tax_line: "Non-Taxable", parent_code: "5000", description: "Miscellaneous administrative operating expenses" },
+  { code: "5100", name: "Bank Charges & Merchant Fees", account_type: "Expense", sub_type: "Other Miscellaneous Expense", tax_line: "Non-Taxable", parent_code: "5000", description: "Bank statement charges and payment gateway fees" },
 ];
 
 export const CATEGORY_TO_ACCOUNT_CODE: Record<ExpenseCategory, string> = {
@@ -225,6 +258,9 @@ export const initializeCompanyChartOfAccounts = cache(
           code: template.code,
           name: template.name,
           account_type: template.account_type,
+          sub_type: template.sub_type ?? null,
+          tax_line: template.tax_line ?? null,
+          parent_id: template.parent_code ? `acc-${companyId}-${template.parent_code}` : null,
           description: template.description,
           is_system: true,
           is_active: true,
@@ -234,6 +270,11 @@ export const initializeCompanyChartOfAccounts = cache(
         memoryFinanceStore.accounts.push(newAcc);
         seeded.push(newAcc);
       } else {
+        if (template.sub_type && !found.sub_type) found.sub_type = template.sub_type;
+        if (template.tax_line && !found.tax_line) found.tax_line = template.tax_line;
+        if (template.parent_code && !found.parent_id) {
+          found.parent_id = `acc-${companyId}-${template.parent_code}`;
+        }
         seeded.push(found);
       }
     }
@@ -246,6 +287,8 @@ export const initializeCompanyChartOfAccounts = cache(
         code: t.code,
         name: t.name,
         account_type: t.account_type,
+        sub_type: t.sub_type || null,
+        tax_line: t.tax_line || null,
         description: t.description,
         is_system: true,
         is_active: true,

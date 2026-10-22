@@ -38,7 +38,7 @@ export function ChartOfAccountsClient({
   const [searchTerm, setSearchTerm] = React.useState("");
   const [typeFilter, setTypeFilter] = React.useState<string>("ALL");
   const [includeInactive, setIncludeInactive] = React.useState(false);
-  const [expandedParents, setExpandedParents] = React.useState<Record<string, boolean>>({});
+  const [collapsedParents, setCollapsedParents] = React.useState<Record<string, boolean>>({});
 
   // Modals state
   const [isAddAccountOpen, setIsAddAccountOpen] = React.useState(false);
@@ -46,7 +46,21 @@ export function ChartOfAccountsClient({
   const [editAccount, setEditAccount] = React.useState<Account | null>(null);
 
   const toggleExpand = (id: string) => {
-    setExpandedParents((prev) => ({ ...prev, [id]: !prev[id] }));
+    setCollapsedParents((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleExpandAll = () => {
+    setCollapsedParents({});
+  };
+
+  const handleCollapseAll = () => {
+    const collapsed: Record<string, boolean> = {};
+    accounts.forEach((acc) => {
+      if (!acc.parent_id && (parentMap[acc.id] || []).length > 0) {
+        collapsed[acc.id] = true;
+      }
+    });
+    setCollapsedParents(collapsed);
   };
 
   const handleAccountCreated = (newAccount: Account) => {
@@ -85,6 +99,9 @@ export function ChartOfAccountsClient({
         map[acc.parent_id].push(acc);
       }
     });
+    Object.keys(map).forEach((k) => {
+      map[k].sort((a, b) => a.code.localeCompare(b.code));
+    });
     return map;
   }, [accounts]);
 
@@ -119,6 +136,58 @@ export function ChartOfAccountsClient({
       return true;
     });
   }, [accounts, searchTerm, typeFilter, includeInactive]);
+
+  // Hierarchical display: Group subheadings immediately under their parent heading
+  const displayAccounts = React.useMemo(() => {
+    if (searchTerm.trim()) {
+      return filteredAccounts;
+    }
+
+    const result: Account[] = [];
+    const processedIds = new Set<string>();
+
+    const rootAccounts = filteredAccounts.filter((a) => !a.parent_id);
+    rootAccounts.forEach((parent) => {
+      result.push(parent);
+      processedIds.add(parent.id);
+
+      const children = parentMap[parent.id] || [];
+      const isCollapsed = !!collapsedParents[parent.id];
+
+      // Mark all known children as recognized belonging to this parent
+      children.forEach((child) => {
+        processedIds.add(child.id);
+      });
+
+      if (!isCollapsed) {
+        children.forEach((child) => {
+          if (filteredAccounts.some((f) => f.id === child.id)) {
+            result.push(child);
+          }
+        });
+      }
+    });
+
+    // Fallback for any truly orphan sub-accounts (parent_id not in accounts)
+    filteredAccounts.forEach((acc) => {
+      if (!processedIds.has(acc.id)) {
+        result.push(acc);
+      }
+    });
+
+    return result;
+  }, [filteredAccounts, parentMap, collapsedParents, searchTerm]);
+
+  const parentAccountsCount = React.useMemo(
+    () => accounts.filter((a) => !a.parent_id).length,
+    [accounts]
+  );
+  const subAccountsCount = React.useMemo(
+    () => accounts.filter((a) => !!a.parent_id).length,
+    [accounts]
+  );
+  const hasSubAccounts = subAccountsCount > 0;
+  const isAnyCollapsed = Object.keys(collapsedParents).some((k) => collapsedParents[k]);
 
   // Export CSV
   const handleExportCSV = () => {
@@ -167,7 +236,7 @@ export function ChartOfAccountsClient({
               Chart of Accounts (COA)
             </h1>
             <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700 border border-slate-200">
-              {activeCount} Active / {totalCount} Total
+              {parentAccountsCount} Headings · {subAccountsCount} Subheadings · {activeCount} Active
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -185,6 +254,18 @@ export function ChartOfAccountsClient({
             <Plus className="h-4 w-4" />
             <span>+ New Account</span>
           </button>
+
+          {hasSubAccounts && (
+            <button
+              type="button"
+              onClick={isAnyCollapsed ? handleExpandAll : handleCollapseAll}
+              className="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-colors"
+              title={isAnyCollapsed ? "Expand all subheadings" : "Collapse all subheadings"}
+            >
+              <Layers className="h-3.5 w-3.5 text-slate-500" />
+              <span>{isAnyCollapsed ? "Expand All" : "Collapse All"}</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -280,7 +361,7 @@ export function ChartOfAccountsClient({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {filteredAccounts.length === 0 ? (
+            {displayAccounts.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-12 text-center text-slate-500">
                   <Landmark className="h-8 w-8 text-slate-300 mx-auto mb-2" />
@@ -291,17 +372,16 @@ export function ChartOfAccountsClient({
                 </td>
               </tr>
             ) : (
-              filteredAccounts.map((acc) => {
-                const isParent = !acc.parent_id;
+              displayAccounts.map((acc) => {
                 const subAccounts = parentMap[acc.id] || [];
                 const hasSubs = subAccounts.length > 0;
-                const isExpanded = !!expandedParents[acc.id];
+                const isCollapsed = !!collapsedParents[acc.id];
 
                 return (
                   <tr
                     key={acc.id}
                     className={`hover:bg-[#f0f9ff]/70 transition-colors ${
-                      !acc.is_active ? "opacity-60 bg-slate-50" : ""
+                      !acc.is_active ? "opacity-60 bg-slate-50" : acc.parent_id ? "bg-slate-50/40" : ""
                     }`}
                   >
                     {/* Account Code */}
@@ -313,25 +393,36 @@ export function ChartOfAccountsClient({
                     <td className="py-2 px-3 font-medium text-slate-900">
                       <div className="flex items-center gap-1.5">
                         {acc.parent_id ? (
-                          <span className="text-slate-400 ml-4">↳</span>
+                          <span className="text-slate-400 font-mono text-sm ml-4 select-none">↳</span>
                         ) : hasSubs ? (
                           <button
                             type="button"
                             onClick={() => toggleExpand(acc.id)}
-                            className="p-0.5 text-slate-400 hover:text-slate-700"
+                            className="p-0.5 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-200/60 transition-colors"
+                            title={isCollapsed ? "Expand subheadings" : "Collapse subheadings"}
                           >
-                            {isExpanded ? (
-                              <ChevronDown className="h-3.5 w-3.5" />
-                            ) : (
+                            {isCollapsed ? (
                               <ChevronRight className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronDown className="h-3.5 w-3.5" />
                             )}
                           </button>
                         ) : (
                           <span className="w-3.5" />
                         )}
-                        <span className={acc.parent_id ? "text-slate-700" : "font-semibold"}>
+                        <span className={acc.parent_id ? "text-slate-700 font-medium" : "font-bold text-slate-900"}>
                           {acc.name}
                         </span>
+                        {hasSubs && (
+                          <span className="rounded bg-blue-50 px-1.5 py-0.2 text-[9px] font-semibold text-[#0078d4] border border-blue-200/60">
+                            {subAccounts.length} {subAccounts.length === 1 ? "subheading" : "subheadings"}
+                          </span>
+                        )}
+                        {acc.parent_id && (
+                          <span className="rounded bg-slate-100 px-1 py-0.2 text-[9px] font-medium text-slate-500 border border-slate-200">
+                            Sub-account
+                          </span>
+                        )}
                         {acc.is_system && (
                           <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[9px] font-semibold text-slate-500 border border-slate-200">
                             CORE

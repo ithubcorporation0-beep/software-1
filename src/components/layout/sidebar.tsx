@@ -24,6 +24,9 @@ import {
   BookOpen,
   ArrowRightLeft,
   Briefcase,
+  UserCheck,
+  Lock,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -66,12 +69,14 @@ export const desktopNavigationConfig: NavSection[] = [
         href: "/account/customers",
         icon: Users,
         children: [
-          { title: "Customer List", href: "/account/customers" },
-          { title: "Customer Payments", href: "/account/customer-payments" },
+          { title: "Customer Directory", href: "/account/customers" },
+          { title: "Customer Payments & Receipts", href: "/account/customer-payments" },
           { title: "Due & Batch Clearance", href: "/account/customer-payments/due-batch" },
-          { title: "Customer Ledger", href: "/account/reports/customer-ledger" },
-          { title: "Receivables Aging Report", href: "/account/reports/customer-report" },
+          { title: "Customer Ledger Statements", href: "/account/reports/customer-ledger" },
+          { title: "A/R Aging & Receivables Report", href: "/account/reports/customer-report" },
           { title: "Customer Groups & Setup", href: "/account/customer-groups" },
+          { title: "Trade Categories Setup", href: "/account/customer-categories" },
+          { title: "Lead Center & CRM", href: "/crm" },
         ],
       },
       {
@@ -79,9 +84,11 @@ export const desktopNavigationConfig: NavSection[] = [
         href: "/sales",
         icon: ShoppingCart,
         children: [
-          { title: "Sales Invoices", href: "/sales" },
+          { title: "Sales Invoices (A/R)", href: "/sales" },
           { title: "Sales Receipts", href: "/sales" },
-          { title: "Estimates & Quotes", href: "/sales" },
+          { title: "Estimates & Quotations", href: "/sales" },
+          { title: "Sales Orders Pipeline", href: "/sales" },
+          { title: "Credit Notes & Returns", href: "/sales" },
         ],
       },
     ],
@@ -94,10 +101,13 @@ export const desktopNavigationConfig: NavSection[] = [
         href: "/finance",
         icon: Banknote,
         children: [
-          { title: "Vendor Center", href: "/finance" },
-          { title: "Expenses", href: "/finance" },
-          { title: "Bills & Payables", href: "/finance" },
-          { title: "Bill Payments", href: "/finance" },
+          { title: "Vendor Center (Suppliers)", href: "/finance" },
+          { title: "Enter Bills (A/P)", href: "/finance" },
+          { title: "Pay Bills & Disburse Funds", href: "/finance" },
+          { title: "Direct Operational Expenses", href: "/finance" },
+          { title: "Purchase Orders (PO)", href: "/inventory" },
+          { title: "Vendor Credits & Refunds", href: "/finance" },
+          { title: "A/P Aging & Payables Summary", href: "/finance" },
         ],
       },
     ],
@@ -110,9 +120,12 @@ export const desktopNavigationConfig: NavSection[] = [
         href: "/modules/accounting",
         icon: Landmark,
         children: [
-          { title: "Chart of Accounts", href: "/accounting/chart-of-accounts" },
-          { title: "Journal Entries (JV)", href: "/modules/accounting" },
-          { title: "Reconciliations", href: "/modules/accounting" },
+          { title: "Chart of Accounts (COA)", href: "/accounting/chart-of-accounts" },
+          { title: "Make Journal Entries (JV)", href: "/modules/accounting" },
+          { title: "Bank Reconciliations", href: "/modules/accounting" },
+          { title: "Transfer Funds Between Accounts", href: "/modules/accounting" },
+          { title: "Write Checks & Disburse Funds", href: "/modules/accounting" },
+          { title: "Account Registers", href: "/accounting/chart-of-accounts" },
         ],
       },
     ],
@@ -125,8 +138,10 @@ export const desktopNavigationConfig: NavSection[] = [
         href: "/inventory",
         icon: Package,
         children: [
-          { title: "Items & Services", href: "/inventory" },
+          { title: "Items & Services List", href: "/inventory" },
           { title: "Inventory Adjustments", href: "/inventory" },
+          { title: "Stock Valuation & Quantities", href: "/inventory" },
+          { title: "Low Stock & Reorder Alerts", href: "/inventory" },
         ],
       },
     ],
@@ -140,8 +155,12 @@ export const desktopNavigationConfig: NavSection[] = [
         icon: FileCheck2,
         badge: "FBR",
         children: [
-          { title: "FBR Digital Invoicing", href: "/settings?tab=fbr" },
-          { title: "Sales Tax Returns", href: "/reports" },
+          { title: "FBR Digital Invoicing Hub", href: "/settings?tab=fbr" },
+          { title: "Verify Active Taxpayer (ATL)", href: "/account/customers" },
+          { title: "Sales Tax Return Registers (18%)", href: "/reports" },
+          { title: "Provincial Services Tax (SRB/PRA)", href: "/reports" },
+          { title: "Withholding Tax Ledger (Sec 153)", href: "/reports" },
+          { title: "Production FBR Sync & Audit", href: "/settings?tab=fbr" },
         ],
       },
     ],
@@ -154,11 +173,30 @@ export const desktopNavigationConfig: NavSection[] = [
         href: "/reports",
         icon: BarChart3,
         children: [
-          { title: "Financial Statements", href: "/reports" },
-          { title: "Profit & Loss (P&L)", href: "/reports" },
-          { title: "Balance Sheet", href: "/reports" },
-          { title: "Customer Balances", href: "/account/reports/customer-report" },
-          { title: "Sales Reports", href: "/sales" },
+          { title: "Financial: Profit & Loss (P&L)", href: "/reports" },
+          { title: "Financial: Balance Sheet Standard", href: "/reports" },
+          { title: "Financial: Statement of Cash Flows", href: "/reports" },
+          { title: "Financial: Trial Balance", href: "/modules/accounting" },
+          { title: "Customers: A/R Aging Summary", href: "/account/reports/customer-report" },
+          { title: "Customers: Customer Ledger Statements", href: "/account/reports/customer-ledger" },
+          { title: "Vendors: A/P Aging Summary", href: "/finance" },
+          { title: "Sales & Invoicing Analysis", href: "/sales" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "Personnel & Payroll",
+    items: [
+      {
+        title: "Staff & Payroll",
+        href: "/payroll",
+        icon: CreditCard,
+        children: [
+          { title: "Employee Directory & Profiles", href: "/hr" },
+          { title: "Run Payroll & Disburse Salaries", href: "/payroll" },
+          { title: "Attendance & Time Records", href: "/hr" },
+          { title: "Leave Approvals & Tracking", href: "/hr" },
         ],
       },
     ],
@@ -171,9 +209,10 @@ export const desktopNavigationConfig: NavSection[] = [
         href: "/settings",
         icon: Settings,
         children: [
-          { title: "Users & Roles", href: "/modules/user-management" },
-          { title: "Company Settings", href: "/settings" },
-          { title: "Audit Log", href: "/admin/audit-logs" },
+          { title: "Users & Roles (RBAC)", href: "/modules/user-management" },
+          { title: "Company Settings & Fiscal Year", href: "/settings" },
+          { title: "Audit Trail & Security Logs", href: "/admin/audit-logs" },
+          { title: "Company Workspaces & Tenants", href: "/admin/companies" },
         ],
       },
     ],
@@ -199,7 +238,7 @@ export function Sidebar({ className }: { className?: string }) {
       aria-label="Desktop Accounting Navigation"
       className={cn(
         "flex h-screen flex-col border-r border-[#2d3742] bg-[#1a2026] text-[#cbd5e1] select-none transition-all duration-200 z-30 shrink-0",
-        collapsed ? "w-14" : "w-60",
+        collapsed ? "w-14" : "w-64",
         className
       )}
     >
@@ -295,7 +334,7 @@ export function Sidebar({ className }: { className?: string }) {
                       </button>
 
                       {isExpanded && (
-                        <div className="pl-4 pr-1 space-y-0.5 pt-0.5 border-l border-[#2d3742] ml-3.5">
+                        <div className="pl-3.5 pr-1 space-y-0.5 pt-0.5 border-l border-[#2d3742] ml-3.5">
                           {item.children!.map((child) => {
                             const isCurrentChild =
                               child.href === "/"

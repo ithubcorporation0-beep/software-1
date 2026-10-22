@@ -114,6 +114,61 @@ describe("Chart of Accounts Client & Register", () => {
     expect(screen.getByText("Sales Revenue")).toBeInTheDocument();
     expect(screen.queryByText("Meezan Operating Bank")).not.toBeInTheDocument();
   });
+
+  it("handles hierarchical subheadings and Expand/Collapse All toggle", () => {
+    const hierarchicalAccounts: Account[] = [
+      {
+        id: "acc-parent-1",
+        company_id: "00000000-0000-0000-0000-000000000001",
+        code: "1200",
+        name: "Bank Accounts",
+        account_type: "Asset",
+        is_system: true,
+        is_active: true,
+        created_at: "2026-07-01T00:00:00Z",
+        updated_at: "2026-07-01T00:00:00Z",
+      },
+      {
+        id: "acc-child-1",
+        company_id: "00000000-0000-0000-0000-000000000001",
+        parent_id: "acc-parent-1",
+        code: "1210",
+        name: "HBL Corporate Account",
+        account_type: "Asset",
+        sub_type: "Checking",
+        is_system: true,
+        is_active: true,
+        created_at: "2026-07-01T00:00:00Z",
+        updated_at: "2026-07-01T00:00:00Z",
+      },
+    ];
+
+    render(
+      <ChartOfAccountsClient
+        initialAccounts={hierarchicalAccounts}
+        companyId="00000000-0000-0000-0000-000000000001"
+      />
+    );
+
+    // Both parent and child should be rendered initially
+    expect(screen.getByText("Bank Accounts")).toBeInTheDocument();
+    expect(screen.getByText("1 subheading")).toBeInTheDocument();
+    expect(screen.getByText("HBL Corporate Account")).toBeInTheDocument();
+
+    // Click Collapse All
+    const collapseBtn = screen.getByRole("button", { name: /Collapse All/i });
+    fireEvent.click(collapseBtn);
+
+    // Child should be collapsed/hidden
+    expect(screen.queryByText("HBL Corporate Account")).not.toBeInTheDocument();
+
+    // Click Expand All
+    const expandBtn = screen.getByRole("button", { name: /Expand All/i });
+    fireEvent.click(expandBtn);
+
+    // Child should be visible again
+    expect(screen.getByText("HBL Corporate Account")).toBeInTheDocument();
+  });
 });
 
 describe("Add Account Dialog (Two-Panel Interface)", () => {

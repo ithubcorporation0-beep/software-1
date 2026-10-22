@@ -66,10 +66,10 @@ export function DesktopMenuBar({
       title: "File",
       items: [
         { label: "New Company / Workspace", href: "/admin/companies", shortcut: "Ctrl+N" },
-        { label: "Company Settings", href: "/settings", shortcut: "Ctrl+," },
+        { label: "Company Settings & Preferences", href: "/settings", shortcut: "Ctrl+," },
         { label: "Print Active Screen", onClick: () => window.print(), shortcut: "Ctrl+P", divider: true },
-        { label: "Export System Audit Logs", href: "/admin/audit-logs", divider: true },
-        { label: "Close Window / Back to Dashboard", href: "/", shortcut: "Esc" },
+        { label: "Export System Audit Trail", href: "/admin/audit-logs", divider: true },
+        { label: "Close Window / Return to Dashboard", href: "/", shortcut: "Esc" },
         {
           label: "Exit / Sign Out",
           onClick: async () => {
@@ -92,31 +92,33 @@ export function DesktopMenuBar({
       title: "View",
       items: [
         { label: "Dashboard Overview", href: "/", shortcut: "Ctrl+1" },
-        { label: "Sales & Commercial Invoices", href: "/sales", shortcut: "Ctrl+2" },
-        { label: "Customer Accounts Center", href: "/account/customers", shortcut: "Ctrl+3" },
-        { label: "Expenses & Bills", href: "/finance", shortcut: "Ctrl+4" },
-        { label: "Chart of Accounts (COA)", href: "/modules/accounting?tab=chart-of-accounts", shortcut: "Ctrl+5", divider: true },
+        { label: "Sales & Invoicing", href: "/sales", shortcut: "Ctrl+2" },
+        { label: "Customer Center", href: "/account/customers", shortcut: "Ctrl+3" },
+        { label: "Expenses & Vendor Bills", href: "/finance", shortcut: "Ctrl+4" },
+        { label: "Chart of Accounts (COA)", href: "/accounting/chart-of-accounts", shortcut: "Ctrl+5", divider: true },
         { label: "Refresh Application Cache", onClick: () => window.location.reload(), shortcut: "F5" },
       ],
     },
     {
       title: "Lists",
       items: [
-        { label: "Chart of Accounts", href: "/modules/accounting?tab=chart-of-accounts" },
-        { label: "Customer List", href: "/account/customers" },
-        { label: "Customer Groups & Categories", href: "/account/customer-groups" },
+        { label: "Chart of Accounts", href: "/accounting/chart-of-accounts" },
+        { label: "Customer Directory", href: "/account/customers" },
+        { label: "Customer Groups & Setup", href: "/account/customer-groups" },
+        { label: "Trade Categories Setup", href: "/account/customer-categories" },
         { label: "Product & Inventory Item List", href: "/inventory", divider: true },
         { label: "Vendor / Supplier List", href: "/finance" },
         { label: "Employee & Personnel List", href: "/hr" },
+        { label: "Fixed Assets Register", href: "/accounting/chart-of-accounts" },
       ],
     },
     {
       title: "Company",
       items: [
-        { label: "Company Information", href: "/settings" },
-        { label: "Chart of Accounts", href: "/modules/accounting?tab=chart-of-accounts" },
-        { label: "Make General Journal Entries", href: "/modules/accounting", divider: true },
-        { label: "Users & Permissions (RBAC)", href: "/modules/user-management" },
+        { label: "Company Information & Logo", href: "/settings" },
+        { label: "Chart of Accounts", href: "/accounting/chart-of-accounts" },
+        { label: "Make General Journal Entries (JV)", href: "/modules/accounting", divider: true },
+        { label: "Users & Roles (RBAC Permissions)", href: "/modules/user-management" },
         { label: "Payroll & Compensation Runs", href: "/payroll" },
         { label: "Staff Attendance & Leave", href: "/hr" },
         { label: "Reminders & Alerts", href: "/notifications" },
@@ -126,22 +128,27 @@ export function DesktopMenuBar({
       title: "Customers",
       items: [
         { label: "Customer Center", href: "/account/customers" },
-        { label: "Create Invoices", href: "/sales" },
+        { label: "Create Sales Invoices", href: "/sales", shortcut: "Ctrl+I" },
         { label: "Receive Payments", href: "/account/customer-payments" },
-        { label: "Due & Batch Clearance", href: "/account/customer-payments/due-batch" },
-        { label: "Create Estimates / Quotes", href: "/sales", divider: true },
+        { label: "Enter Sales Receipts", href: "/sales" },
+        { label: "Create Estimates / Quotes", href: "/sales" },
+        { label: "Due & Batch Clearance", href: "/account/customer-payments/due-batch", divider: true },
         { label: "Customer Ledger Statement", href: "/account/reports/customer-ledger" },
         { label: "Customer Receivables & Aging Report", href: "/account/reports/customer-report" },
+        { label: "Customer Groups & Categories", href: "/account/customer-groups" },
+        { label: "Lead Center (CRM)", href: "/crm" },
       ],
     },
     {
       title: "Vendors",
       items: [
         { label: "Vendor Center", href: "/finance" },
-        { label: "Record Expense / Bill", href: "/finance" },
-        { label: "Purchase Orders", href: "/inventory" },
-        { label: "Pay Bills & Disburse Funds", href: "/finance", divider: true },
+        { label: "Enter Bills (A/P)", href: "/finance" },
+        { label: "Pay Bills & Disburse Funds", href: "/finance" },
+        { label: "Record Direct Expense", href: "/finance" },
+        { label: "Create Purchase Orders", href: "/inventory", divider: true },
         { label: "Accounts Payable (A/P) Aging", href: "/finance" },
+        { label: "Pay FBR Sales Tax / Withholding", href: "/settings?tab=fbr" },
       ],
     },
     {
@@ -149,19 +156,22 @@ export function DesktopMenuBar({
       items: [
         { label: "Write Checks / Disburse Payment", href: "/modules/accounting" },
         { label: "Transfer Funds Between Accounts", href: "/modules/accounting" },
-        { label: "Bank Reconciliation", href: "/modules/accounting" },
-        { label: "Account Register", href: "/modules/accounting?tab=chart-of-accounts", divider: true },
-        { label: "Cash Flow Statement", href: "/reports" },
+        { label: "Reconcile Bank Accounts", href: "/modules/accounting" },
+        { label: "Bank Account Registers", href: "/accounting/chart-of-accounts", divider: true },
+        { label: "Statement of Cash Flows", href: "/reports" },
       ],
     },
     {
       title: "Reports",
       items: [
-        { label: "Company & Financial: Profit & Loss", href: "/reports" },
-        { label: "Company & Financial: Balance Sheet", href: "/reports" },
-        { label: "Company & Financial: Statement of Cash Flows", href: "/reports", divider: true },
+        { label: "Report Center Overview", href: "/reports" },
+        { label: "Company & Financial: Profit & Loss (P&L)", href: "/reports" },
+        { label: "Company & Financial: Balance Sheet Standard", href: "/reports" },
+        { label: "Company & Financial: Statement of Cash Flows", href: "/reports" },
+        { label: "Company & Financial: Trial Balance", href: "/modules/accounting", divider: true },
         { label: "Customers & Receivables: Aging Summary", href: "/account/reports/customer-report" },
         { label: "Customers & Receivables: Ledger Statements", href: "/account/reports/customer-ledger" },
+        { label: "Vendors & Payables: A/P Aging Summary", href: "/finance" },
         { label: "Sales & Invoicing Analysis", href: "/sales", divider: true },
         { label: "FBR Digital Invoicing Audit Trail", href: "/settings?tab=fbr" },
       ],
@@ -169,10 +179,12 @@ export function DesktopMenuBar({
     {
       title: "Window",
       items: [
-        { label: "Close All / Dashboard", href: "/" },
-        { label: "Customer Management Screen", href: "/account/customers" },
+        { label: "Close All / Return to Dashboard", href: "/" },
+        { label: "Customer Center Screen", href: "/account/customers" },
         { label: "Sales & Invoicing Screen", href: "/sales" },
+        { label: "Chart of Accounts Register Screen", href: "/accounting/chart-of-accounts" },
         { label: "Accounting & Ledger Screen", href: "/modules/accounting" },
+        { label: "Finance & Expenses Screen", href: "/finance" },
         { label: "Inventory Warehouse Screen", href: "/inventory" },
       ],
     },
@@ -182,8 +194,8 @@ export function DesktopMenuBar({
         { label: "IT HUB ERP User Manual", href: "https://ipv6.fbr.gov.pk/di-technical-assistance/173967/174202" },
         { label: "FBR Technical Assistance & Documentation", href: "https://www.fbr.gov.pk/di-technical-assistance/173967/173970" },
         { label: "FBR Licensed Integrator Directory", href: "https://fbr.gov.pk/list-of-license-interprator/173967/173971", divider: true },
-        { label: "Keyboard Shortcuts Guide (Ctrl+K, Esc)", onClick: onOpenSearch },
-        { label: "About IT HUB ERP v0.1.0", href: "/settings" },
+        { label: "Keyboard Shortcuts Guide (Ctrl+K, Alt+N, Esc)", onClick: onOpenSearch },
+        { label: "About IT HUB ERP Enterprise v0.1.0", href: "/settings" },
       ],
     },
   ];
@@ -220,7 +232,7 @@ export function DesktopMenuBar({
               </button>
 
               {isOpen && (
-                <div className="absolute left-0 top-full mt-0 w-64 rounded-b-md border border-[#3b4651] bg-[#1e252b] py-1 shadow-xl z-50 animate-in fade-in-0 duration-75 text-xs">
+                <div className="absolute left-0 top-full mt-0 w-72 rounded-b-md border border-[#3b4651] bg-[#1e252b] py-1 shadow-xl z-50 animate-in fade-in-0 duration-75 text-xs">
                   {menu.items.map((item, idx) => {
                     return (
                       <React.Fragment key={idx}>
