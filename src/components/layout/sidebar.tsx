@@ -35,6 +35,7 @@ export interface SubNavItem {
   title: string;
   href: string;
   badge?: string;
+  sectionHeader?: string;
 }
 
 export interface NavItem {
@@ -69,14 +70,17 @@ export const desktopNavigationConfig: NavSection[] = [
         href: "/account/customers",
         icon: Users,
         children: [
-          { title: "Customer Directory", href: "/account/customers" },
-          { title: "Customer Payments & Receipts", href: "/account/customer-payments" },
-          { title: "Due & Batch Clearance", href: "/account/customer-payments/due-batch" },
-          { title: "Customer Ledger Statements", href: "/account/reports/customer-ledger" },
-          { title: "A/R Aging & Receivables Report", href: "/account/reports/customer-report" },
-          { title: "Customer Groups & Setup", href: "/account/customer-groups" },
-          { title: "Trade Categories Setup", href: "/account/customer-categories" },
-          { title: "Lead Center & CRM", href: "/crm" },
+          { sectionHeader: "Directories & Lists", title: "Customer Directory & Accounts", href: "/account/customers" },
+          { sectionHeader: "Directories & Lists", title: "Add New Customer Record", href: "/account/customers" },
+          { sectionHeader: "Directories & Lists", title: "Customer Groups & Credit Tiers", href: "/account/customer-groups" },
+          { sectionHeader: "Directories & Lists", title: "Trade Categories & Terms", href: "/account/customer-categories" },
+          { sectionHeader: "Directories & Lists", title: "Lead Center & Sales Pipeline", href: "/crm" },
+          { sectionHeader: "Receivables & Payments", title: "Customer Payments & Receipts", href: "/account/customer-payments" },
+          { sectionHeader: "Receivables & Payments", title: "Receive Payments (Cash/Bank)", href: "/account/customer-payments" },
+          { sectionHeader: "Receivables & Payments", title: "Due Invoices & Batch Settlement", href: "/account/customer-payments/due-batch" },
+          { sectionHeader: "Ledgers & Aging Reports", title: "Customer Ledger Statements", href: "/account/reports/customer-ledger" },
+          { sectionHeader: "Ledgers & Aging Reports", title: "A/R Aging Summary Report", href: "/account/reports/customer-report" },
+          { sectionHeader: "Ledgers & Aging Reports", title: "Customer Balance Detail", href: "/account/reports/customer-report" },
         ],
       },
       {
@@ -84,70 +88,102 @@ export const desktopNavigationConfig: NavSection[] = [
         href: "/sales",
         icon: ShoppingCart,
         children: [
-          { title: "Sales Invoices (A/R)", href: "/sales" },
-          { title: "Sales Receipts", href: "/sales" },
-          { title: "Estimates & Quotations", href: "/sales" },
-          { title: "Sales Orders Pipeline", href: "/sales" },
-          { title: "Credit Notes & Returns", href: "/sales" },
+          { sectionHeader: "Sales Transactions", title: "Sales Invoices (A/R)", href: "/sales" },
+          { sectionHeader: "Sales Transactions", title: "Sales Receipts & Cash Counter", href: "/sales" },
+          { sectionHeader: "Sales Transactions", title: "Estimates, Quotes & Proposals", href: "/sales" },
+          { sectionHeader: "Sales Transactions", title: "Sales Orders Pipeline", href: "/sales" },
+          { sectionHeader: "Sales Transactions", title: "Credit Notes & Returns", href: "/sales" },
+          { sectionHeader: "Reports & Schedules", title: "Sales by Customer Summary", href: "/sales" },
+          { sectionHeader: "Reports & Schedules", title: "Sales by Item & Service", href: "/sales" },
+          { sectionHeader: "Reports & Schedules", title: "Recurring Scheduled Invoices", href: "/sales" },
         ],
       },
     ],
   },
   {
-    title: "Suppliers & Expenses",
+    title: "Suppliers & Payables",
     items: [
       {
         title: "Vendors & Bills",
         href: "/finance",
         icon: Banknote,
         children: [
-          { title: "Vendor Center (Suppliers)", href: "/finance" },
-          { title: "Enter Bills (A/P)", href: "/finance" },
-          { title: "Pay Bills & Disburse Funds", href: "/finance" },
-          { title: "Direct Operational Expenses", href: "/finance" },
-          { title: "Purchase Orders (PO)", href: "/inventory" },
-          { title: "Vendor Credits & Refunds", href: "/finance" },
-          { title: "A/P Aging & Payables Summary", href: "/finance" },
+          { sectionHeader: "Suppliers & Orders", title: "Vendor Center & Suppliers", href: "/finance" },
+          { sectionHeader: "Suppliers & Orders", title: "Add New Supplier Profile", href: "/finance" },
+          { sectionHeader: "Suppliers & Orders", title: "Purchase Orders (PO)", href: "/inventory" },
+          { sectionHeader: "Bills & Disbursements", title: "Enter Bills (A/P)", href: "/finance" },
+          { sectionHeader: "Bills & Disbursements", title: "Pay Bills & Disburse Funds", href: "/finance" },
+          { sectionHeader: "Bills & Disbursements", title: "Direct Operating Expenses", href: "/finance" },
+          { sectionHeader: "Bills & Disbursements", title: "Write Checks & Bank Outflows", href: "/modules/accounting" },
+          { sectionHeader: "Bills & Disbursements", title: "Vendor Credits & Refunds", href: "/finance" },
+          { sectionHeader: "Payables & Aging", title: "A/P Aging Summary", href: "/finance" },
+          { sectionHeader: "Payables & Aging", title: "Unpaid Bills Detail", href: "/finance" },
+          { sectionHeader: "Payables & Aging", title: "Vendor Balance Detail", href: "/finance" },
         ],
       },
     ],
   },
   {
-    title: "Accounting",
+    title: "Banking & Cash",
+    items: [
+      {
+        title: "Banking Center",
+        href: "/modules/accounting",
+        icon: Landmark,
+        children: [
+          { sectionHeader: "Banking Operations", title: "Bank Accounts & Registers", href: "/accounting/chart-of-accounts" },
+          { sectionHeader: "Banking Operations", title: "Reconcile Bank Statements", href: "/modules/accounting" },
+          { sectionHeader: "Banking Operations", title: "Transfer Funds Between Accounts", href: "/modules/accounting" },
+          { sectionHeader: "Banking Operations", title: "Record Deposits & Undeposited", href: "/modules/accounting" },
+          { sectionHeader: "Banking Operations", title: "Write Checks & Payment Vouchers", href: "/modules/accounting" },
+          { sectionHeader: "Cash Flow & Audit", title: "General Ledger Cash Register", href: "/accounting/chart-of-accounts" },
+          { sectionHeader: "Cash Flow & Audit", title: "Statement of Cash Flows", href: "/reports" },
+          { sectionHeader: "Cash Flow & Audit", title: "Cash Flow Monitor & Forecast", href: "/reports" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "Accounting & Ledger",
     items: [
       {
         title: "General Ledger & COA",
         href: "/modules/accounting",
-        icon: Landmark,
+        icon: BookOpen,
         children: [
-          { title: "Chart of Accounts (COA)", href: "/accounting/chart-of-accounts" },
-          { title: "Make Journal Entries (JV)", href: "/modules/accounting" },
-          { title: "Bank Reconciliations", href: "/modules/accounting" },
-          { title: "Transfer Funds Between Accounts", href: "/modules/accounting" },
-          { title: "Write Checks & Disburse Funds", href: "/modules/accounting" },
-          { title: "Account Registers", href: "/accounting/chart-of-accounts" },
+          { sectionHeader: "Chart of Accounts & Registers", title: "Chart of Accounts (COA)", href: "/accounting/chart-of-accounts" },
+          { sectionHeader: "Chart of Accounts & Registers", title: "Account Registers (Balance Sheet)", href: "/accounting/chart-of-accounts" },
+          { sectionHeader: "Chart of Accounts & Registers", title: "General Ledger Detail Report", href: "/modules/accounting" },
+          { sectionHeader: "Journal Entries & Audit", title: "Make General Journal Entries (JV)", href: "/modules/accounting" },
+          { sectionHeader: "Journal Entries & Audit", title: "Trial Balance Summary & Detail", href: "/modules/accounting" },
+          { sectionHeader: "Journal Entries & Audit", title: "Fixed Asset Register & Depreciation", href: "/accounting/chart-of-accounts" },
+          { sectionHeader: "Journal Entries & Audit", title: "Closing Books & Period Locking", href: "/settings" },
+          { sectionHeader: "Journal Entries & Audit", title: "Adjusting Journal Entries", href: "/modules/accounting" },
         ],
       },
     ],
   },
   {
-    title: "Inventory",
+    title: "Inventory & Items",
     items: [
       {
         title: "Items & Inventory",
         href: "/inventory",
         icon: Package,
         children: [
-          { title: "Items & Services List", href: "/inventory" },
-          { title: "Inventory Adjustments", href: "/inventory" },
-          { title: "Stock Valuation & Quantities", href: "/inventory" },
-          { title: "Low Stock & Reorder Alerts", href: "/inventory" },
+          { sectionHeader: "Items Catalog", title: "Items & Services Master List", href: "/inventory" },
+          { sectionHeader: "Items Catalog", title: "Add New Inventory Item", href: "/inventory" },
+          { sectionHeader: "Items Catalog", title: "Add New Professional Service", href: "/inventory" },
+          { sectionHeader: "Stock Control & Valuation", title: "Inventory Quantity Adjustments", href: "/inventory" },
+          { sectionHeader: "Stock Control & Valuation", title: "Stock Valuation & Quantities", href: "/inventory" },
+          { sectionHeader: "Stock Control & Valuation", title: "Low Stock & Reorder Level Alerts", href: "/inventory" },
+          { sectionHeader: "Stock Control & Valuation", title: "Physical Inventory Worksheet", href: "/inventory" },
         ],
       },
     ],
   },
   {
-    title: "Tax & FBR",
+    title: "Tax & FBR Compliance",
     items: [
       {
         title: "FBR Digital Invoicing",
@@ -155,64 +191,72 @@ export const desktopNavigationConfig: NavSection[] = [
         icon: FileCheck2,
         badge: "FBR",
         children: [
-          { title: "FBR Digital Invoicing Hub", href: "/settings?tab=fbr" },
-          { title: "Verify Active Taxpayer (ATL)", href: "/account/customers" },
-          { title: "Sales Tax Return Registers (18%)", href: "/reports" },
-          { title: "Provincial Services Tax (SRB/PRA)", href: "/reports" },
-          { title: "Withholding Tax Ledger (Sec 153)", href: "/reports" },
-          { title: "Production FBR Sync & Audit", href: "/settings?tab=fbr" },
+          { sectionHeader: "FBR Digital Invoicing", title: "FBR Digital Invoicing Hub", href: "/settings?tab=fbr" },
+          { sectionHeader: "FBR Digital Invoicing", title: "Verify Active Taxpayer (ATL)", href: "/account/customers" },
+          { sectionHeader: "FBR Digital Invoicing", title: "Production Transmission & Audit", href: "/settings?tab=fbr" },
+          { sectionHeader: "Statutory Tax Registers", title: "Sales Tax Registers (Annexure-C 18%)", href: "/reports" },
+          { sectionHeader: "Statutory Tax Registers", title: "Provincial Services Tax (SRB/PRA)", href: "/reports" },
+          { sectionHeader: "Statutory Tax Registers", title: "Withholding Tax Ledger (Sec 153)", href: "/reports" },
+          { sectionHeader: "Statutory Tax Registers", title: "Payroll Withholding Ledger (Sec 149)", href: "/reports" },
         ],
       },
     ],
   },
   {
-    title: "Reports",
+    title: "Reports & Financials",
     items: [
       {
         title: "Report Center",
         href: "/reports",
         icon: BarChart3,
         children: [
-          { title: "Financial: Profit & Loss (P&L)", href: "/reports" },
-          { title: "Financial: Balance Sheet Standard", href: "/reports" },
-          { title: "Financial: Statement of Cash Flows", href: "/reports" },
-          { title: "Financial: Trial Balance", href: "/modules/accounting" },
-          { title: "Customers: A/R Aging Summary", href: "/account/reports/customer-report" },
-          { title: "Customers: Customer Ledger Statements", href: "/account/reports/customer-ledger" },
-          { title: "Vendors: A/P Aging Summary", href: "/finance" },
-          { title: "Sales & Invoicing Analysis", href: "/sales" },
+          { sectionHeader: "Company & Financial", title: "Profit & Loss (P&L Standard)", href: "/reports" },
+          { sectionHeader: "Company & Financial", title: "Balance Sheet Standard", href: "/reports" },
+          { sectionHeader: "Company & Financial", title: "Statement of Cash Flows", href: "/reports" },
+          { sectionHeader: "Company & Financial", title: "Trial Balance (Debit / Credit)", href: "/modules/accounting" },
+          { sectionHeader: "Receivables & Sales", title: "Customer Ledger Statements", href: "/account/reports/customer-ledger" },
+          { sectionHeader: "Receivables & Sales", title: "A/R Aging Summary Report", href: "/account/reports/customer-report" },
+          { sectionHeader: "Receivables & Sales", title: "Sales & Invoicing Analysis", href: "/sales" },
+          { sectionHeader: "Payables & Purchases", title: "A/P Aging Summary", href: "/finance" },
+          { sectionHeader: "Payables & Purchases", title: "Vendor Ledger Statements", href: "/finance" },
+          { sectionHeader: "Tax & Compliance", title: "FBR Sales Tax Return Register", href: "/reports" },
+          { sectionHeader: "Tax & Compliance", title: "Withholding Tax Deductions Report", href: "/reports" },
         ],
       },
     ],
   },
   {
-    title: "Personnel & Payroll",
+    title: "Staff & Payroll",
     items: [
       {
-        title: "Staff & Payroll",
+        title: "Personnel Center",
         href: "/payroll",
         icon: CreditCard,
         children: [
-          { title: "Employee Directory & Profiles", href: "/hr" },
-          { title: "Run Payroll & Disburse Salaries", href: "/payroll" },
-          { title: "Attendance & Time Records", href: "/hr" },
-          { title: "Leave Approvals & Tracking", href: "/hr" },
+          { sectionHeader: "Employees & Directory", title: "Employee Directory & Profiles", href: "/hr" },
+          { sectionHeader: "Employees & Directory", title: "Add New Employee Profile", href: "/hr" },
+          { sectionHeader: "Payroll & Compensation", title: "Run Monthly Payroll Batches", href: "/payroll" },
+          { sectionHeader: "Payroll & Compensation", title: "Salary Pay Slips & Advice", href: "/payroll" },
+          { sectionHeader: "Payroll & Compensation", title: "Payroll Tax Withholding (Sec 149)", href: "/payroll" },
+          { sectionHeader: "Time & Attendance", title: "Attendance & Time Records", href: "/hr" },
+          { sectionHeader: "Time & Attendance", title: "Leave Entitlements & Approvals", href: "/hr" },
         ],
       },
     ],
   },
   {
-    title: "Administration",
+    title: "Administration & Settings",
     items: [
       {
         title: "Company & Users",
         href: "/settings",
         icon: Settings,
         children: [
-          { title: "Users & Roles (RBAC)", href: "/modules/user-management" },
-          { title: "Company Settings & Fiscal Year", href: "/settings" },
-          { title: "Audit Trail & Security Logs", href: "/admin/audit-logs" },
-          { title: "Company Workspaces & Tenants", href: "/admin/companies" },
+          { sectionHeader: "Access & Security", title: "Users & Roles (RBAC Permissions)", href: "/modules/user-management" },
+          { sectionHeader: "Access & Security", title: "Audit Trail & Activity Logs", href: "/admin/audit-logs" },
+          { sectionHeader: "Company Preferences", title: "Company Settings & Fiscal Year", href: "/settings" },
+          { sectionHeader: "Company Preferences", title: "Company Workspaces & Tenants", href: "/admin/companies" },
+          { sectionHeader: "Company Preferences", title: "System Preferences & Numbering", href: "/settings" },
         ],
       },
     ],
@@ -335,25 +379,35 @@ export function Sidebar({ className }: { className?: string }) {
 
                       {isExpanded && (
                         <div className="pl-3.5 pr-1 space-y-0.5 pt-0.5 border-l border-[#2d3742] ml-3.5">
-                          {item.children!.map((child) => {
+                          {item.children!.map((child, idx) => {
                             const isCurrentChild =
                               child.href === "/"
                                 ? pathname === "/"
                                 : pathname === child.href;
+                            const showHeader =
+                              child.sectionHeader &&
+                              (idx === 0 || item.children![idx - 1].sectionHeader !== child.sectionHeader);
+
                             return (
-                              <Link
-                                key={child.title}
-                                href={child.href}
-                                prefetch={true}
-                                className={cn(
-                                  "block rounded px-2 py-1 text-[11px] transition-colors truncate",
-                                  isCurrentChild
-                                    ? "bg-[#0078d4] text-white font-semibold shadow-xs"
-                                    : "text-[#94a3b8] hover:text-white hover:bg-[#252c34]"
+                              <React.Fragment key={child.title + idx}>
+                                {showHeader && (
+                                  <div className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]/70 pt-2 pb-0.5 px-2 select-none border-t border-[#2d3742]/40 first:border-t-0 first:pt-1">
+                                    {child.sectionHeader}
+                                  </div>
                                 )}
-                              >
-                                {child.title}
-                              </Link>
+                                <Link
+                                  href={child.href}
+                                  prefetch={true}
+                                  className={cn(
+                                    "block rounded px-2 py-1 text-[11px] transition-colors truncate",
+                                    isCurrentChild
+                                      ? "bg-[#0078d4] text-white font-semibold shadow-xs"
+                                      : "text-[#94a3b8] hover:text-white hover:bg-[#252c34]"
+                                  )}
+                                >
+                                  {child.title}
+                                </Link>
+                              </React.Fragment>
                             );
                           })}
                         </div>
