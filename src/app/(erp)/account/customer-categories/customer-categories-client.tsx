@@ -19,6 +19,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  createCustomerCategoryAction,
+  updateCustomerCategoryAction,
+  deleteCustomerCategoryAction,
+} from "@/app/(erp)/account/customers/actions";
 
 export interface CustomerCategoriesClientProps {
   companyId: string;
@@ -86,9 +91,8 @@ export function CustomerCategoriesClient({
     setModalError(null);
 
     try {
-      const { createCustomerCategory, updateCustomerCategory } = await import("@/lib/crm/customer-settings");
       if (editingCategory) {
-        const res = await updateCustomerCategory(companyId, editingCategory.id, {
+        const res = await updateCustomerCategoryAction(companyId, editingCategory.id, {
           name: formName,
           description: formDesc,
         });
@@ -100,7 +104,7 @@ export function CustomerCategoriesClient({
           setModalError(res.error || "Failed to update category");
         }
       } else {
-        const res = await createCustomerCategory(companyId, {
+        const res = await createCustomerCategoryAction(companyId, {
           name: formName,
           description: formDesc,
         });
@@ -123,8 +127,7 @@ export function CustomerCategoriesClient({
     if (!confirm(`Are you sure you want to delete customer category '${cat.name}'?`)) return;
 
     try {
-      const { deleteCustomerCategory } = await import("@/lib/crm/customer-settings");
-      const res = await deleteCustomerCategory(companyId, cat.id);
+      const res = await deleteCustomerCategoryAction(companyId, cat.id);
       if (res.success) {
         setCategories((prev) => prev.filter((c) => c.id !== cat.id));
         setFeedback({ message: `Category '${cat.name}' removed.`, type: "success" });

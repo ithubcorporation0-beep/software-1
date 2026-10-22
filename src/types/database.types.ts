@@ -104,7 +104,7 @@ export interface AuditLog {
   created_at: string;
 }
 
-export type CustomerType = "B2B" | "B2C" | "Enterprise" | "SMB" | "Government" | "Wholesale";
+export type CustomerType = "B2B" | "B2C" | "Enterprise" | "SMB" | "Government" | "Wholesale" | "Retailer" | "WS / Distributor";
 export type CustomerStatus = "Active" | "Inactive" | "Lead" | "Archived";
 
 export interface CustomerDocument {

@@ -5,9 +5,16 @@ import {
   toggleCustomerStatus,
   bulkDeleteCustomers,
   exportCustomersToCsv,
+  createCustomerGroup,
+  updateCustomerGroup,
+  deleteCustomerGroup,
+  createCustomerCategory,
+  updateCustomerCategory,
+  deleteCustomerCategory,
+  importCustomersFromCsv,
 } from "@/lib/crm/customer-settings";
 import { deleteCustomer } from "@/lib/crm/server";
-import { CustomerStatus } from "@/types/database.types";
+import { CustomerStatus, CustomerGroup, CustomerCategory } from "@/types/database.types";
 
 export interface ActionState<T = any> {
   success: boolean;
@@ -87,5 +94,132 @@ export async function exportCustomersCsvAction(
     return { success: true, data: csv };
   } catch (err: any) {
     return { success: false, error: err.message || "Export failed" };
+  }
+}
+
+export async function createCustomerGroupAction(
+  companyId: string,
+  data: { name: string; description?: string }
+): Promise<ActionState<CustomerGroup>> {
+  try {
+    const res = await createCustomerGroup(companyId, data);
+    if (!res.success) {
+      return { success: false, error: res.error || "Failed to create group" };
+    }
+    revalidatePath("/account/customer-groups");
+    revalidatePath("/account/customers");
+    return { success: true, data: res.data, message: "Customer group created successfully" };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to create customer group" };
+  }
+}
+
+export async function updateCustomerGroupAction(
+  companyId: string,
+  groupId: string,
+  data: { name: string; description?: string }
+): Promise<ActionState<CustomerGroup>> {
+  try {
+    const res = await updateCustomerGroup(companyId, groupId, data);
+    if (!res.success) {
+      return { success: false, error: res.error || "Failed to update group" };
+    }
+    revalidatePath("/account/customer-groups");
+    revalidatePath("/account/customers");
+    return { success: true, data: res.data, message: "Customer group updated successfully" };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to update customer group" };
+  }
+}
+
+export async function deleteCustomerGroupAction(
+  companyId: string,
+  groupId: string
+): Promise<ActionState> {
+  try {
+    const res = await deleteCustomerGroup(companyId, groupId);
+    if (!res.success) {
+      return { success: false, error: res.error || "Failed to delete group" };
+    }
+    revalidatePath("/account/customer-groups");
+    revalidatePath("/account/customers");
+    return { success: true, message: "Customer group deleted successfully" };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to delete customer group" };
+  }
+}
+
+export async function createCustomerCategoryAction(
+  companyId: string,
+  data: { name: string; description?: string }
+): Promise<ActionState<CustomerCategory>> {
+  try {
+    const res = await createCustomerCategory(companyId, data);
+    if (!res.success) {
+      return { success: false, error: res.error || "Failed to create category" };
+    }
+    revalidatePath("/account/customer-categories");
+    revalidatePath("/account/customers");
+    return { success: true, data: res.data, message: "Customer category created successfully" };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to create customer category" };
+  }
+}
+
+export async function updateCustomerCategoryAction(
+  companyId: string,
+  categoryId: string,
+  data: { name: string; description?: string }
+): Promise<ActionState<CustomerCategory>> {
+  try {
+    const res = await updateCustomerCategory(companyId, categoryId, data);
+    if (!res.success) {
+      return { success: false, error: res.error || "Failed to update category" };
+    }
+    revalidatePath("/account/customer-categories");
+    revalidatePath("/account/customers");
+    return { success: true, data: res.data, message: "Customer category updated successfully" };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to update customer category" };
+  }
+}
+
+export async function deleteCustomerCategoryAction(
+  companyId: string,
+  categoryId: string
+): Promise<ActionState> {
+  try {
+    const res = await deleteCustomerCategory(companyId, categoryId);
+    if (!res.success) {
+      return { success: false, error: res.error || "Failed to delete category" };
+    }
+    revalidatePath("/account/customer-categories");
+    revalidatePath("/account/customers");
+    return { success: true, message: "Customer category deleted successfully" };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to delete customer category" };
+  }
+}
+
+export async function importCustomersFromCsvAction(
+  companyId: string,
+  csvText: string,
+  commit: boolean = false
+): Promise<ActionState<{ totalRows: number; validRows: number; errorRows: Array<{ row: number; reason: string }>; insertedCount: number }>> {
+  try {
+    const res = await importCustomersFromCsv(companyId, csvText, commit);
+    if (commit) {
+      revalidatePath("/account/customers");
+      revalidatePath("/crm");
+    }
+    return {
+      success: true,
+      message: commit
+        ? `Successfully imported ${res.insertedCount} customer(s)`
+        : `Validated ${res.validRows} valid rows out of ${res.totalRows}`,
+      data: res,
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || "CSV Import failed" };
   }
 }

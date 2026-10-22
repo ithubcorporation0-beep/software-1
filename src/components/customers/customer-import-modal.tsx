@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { importCustomersFromCsvAction } from "@/app/(erp)/account/customers/actions";
 
 export interface CustomerImportModalProps {
   open: boolean;
@@ -84,13 +85,20 @@ CUST-1002,"Lahore General Supplies","Zubair Ali","zubair@lgs.com.pk","0321987654
     if (!csvContent) return;
     setIsProcessing(true);
     try {
-      const { importCustomersFromCsv } = await import("@/lib/crm/customer-settings");
-      const res = await importCustomersFromCsv(companyId, csvContent, false);
-      setTestResult({
-        tested: true,
-        validRows: res.validRows,
-        errorRows: res.errorRows,
-      });
+      const res = await importCustomersFromCsvAction(companyId, csvContent, false);
+      if (res.success && res.data) {
+        setTestResult({
+          tested: true,
+          validRows: res.data.validRows,
+          errorRows: res.data.errorRows,
+        });
+      } else {
+        setTestResult({
+          tested: true,
+          validRows: 0,
+          errorRows: [{ row: 1, reason: res.error || "Validation failed" }],
+        });
+      }
     } catch (e: any) {
       setTestResult({
         tested: true,
@@ -106,14 +114,21 @@ CUST-1002,"Lahore General Supplies","Zubair Ali","zubair@lgs.com.pk","0321987654
     if (!csvContent) return;
     setIsProcessing(true);
     try {
-      const { importCustomersFromCsv } = await import("@/lib/crm/customer-settings");
-      const res = await importCustomersFromCsv(companyId, csvContent, true);
-      setCommitResult({
-        success: res.insertedCount > 0,
-        insertedCount: res.insertedCount,
-      });
-      if (onImportComplete) {
-        onImportComplete();
+      const res = await importCustomersFromCsvAction(companyId, csvContent, true);
+      if (res.success && res.data) {
+        setCommitResult({
+          success: res.data.insertedCount > 0,
+          insertedCount: res.data.insertedCount,
+        });
+        if (onImportComplete) {
+          onImportComplete();
+        }
+      } else {
+        setCommitResult({
+          success: false,
+          insertedCount: 0,
+          error: res.error || "Commit failed",
+        });
       }
     } catch (e: any) {
       setCommitResult({

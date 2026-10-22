@@ -18,6 +18,12 @@ import { CustomerSettingsTabs } from "@/components/customers/customer-settings-t
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import {
+  createCustomerGroupAction,
+  updateCustomerGroupAction,
+  deleteCustomerGroupAction,
+} from "@/app/(erp)/account/customers/actions";
 
 export interface CustomerGroupsClientProps {
   companyId: string;
@@ -85,9 +91,8 @@ export function CustomerGroupsClient({
     setModalError(null);
 
     try {
-      const { createCustomerGroup, updateCustomerGroup } = await import("@/lib/crm/customer-settings");
       if (editingGroup) {
-        const res = await updateCustomerGroup(companyId, editingGroup.id, {
+        const res = await updateCustomerGroupAction(companyId, editingGroup.id, {
           name: formName,
           description: formDesc,
         });
@@ -99,7 +104,7 @@ export function CustomerGroupsClient({
           setModalError(res.error || "Failed to update group");
         }
       } else {
-        const res = await createCustomerGroup(companyId, {
+        const res = await createCustomerGroupAction(companyId, {
           name: formName,
           description: formDesc,
         });
@@ -122,8 +127,7 @@ export function CustomerGroupsClient({
     if (!confirm(`Are you sure you want to delete customer group '${group.name}'?`)) return;
 
     try {
-      const { deleteCustomerGroup } = await import("@/lib/crm/customer-settings");
-      const res = await deleteCustomerGroup(companyId, group.id);
+      const res = await deleteCustomerGroupAction(companyId, group.id);
       if (res.success) {
         setGroups((prev) => prev.filter((g) => g.id !== group.id));
         setFeedback({ message: `Group '${group.name}' removed.`, type: "success" });

@@ -4,6 +4,10 @@ import * as React from "react";
 import { X, FolderPlus, Tag, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  createCustomerGroupAction,
+  createCustomerCategoryAction,
+} from "@/app/(erp)/account/customers/actions";
 
 export interface QuickCreateModalProps {
   open: boolean;
@@ -48,10 +52,9 @@ export function QuickCreateModal({
     setIsSubmitting(true);
     setError(null);
     try {
-      const { createCustomerGroup, createCustomerCategory } = await import("@/lib/crm/customer-settings");
       const res = isGroup
-        ? await createCustomerGroup(companyId, { name, description })
-        : await createCustomerCategory(companyId, { name, description });
+        ? await createCustomerGroupAction(companyId, { name, description })
+        : await createCustomerCategoryAction(companyId, { name, description });
 
       if (res.success && res.data) {
         onSuccess(res.data.name);
